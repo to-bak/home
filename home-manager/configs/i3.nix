@@ -34,7 +34,7 @@ in
         "XF86AudioRaiseVolume" = "exec amixer -D pulse sset Master 4%+";
         "XF86MonBrightnessDown" = "exec brightnessctl set 4%-";
         "XF86MonBrightnessUp" = "exec brightnessctl set 4%+";
-        "${modifier}+Return" = "exec nixGL ${pkgs.alacritty}/bin/alacritty";
+        "${modifier}+Return" = "exec ${pkgs.nixgl.nixGLIntel}/bin/nixGLIntel ${pkgs.alacritty}/bin/alacritty";
         "${modifier}+d" = "exec ~/.config/rofi/launchers/type-7/launcher.sh";
         "${modifier}+Shift+d" = "exec ${pkgs.rofi}/bin/rofi -show window";
         "${modifier}+Shift+x" = "exec i3lock -c 000000";
