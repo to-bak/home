@@ -40,7 +40,4 @@ nix -> $HOME/.config/nix
 .profile -> $HOME/.profile
 home-manager -> $HOME/.config/home-manager
 ```
-
-4. search for `TODOs` in nix files, and address.
-
-5. run `home-manager switch`
+4. run `home-manager switch`

@@ -1,6 +1,7 @@
 { pkgs, lib, ... }:
 let
   variables = import ../variables.nix;
+  theme = import ../theme.nix;
 in
 {
   xsession.windowManager.i3 = {
@@ -11,13 +12,12 @@ in
       modifier = "Mod4";
       bars = [ ];
       colors.focused = {
-        background = "#679f6b";
-        border = "#679f6b";
-        childBorder = "#679f6b";
-        indicator = "#679f6b";
-        text = "#679f6b";
+        background = theme.borderColor;
+        border = theme.borderColor;
+        childBorder = theme.borderColor;
+        indicator = theme.borderColor;
+        text = theme.borderColor;
       };
-
 
       window.border = 4;
 

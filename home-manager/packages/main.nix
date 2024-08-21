@@ -75,6 +75,11 @@ in {
     #Latex Full package
     tex
 
+    #Tilt
+    kind
+    ctlptl
+    tilt
+
   ];
 
 }

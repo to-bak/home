@@ -131,11 +131,6 @@ https://www.reddit.com/r/emacs/comments/sn8pma/how_to_pasteyank_into_minibuffer_
 #+BEGIN_SRC elisp
 (global-hl-line-mode 1)
 #+END_SRC
-** Superword mode
-#+BEGIN_SRC elisp
-(global-superword-mode t)
-#+END_SRC
-
 ** Which-key
 /which-key/ displays a list of possible commands, when entering a prefix.
 #+BEGIN_SRC emacs-lisp

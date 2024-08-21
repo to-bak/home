@@ -1,5 +1,7 @@
 { config, lib, pkgs, ... }:
-
+let
+  theme = import ../theme.nix;
+in
 {
   services.polybar = {
     enable = true;
@@ -45,7 +47,7 @@
         type = "internal/i3";
         label-unfocused-foreground = "#ffffff";
         label-focused-foreground = "#111111";
-	label-focused-background = "#679f6b";
+  label-focused-background = theme.borderColor;
         label-urgent-foreground = "#ffffff";
         label-unfocused-padding = 1;
         label-focused-padding = 1;

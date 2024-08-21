@@ -5,14 +5,6 @@
   services.picom = {
     enable = true;
 
-    fade = true;
-    fadeDelta = 5;
-
-    shadow = true;
-    shadowOffsets = [ (-7) (-7) ];
-    shadowOpacity = 0.7;
-    shadowExclude = [ "window_type *= 'normal' && ! name ~= ''" ];
-
     activeOpacity = 0.94;
     inactiveOpacity = 0.86;
     opacityRules = [

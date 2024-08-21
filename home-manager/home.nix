@@ -8,6 +8,4 @@ in
   home.homeDirectory = variables.homeDir;
 
   imports = [ ./configs/main.nix ./packages/main.nix ];
-
-  services.emacs.enable = true;
 }

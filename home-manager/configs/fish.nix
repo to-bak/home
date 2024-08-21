@@ -9,8 +9,11 @@
           repo  = "z";
           rev   = "e0e1b9dfdba362f8ab1ae8c1afc7ccf62b89f7eb";
           sha256 = "0dbnir6jbwjpjalz14snzd3cgdysgcs3raznsijd6savad3qhijc";
-        }; 
+        };
       }];
+      shellAliases = {
+        "nuke" = "docker ps -aq | xargs -r docker stop | xargs docker rm -f";
+      };
       interactiveShellInit = ''
       # Fish configuration
       set fish_color_user --bold brgreen
