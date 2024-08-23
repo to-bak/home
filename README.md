@@ -1,43 +1,19 @@
-# dotfiles
-NIX flake / Emacs home setup.
+# Home
 
-## Setup
-1. download nix: https://nixos.org/download/#download-nix
-2. create file `home-manager/variables.nix`, and populate it:
+Install [nix](https://nixos.org/download.html)
+```sh
+sh <(curl -L https://nixos.org/nix/install) --daemon
 ```
-{
-  ### GITHUB
-  # github ghp key
-  github_ghp = "...";
 
-  # git username
-  github_user = "...";
+Run the bootstrap script
+```sh
+nix run github:to-bak/home?dir=home-manager#bootstrap \
+    --extra-experimental-features nix-command \
+    --extra-experimental-features flakes
 
-  # git email
-  github_email = "...";
-
-  # path to local git_config, i.e. ~/.gitconfig
-  git_config = "...";
-
-  ### SYSTEM
-  username = "..."; #echo $USER
-  homeDir = "..."; #echo $HOME
-
-
-  ### NIX
-  # must be equal to state version of our current nix state_version.
-  stateVersion = "...";
-
-  ### MISC
-  # path to background image.
-  background = "...";
-}
 ```
-3. create following symlinks (some are optional)
+
+[Locale issues on non-NixOS](https://nixos.wiki/wiki/Locales)
 ```
-nix -> $HOME/.config/nix
-.emacs.d -> $HOME/.emacs.d
-.profile -> $HOME/.profile
-home-manager -> $HOME/.config/home-manager
+export LOCALE_ARCHIVE=/usr/lib/locale/locale-archive
 ```
-4. run `home-manager switch`
