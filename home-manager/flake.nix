@@ -7,8 +7,9 @@
     inputs.nixpkgs.follows = "nixpkgs";
   };
   inputs.nixgl.url = "github:nix-community/nixGL";
+  inputs.flake-utils.url = "github:numtide/flake-utils";
 
-  outputs = inputs@{ nixgl, nixpkgs, home-manager, ... }:
+  outputs = inputs@{ nixgl, nixpkgs, home-manager, flake-utils, ... }:
   let
     pkgs = import nixpkgs {
       system = "x86_64-linux";
