@@ -23,18 +23,6 @@
       modules = [ ./home.nix ];
 
     };
-
-    packages.bootstrap = pkgs.writeShellApplication {
-      name = "bootstrap";
-      runtimeInputs = [ pkgs.git ];
-      text = ''
-        DOT_DIR=$HOME/.home
-        echo "Initializing dotfiles repo: $DOT_DIR" && \
-        git clone --bare https://github.com/to-bak/home.git $DOT_DIR && \
-        git --git-dir $DOT_DIR --work-tree=$HOME checkout && \
-        cd $HOME/nix
-      '';
-    };
   };
 
 }
