@@ -1,9 +1,9 @@
 {
   description = "Home Manager configuration";
 
-  inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-23.11";
+  inputs.nixpkgs.url = "github:nixos/nixpkgs";
   inputs.home-manager = {
-    url = "github:nix-community/home-manager/release-23.11";
+    url = "github:nix-community/home-manager";
     inputs.nixpkgs.follows = "nixpkgs";
   };
   inputs.nixgl.url = "github:nix-community/nixGL";
@@ -17,6 +17,7 @@
     };
     variables = import ./variables.nix;
   in {
+
     packages.bootstrap = pkgs.writeShellApplication {
       name = "bootstrap";
       runtimeInputs = [ pkgs.git ];
