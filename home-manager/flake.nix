@@ -28,8 +28,8 @@
           name = "bootstrap";
           runtimeInputs = [ pkgs.git pkgs.home-manager ];
           text = ''
-          git clone https://github.com/to-bak/home.git && \
-          cd "$HOME"/.dotfiles && \
+          DOT_DIR=$HOME/.dotfiles
+          git clone https://github.com/to-bak/home.git "$DOT_DIR" && \
           home-manager switch
           '';
         };
