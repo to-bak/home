@@ -22,11 +22,7 @@
       name = "bootstrap";
       runtimeInputs = [ pkgs.git ];
       text = ''
-        echo "Initializing dotfiles repo: $HOME/.cfg/" && \
-        git clone --bare https://github.com/SamWolfs/dotfiles-v2.git $HOME/.cfg/ && \
-        git --git-dir=$HOME/.cfg/ --work-tree=$HOME checkout && \
-        cd $HOME/nix && \
-        nix profile install
+        echo "hello"
           '';
     };
 
