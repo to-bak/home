@@ -37,7 +37,6 @@
           ln -sfn "$DOT_DIR"/.emacs.d "$HOME"/.emacs.d && \
           ln -sfn "$DOT_DIR"/.profile "$HOME"/.profile && \
           home-manager switch
-          ln -sfn "$HOME/variables.nix" "$DOT_DIR"/home-manager/variables.nix
           '';
         };
       });
