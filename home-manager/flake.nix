@@ -28,7 +28,6 @@
           name = "bootstrap";
           runtimeInputs = [ pkgs.git pkgs.home-manager ];
           text = ''
-          echo "$GITHUB_GHP"
           DOT_DIR=$HOME/.dotfiles
           git clone https://github.com/to-bak/home.git "$DOT_DIR" && \
           cp "$HOME/variables.nix" "$DOT_DIR"/home-manager/variables.nix && \
