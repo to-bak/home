@@ -77,7 +77,7 @@ in
           notification = false;
         }
         {
-          command = "${pkgs.feh}/bin/feh --bg-scale $HOME/.dotfiles/Wallpapers/forest.png";
+          command = "${pkgs.feh}/bin/feh --bg-scale $HOME/.dotfiles/wallpapers/forest.png";
           always = true;
           notification = false;
         }
