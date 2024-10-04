@@ -32,7 +32,7 @@
           text = ''
             DOT_DIR=$HOME/.dotfiles
             ENV_DIR=$HOME/.flake-env
-            if [ -d $DOT_DIR ]; then
+            if [ -d "$DOT_DIR" ]; then
               echo "PROCEEDING TO BOOTSTRAP"
               ln -sfn "$DOT_DIR"/home-manager "$HOME"/.config/home-manager && \
               ln -sfn "$DOT_DIR"/nix "$HOME"/.config/nix && \
