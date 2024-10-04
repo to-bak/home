@@ -33,7 +33,12 @@
             DOT_DIR=$HOME/.dotfiles
             ENV_DIR=$HOME/.flake-env
             if [ -d "$DOT_DIR" ]; then
-              echo "PROCEEDING TO BOOTSTRAP"
+              echo "PROCEEDING TO BOOTSTRAP" && \
+              cd "$ENV_DIR" && \
+              git add . && \
+              git commit --allow-empty -m "commit flake" && \
+              cd "$DOT_DIR"/home-manager && \
+              nix flake lock --update-input flake-env && \
               ln -sfn "$DOT_DIR"/home-manager "$HOME"/.config/home-manager && \
               ln -sfn "$DOT_DIR"/nix "$HOME"/.config/nix && \
               ln -sfn "$DOT_DIR"/autorandr "$HOME"/.config/autorandr && \

@@ -1,4 +1,4 @@
-{ config, pkgs, lib, environment, ... }:
+ config, pkgs, lib, environment, ... }:
 
 {
   home.stateVersion = "22.11";
