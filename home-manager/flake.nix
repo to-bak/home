@@ -26,9 +26,11 @@
           };
         packages.bootstrap = pkgs.writeShellApplication {
           name = "bootstrap";
-          runtimeInputs = [ pkgs.git ];
+          runtimeInputs = [ pkgs.git pkgs.home-manager ];
           text = ''
-          echo "hello"
+          git clone https://github.com/to-bak/home.git && \
+          cd "$HOME"/.dotfiles && \
+          home-manager switch
           '';
         };
       });
