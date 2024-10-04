@@ -1,7 +1,5 @@
-{ config, pkgs, lib, ... }:
-let
-  variables = import ../variables.nix;
-in
+{ config, pkgs, lib, variables, ... }:
+
 {
   imports = [
     ./alacritty.nix
