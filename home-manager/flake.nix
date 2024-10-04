@@ -45,7 +45,7 @@
               git clone https://github.com/to-bak/home.git "$DOT_DIR" && \
               ln -sfn "$DOT_DIR"/flake-env "$ENV_DIR" && \
               cp "$ENV_DIR"/template "$ENV_DIR"/environment.nix && \
-              nix registry add flake:flake-env git+file:///$HOME/.flake-env/ && \
+              nix registry add flake:flake-env git+file:///"$HOME"/.flake-env/ && \
               cd "$ENV_DIR" && \
               git init
             fi
