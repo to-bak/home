@@ -5,6 +5,19 @@ Install [nix](https://nixos.org/download.html)
 sh <(curl -L https://nixos.org/nix/install) --daemon
 ```
 
+Populate `$HOME/variables.nix` with following structure:
+```
+{
+  github_ghp = "...";
+  github_user = "...";
+  github_email = "...";
+  git_config = "...";
+  username = "...";
+  homeDir = "...";
+  stateVersion = "22.11";
+}
+```
+
 Run the bootstrap script
 ```sh
 nix run github:to-bak/home?dir=home-manager#bootstrap \
