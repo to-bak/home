@@ -32,6 +32,7 @@
           DOT_DIR=$HOME/.dotfiles
           git clone https://github.com/to-bak/home.git "$DOT_DIR" && \
           cp "$HOME/variables.nix" "$DOT_DIR"/home-manager/variables.nix && \
+          rm "$HOME"/variables.nix && \
           ln -sfn "$DOT_DIR"/home-manager "$HOME"/.config/home-manager && \
           ln -sfn "$DOT_DIR"/nix "$HOME"/.config/nix && \
           ln -sfn "$DOT_DIR"/autorandr "$HOME"/.config/autorandr && \

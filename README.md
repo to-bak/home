@@ -25,6 +25,7 @@ nix run github:to-bak/home?dir=home-manager#bootstrap \
     --extra-experimental-features flakes
 
 ```
+(The `$HOME/variables.nix` file will be removed, and moved into `$HOME/.dotfiles/home-manager/variables.nix`)
 
 [Locale issues on non-NixOS](https://nixos.wiki/wiki/Locales)
 ```
