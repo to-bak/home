@@ -1,6 +1,5 @@
 { pkgs, lib, ... }:
 let
-  variables = import ../variables.nix;
   theme = import ../theme.nix;
 in
 {
