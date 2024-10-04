@@ -1,0 +1,10 @@
+{
+  github_ghp = "...";
+  github_user = "...";
+  github_email = "...";
+  git_config = "...";
+  username = "...";
+  homeDir = "...";
+  stateVersion = "...";
+  background = "...";
+}

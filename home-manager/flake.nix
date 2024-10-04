@@ -10,7 +10,8 @@
   inputs.flake-utils.url = "github:numtide/flake-utils";
   inputs.flake-env.url = "flake:flake-env";
 
-  outputs = inputs@{ nixgl, nixpkgs, home-manager, flake-utils, flake-env, ... }:
+  outputs =
+    inputs@{ nixgl, nixpkgs, home-manager, flake-utils, flake-env, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs {
@@ -29,14 +30,22 @@
           name = "bootstrap";
           runtimeInputs = [ pkgs.git pkgs.home-manager ];
           text = ''
-          DOT_DIR=$HOME/.dotfiles
-          git clone https://github.com/to-bak/home.git "$DOT_DIR" && \
-          ln -sfn "$DOT_DIR"/home-manager "$HOME"/.config/home-manager && \
-          ln -sfn "$DOT_DIR"/nix "$HOME"/.config/nix && \
-          ln -sfn "$DOT_DIR"/autorandr "$HOME"/.config/autorandr && \
-          ln -sfn "$DOT_DIR"/.emacs.d "$HOME"/.emacs.d && \
-          ln -sfn "$DOT_DIR"/.profile "$HOME"/.profile && \
-          home-manager switch
+            DOT_DIR=$HOME/.dotfiles
+            ENV_DIR=$HOME/.flake-env
+            if [ -d $DOT_DIR ]; then
+              echo "PROCEEDING TO BOOTSTRAP"
+              ln -sfn "$DOT_DIR"/home-manager "$HOME"/.config/home-manager && \
+              ln -sfn "$DOT_DIR"/nix "$HOME"/.config/nix && \
+              ln -sfn "$DOT_DIR"/autorandr "$HOME"/.config/autorandr && \
+              ln -sfn "$DOT_DIR"/.emacs.d "$HOME"/.emacs.d && \
+              ln -sfn "$DOT_DIR"/.profile "$HOME"/.profile && \
+              home-manager switch
+            else
+              echo "SETTING UP ENVIRONMENT"
+              git clone https://github.com/to-bak/home.git "$DOT_DIR" && \
+              ln -sfn "$DOT_DIR"/flake-env "$ENV_DIR"
+              cp "$ENV_DIR"/template "$ENV_DIR"/environment.nix
+            fi
           '';
         };
       });
