@@ -30,6 +30,11 @@
           text = ''
           DOT_DIR=$HOME/.dotfiles
           git clone https://github.com/to-bak/home.git "$DOT_DIR" && \
+          ln -sfn "$DOT_DIR"/home-manager "$HOME"/.config/home-manager && \
+          ln -sfn "$DOT_DIR"/nix "$HOME"/.config/nix && \
+          ln -sfn "$DOT_DIR"/autorandr "$HOME"/.config/autorandr && \
+          ln -sfn "$DOT_DIR"/.emacs.d "$HOME"/.emacs.d && \
+          ln -sfn "$DOT_DIR"/.profile "$HOME"/.profile && \
           home-manager switch
           '';
         };
