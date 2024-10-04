@@ -8,21 +8,22 @@
   };
   inputs.nixgl.url = "github:nix-community/nixGL";
   inputs.flake-utils.url = "github:numtide/flake-utils";
+  inputs.flake-env.url = "flake:flake-env";
 
-  outputs = inputs@{ nixgl, nixpkgs, home-manager, flake-utils, ... }:
+  outputs = inputs@{ nixgl, nixpkgs, home-manager, flake-utils, flake-env, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs {
           inherit system;
           overlays = [ nixgl.overlay ];
         };
-        variables = import ./variables.nix;
+        environment = flake-env.nixosModules.environment;
       in {
-        packages.homeConfigurations.${variables.username} =
+        packages.homeConfigurations.${environment.username} =
           home-manager.lib.homeManagerConfiguration {
             inherit pkgs;
             modules = [ ./home.nix ];
-            extraSpecialArgs = { inherit variables; };
+            extraSpecialArgs = { inherit environment; };
           };
         packages.bootstrap = pkgs.writeShellApplication {
           name = "bootstrap";
@@ -30,8 +31,6 @@
           text = ''
           DOT_DIR=$HOME/.dotfiles
           git clone https://github.com/to-bak/home.git "$DOT_DIR" && \
-          cp "$HOME/variables.nix" "$DOT_DIR"/home-manager/variables.nix && \
-          rm "$HOME"/variables.nix && \
           ln -sfn "$DOT_DIR"/home-manager "$HOME"/.config/home-manager && \
           ln -sfn "$DOT_DIR"/nix "$HOME"/.config/nix && \
           ln -sfn "$DOT_DIR"/autorandr "$HOME"/.config/autorandr && \

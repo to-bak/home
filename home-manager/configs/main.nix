@@ -1,4 +1,4 @@
-{ config, pkgs, lib, variables, ... }:
+{ config, pkgs, lib, environment, ... }:
 
 {
   imports = [
@@ -18,8 +18,8 @@
     ssh.enable = true;
     git = {
       enable = true;
-      userName = variables.github_user;
-      userEmail = variables.github_email;
+      userName = environment.github_user;
+      userEmail = environment.github_email;
       extraConfig = {
       # TODO provide git-credential-libsecret via native OS
       credential.helper = "${
@@ -27,9 +27,9 @@
         }/bin/git-credential-libsecret";
       };
       includes = [
-        {path = variables.git_config;}
+        {path = environment.git_config;}
       ];
-      signing.key = variables.github_ghp;
+      signing.key = environment.github_ghp;
     };
   };
 

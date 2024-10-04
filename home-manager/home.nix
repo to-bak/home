@@ -1,9 +1,9 @@
-{ config, pkgs, lib, variables, ... }:
+{ config, pkgs, lib, environment, ... }:
 
 {
   home.stateVersion = "22.11";
-  home.username = variables.username;
-  home.homeDirectory = variables.homeDir;
+  home.username = environment.username;
+  home.homeDirectory = environment.homeDir;
 
   home.packages = with pkgs; [
     # MISC
