@@ -42,6 +42,7 @@
     gdb
     neovim
     emacs29
+    nixfmt-classic
 
     # DEFAULT
 
