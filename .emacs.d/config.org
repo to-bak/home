@@ -736,6 +736,11 @@ Language server protol setup in Emacs
             ("n" "Roam" entry (file+headline "~/org/roam/Inbox.org" "Inbox")
              "* TODO %?\n%a")))
 #+END_SRC
+** Download
+#+BEGIN_SRC elisp
+(use-package org-download
+  :after org)
+#+END_SRC
 * Keymaps
 ** Org agenda keymap
 To make org-agenda more accesible, a keymap with commonly used commands have been made. Since org-agenda and org-mode used distinct commands for the same semantic functions, we provide a wrapper to call the right function for each mode

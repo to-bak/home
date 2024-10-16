@@ -2,11 +2,11 @@
   "nodes": {
     "flake-env": {
       "locked": {
-        "lastModified": 1728081197,
+        "lastModified": 1728081730,
         "narHash": "sha256-xwX8LFlrLzdBAO+u+1fxtqrBAB7JQ2JTHatlRlNrDRQ=",
         "ref": "refs/heads/master",
-        "rev": "3ab93ed54e4699352b2b4bfd5a051c6aaba7ed18",
-        "revCount": 1,
+        "rev": "29ba72f10b2d73f941458c7336b35d68453d793d",
+        "revCount": 3,
         "type": "git",
         "url": "file:////home/vchg38@ds.mot.com/.flake-env/"
       },

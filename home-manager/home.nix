@@ -53,6 +53,7 @@
     vlc
     # spotify
     # spotifyd
+    xclip
     zathura
 
     #Tilt
