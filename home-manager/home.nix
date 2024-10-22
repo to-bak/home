@@ -20,6 +20,7 @@
     direnv
     autorandr
     jq
+    yq-go
     gh
     delta
     kubectl
