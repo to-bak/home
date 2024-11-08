@@ -20,10 +20,7 @@ Populate `$HOME/variables.nix` with following structure:
 
 Run the bootstrap script
 ```sh
-nix run github:to-bak/home?dir=home-manager#bootstrap \
-    --extra-experimental-features nix-command \
-    --extra-experimental-features flakes
-
+nix run github:to-bak/home?dir=home-manager#bootstrap --extra-experimental-features "nix-command flakes"
 ```
 (The `$HOME/variables.nix` file will be removed, and moved into `$HOME/.dotfiles/home-manager/variables.nix`)
 
