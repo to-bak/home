@@ -29,6 +29,8 @@ nix run github:to-bak/home?dir=home-manager#bootstrap --extra-experimental-featu
 | homeDir      | string |
 | stateVersion | string |
 
+(if in doubt, use stateVersion = "22.11").
+
 * Run the bootstrap script (second time for installation)
 ```sh
 nix run github:to-bak/home?dir=home-manager#bootstrap --extra-experimental-features "nix-command flakes"
