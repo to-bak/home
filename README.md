@@ -18,7 +18,8 @@ nix run github:to-bak/home?dir=home-manager#bootstrap --extra-experimental-featu
 ```
 
 * Populate `$HOME/.flake-env/environment.nix` with following variables:
-| value        | type   |
+
+| Value        | Type   |
 |--------------|--------|
 | github_ghp   | string |
 | github_user  | string |
