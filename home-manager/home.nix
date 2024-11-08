@@ -31,6 +31,7 @@
     nmap
     whois
     tcpdump
+    chromium
 
     # TERMINAL
     any-nix-shell

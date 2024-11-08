@@ -2,13 +2,13 @@
   "nodes": {
     "flake-env": {
       "locked": {
-        "lastModified": 1728081730,
-        "narHash": "sha256-xwX8LFlrLzdBAO+u+1fxtqrBAB7JQ2JTHatlRlNrDRQ=",
+        "lastModified": 1731104773,
+        "narHash": "sha256-FJ1+yfjs2ED335tgjlXgnozeKMnPKScRkYGT/+oUwkE=",
         "ref": "refs/heads/master",
-        "rev": "29ba72f10b2d73f941458c7336b35d68453d793d",
-        "revCount": 3,
+        "rev": "2695c6d5f5539a785b7c8c9a8bd04f12ad1ddd20",
+        "revCount": 1,
         "type": "git",
-        "url": "file:////home/vchg38@ds.mot.com/.flake-env/"
+        "url": "file:////home/oliverbak/.flake-env/"
       },
       "original": {
         "id": "flake-env",
