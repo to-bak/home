@@ -519,7 +519,6 @@ of evil key-bindings for the most popular emacs modes, which are not covered by 
 
 * Programming Language Related
 ** Major Modes
-*** Elixir
 #+BEGIN_SRC emacs-lisp
 (use-package elixir-mode
 :ensure t
@@ -535,22 +534,11 @@ of evil key-bindings for the most popular emacs modes, which are not covered by 
             (push '("->" . ?\u2192) prettify-symbols-alist)
             (push '("<-" . ?\u2190) prettify-symbols-alist)
             (push '("|>" . ?\u25B7) prettify-symbols-alist))))
-#+END_SRC
-*** Haskell
-#+BEGIN_SRC emacs-lisp
 (use-package haskell-mode)
-#+END_SRC
-*** C/C++
-#+BEGIN_SRC emacs-lisp
 (use-package cc-mode)
-#+END_SRC
-*** Elm
-#+BEGIN_SRC emacs-lisp
-(use-package elm-mode)
-#+END_SRC
-*** Rust
-#+BEGIN_SRC emacs-lisp
 (use-package rust-mode)
+(use-package nix-mode)
+(use-package markdown-mode)
 #+END_SRC
 
 ** LSP
