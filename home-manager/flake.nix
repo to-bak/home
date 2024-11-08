@@ -37,13 +37,13 @@
               cd "$ENV_DIR" && \
               git add . && \
               git commit --allow-empty -m "commit flake" && \
-              cd "$DOT_DIR"/home-manager && \
-              nix flake lock --update-input flake-env && \
               ln -sfn "$DOT_DIR"/home-manager "$HOME"/.config/home-manager && \
               ln -sfn "$DOT_DIR"/nix "$HOME"/.config/nix && \
               ln -sfn "$DOT_DIR"/autorandr "$HOME"/.config/autorandr && \
               ln -sfn "$DOT_DIR"/.emacs.d "$HOME"/.emacs.d && \
               ln -sfn "$DOT_DIR"/.profile "$HOME"/.profile && \
+              cd "$DOT_DIR"/home-manager && \
+              nix flake lock --update-input flake-env && \
               home-manager switch
             else
               echo "SETTING UP ENVIRONMENT"
