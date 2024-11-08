@@ -4,8 +4,18 @@ Install [nix](https://nixos.org/download.html)
 ```sh
 sh <(curl -L https://nixos.org/nix/install) --daemon
 ```
+Create $HOME/.gitconfig
+```sh
+[user]
+   name = your name
+   email = your email
+```
+Run the bootstrap script (first time for preparation)
+```sh
+nix run github:to-bak/home?dir=home-manager#bootstrap --extra-experimental-features "nix-command flakes"
+```
 
-Populate `$HOME/variables.nix` with following structure:
+Populate `$HOME/.flake-env/environment.nix` with following structure:
 ```
 {
   github_ghp = "...";
@@ -18,7 +28,7 @@ Populate `$HOME/variables.nix` with following structure:
 }
 ```
 
-Run the bootstrap script
+Run the bootstrap script (second time for installation)
 ```sh
 nix run github:to-bak/home?dir=home-manager#bootstrap --extra-experimental-features "nix-command flakes"
 ```
