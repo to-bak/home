@@ -18,12 +18,12 @@ in
         text = theme.borderColor;
       };
 
-      window.border = 4;
+      window.border = 2;
 
       gaps.smartGaps = true;
 
       gaps = {
-        inner = 20;
+        inner = 5;
         outer = 5;
       };
 
