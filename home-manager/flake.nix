@@ -32,16 +32,25 @@
           text = ''
             DOT_DIR=$HOME/.dotfiles
             ENV_DIR=$HOME/.flake-env
+
+            if [ ! -d "$DOT_DIR" ]; then
+              echo "==> .dotfiles doesn't exist, cloning into ~/.dotfiles"
+              git clone https://github.com/to-bak/home.git "$DOT_DIR"
+            else
+              echo "==> ~/.dotfiles already exists, proceeding bootstrapping."
+            fi
+
             if [ -d "$ENV_DIR" ]; then
-              echo "BOOTSTRAPPING" && \
-              git clone https://github.com/to-bak/home.git "$DOT_DIR" && \
+              echo "==> linking static configs to approriate files" && \
               ln -sfn "$DOT_DIR"/home-manager "$HOME"/.config/home-manager && \
               ln -sfn "$DOT_DIR"/nix "$HOME"/.config/nix && \
               ln -sfn "$DOT_DIR"/autorandr "$HOME"/.config/autorandr && \
               ln -sfn "$DOT_DIR"/.emacs.d "$HOME"/.emacs.d && \
               ln -sfn "$DOT_DIR"/.profile "$HOME"/.profile && \
+              echo "==> updating flake-env to reflect local environment" && \
               cd "$DOT_DIR"/home-manager && \
               nix flake lock --update-input flake-env && \
+              echo "==> applying home-manager switch" && \
               home-manager switch
             else
               echo "Failed to bootstrap. Error: flake-env not found, see README.md"
