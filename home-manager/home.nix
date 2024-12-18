@@ -5,6 +5,8 @@
   home.username = environment.username;
   home.homeDirectory = environment.homeDir;
 
+  nixpkgs.config.allowUnfree = true;
+
   home.packages = with pkgs; [
     # MISC
     cachix
@@ -17,7 +19,6 @@
     brightnessctl
     pulsemixer
     ripgrep
-    direnv
     autorandr
     jq
     yq-go
@@ -32,6 +33,7 @@
     whois
     tcpdump
     chromium
+    google-chrome
 
     # TERMINAL
     any-nix-shell
