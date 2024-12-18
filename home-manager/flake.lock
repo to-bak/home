@@ -6,10 +6,10 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1734541616,
-        "narHash": "sha256-/nI9O5Rv6Dag4yAwPVejJnUsN+gF4Y3stR11zcx0Mlw=",
+        "lastModified": 1734543982,
+        "narHash": "sha256-dRmnb4IbJm/NtPUlZCSej42IJxpq2F7AF7zTD3/UXSI=",
         "ref": "refs/heads/master",
-        "rev": "7c617ba49f4f5034b3fe07805ed1931a5f77a3c5",
+        "rev": "6740784f223ab01d8891a9b11e98cdb87f458ec3",
         "revCount": 1,
         "type": "git",
         "url": "file:////home/oliverbak/.flake-env/"

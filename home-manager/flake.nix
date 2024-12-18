@@ -18,7 +18,7 @@
           inherit system;
           overlays = [ nixgl.overlay ];
         };
-        environment = flake-env.nixosModules.environment;
+        environment = flake-env.nixosModules.${system}.environment;
       in {
         packages.homeConfigurations.${environment.username} =
           home-manager.lib.homeManagerConfiguration {
