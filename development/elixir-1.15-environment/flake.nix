@@ -18,27 +18,26 @@
         });
       in {
 
-        devShells.default = with pkgs;
-          mkShell {
-            buildInputs = [
-              gnumake
-              gcc
-              readline
-              openssl
-              zlib
-              libxml2
-              curl
-              libiconv
-              elixir
-              elixir-ls
-              rebar3
-              glibcLocales
-              postgresql
-              ctags
-              protobuf
-              erlang
-            ];
-          };
+        devShells.default = pkgs.mkShell {
+          buildInputs = [
+            pkgs.gnumake
+            pkgs.gcc
+            pkgs.readline
+            pkgs.openssl
+            pkgs.zlib
+            pkgs.libxml2
+            pkgs.curl
+            pkgs.libiconv
+            elixir
+            elixir-ls
+            pkgs.rebar3
+            pkgs.glibcLocales
+            pkgs.postgresql
+            pkgs.ctags
+            pkgs.protobuf
+            pkgs.erlang
+          ];
+        };
 
       });
 }
