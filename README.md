@@ -10,7 +10,7 @@ sh <(curl -L https://nixos.org/nix/install) --daemon
 nix run github:to-bak/home?dir=home-manager#bootstrap --extra-experimental-features "nix-command flakes"
 ```
 
-* Install (flake-env)[https://github.com/to-bak/flake-env] and populate `$HOME/.flake-env/environment.nix` with following variables:
+* Install [flake-env](https://github.com/to-bak/flake-env) and populate `$HOME/.flake-env/environment.nix` with following variables:
 
 | Value        | Type   |
 |--------------|--------|
