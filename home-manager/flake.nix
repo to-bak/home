@@ -42,7 +42,7 @@
 
             if [ -d "$ENV_DIR" ]; then
               echo "mkdir -p ~/.config/nix if not exists" && \
-              mkdir -p ~/.config/nix && \
+              mkdir -p "$HOME"/.config/nix && \
               echo "==> linking static configs to approriate files" && \
               ln -sfn "$DOT_DIR"/home-manager "$HOME"/.config/home-manager && \
               ln -sfn "$DOT_DIR"/nix.conf "$HOME"/.config/nix/nix.conf && \
