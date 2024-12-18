@@ -43,7 +43,7 @@
             if [ -d "$ENV_DIR" ]; then
               echo "==> linking static configs to approriate files" && \
               ln -sfn "$DOT_DIR"/home-manager "$HOME"/.config/home-manager && \
-              ln -sfn "$DOT_DIR"/nix "$HOME"/.config/nix && \
+              ln -sfn "$DOT_DIR"/nix.conf "$HOME"/.config/nix/nix.conf && \
               ln -sfn "$DOT_DIR"/autorandr "$HOME"/.config/autorandr && \
               ln -sfn "$DOT_DIR"/.emacs.d "$HOME"/.emacs.d && \
               ln -sfn "$DOT_DIR"/.profile "$HOME"/.profile && \
