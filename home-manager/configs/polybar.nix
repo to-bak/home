@@ -1,19 +1,27 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, stylix, ... }:
+with config.lib.stylix.colors;
 let
-  theme = import ../theme.nix;
-
   height = "24pt";
   border-size = "2pt";
   transparent-color = "#00000000";
-  bottom = false;
+  bottom = true;
+
+  inherit (config.lib.formats.rasi) mkLiteral;
+
+  # base0 = background
+  background = "99${base00}";
+  foreground = "${base04}";
+  alert = "${base08}";
+  disabled = "${base01}";
+  grey = "${base03}";
 
   fn-create-polybar = width : offset-x : modules-left : {
     width = width;
     offset-x = offset-x;
     height = height;
     radius = 5;
-    background = "${theme.background}";
-    foreground = "${theme.grey}";
+    background = background;
+    foreground = foreground;
     border-size = border-size;
     border-color = transparent-color;
     padding-left = 1;
@@ -53,17 +61,17 @@ in
       "module/xworkspaces" = {
         type = "internal/xworkspaces";
         label-active = "%name%";
-        label-active-background = "${theme.background}";
-        label-active-foreground = "${theme.foreground}";
-        label-active-underline= "${theme.foreground}";
+        label-active-background = background;
+        label-active-foreground = foreground;
+        label-active-underline= foreground;
         label-active-padding = "1";
         label-occupied = "%name%";
         label-occupied-padding = "1";
         label-urgent = "%name%";
-        label-urgent-background = "${theme.alert}";
+        label-urgent-background = alert;
         label-urgent-padding = "1";
         label-empty = "%name%";
-        label-empty-foreground = "${theme.disabled}";
+        label-empty-foreground = disabled;
         label-empty-padding = "1";
       };
 
@@ -72,7 +80,7 @@ in
         interval = 1;
         date = "%I:%M %p|%d-%m";
         label = "%date%";
-        label-foreground = "${theme.foreground}";
+        label-foreground = foreground;
       };
 
       "module/tray" = {

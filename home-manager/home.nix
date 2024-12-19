@@ -33,7 +33,6 @@
     nmap
     whois
     tcpdump
-    chromium
     google-chrome
 
     # TERMINAL
@@ -55,7 +54,7 @@
 
     # DEFAULT
 
-    vlc
+    # vlc
     # spotify
     # spotifyd
     xclip

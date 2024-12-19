@@ -1,7 +1,5 @@
 { pkgs, lib, ... }:
-let
-  theme = import ../theme.nix;
-in
+
 {
   xsession.windowManager.i3 = {
     enable = true;
@@ -10,15 +8,7 @@ in
     config = rec {
       modifier = "Mod4";
       bars = [ ];
-      colors.focused = {
-        background = theme.borderColor;
-        border = theme.borderColor;
-        childBorder = theme.borderColor;
-        indicator = theme.borderColor;
-        text = theme.borderColor;
-      };
-
-      window.border = 2;
+      window.border = 0;
 
       gaps.smartGaps = true;
 

@@ -11,6 +11,7 @@
     ./fish.nix
     ./fzf.nix
     ./dunst.nix
+    ./stylix.nix
   ];
 
   programs = {
