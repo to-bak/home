@@ -14,6 +14,7 @@
     appimagekit
     arandr
     tmate
+    networkmanagerapplet
     flameshot
     pavucontrol
     brightnessctl

@@ -38,7 +38,7 @@ in
         "${modifier}+Shift+d" = "exec ${pkgs.rofi}/bin/rofi -show window";
         "${modifier}+Shift+x" = "exec i3lock -c 000000";
 
-         # Focus
+        # Focus
         "${modifier}+h" = "focus left";
         "${modifier}+j" = "focus down";
         "${modifier}+k" = "focus up";
@@ -56,14 +56,14 @@ in
 
       };
 
-     modes = lib.mkOptionDefault {
-            resize = {
-                   "j" = "resize grow height 10 px or 10 ppt";
-                   "l" = "resize shrink width 10 px or 10 ppt";
-                   "h" = "resize grow width 10 px or 10 ppt";
-                   "k" = "resize shrink height 10 px or 10 ppt";
-            };
-     };
+      modes = lib.mkOptionDefault {
+        resize = {
+          "j" = "resize grow height 10 px or 10 ppt";
+          "l" = "resize shrink width 10 px or 10 ppt";
+          "h" = "resize grow width 10 px or 10 ppt";
+          "k" = "resize shrink height 10 px or 10 ppt";
+        };
+      };
 
       startup = [
         {
@@ -87,7 +87,17 @@ in
           notification = false;
         }
         {
-          command = "autorandr -c";
+          command = "${pkgs.autorandr}/bin/autorandr -c";
+          always = false;
+          notification = false;
+        }
+        {
+          command = "${pkgs.networkmanagerapplet}/bin/nm-applet --sm-disable";
+          always = false;
+          notification = false;
+        }
+        {
+          command = "${pkgs.flameshot}/bin/flameshot --sm-disable";
           always = false;
           notification = false;
         }
