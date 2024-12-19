@@ -9,9 +9,10 @@
   inputs.nixgl.url = "github:nix-community/nixGL";
   inputs.flake-utils.url = "github:numtide/flake-utils";
   inputs.flake-env.url = "flake:flake-env";
+  inputs.stylix.url = "github:danth/stylix";
 
   outputs =
-    inputs@{ nixgl, nixpkgs, home-manager, flake-utils, flake-env, ... }:
+    inputs@{ nixgl, nixpkgs, home-manager, flake-utils, flake-env, stylix, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs {
@@ -23,7 +24,7 @@
         packages.homeConfigurations.${environment.username} =
           home-manager.lib.homeManagerConfiguration {
             inherit pkgs;
-            modules = [ ./home.nix ];
+            modules = [ ./home.nix stylix.homeManagerModules.stylix ];
             extraSpecialArgs = { inherit environment; };
           };
         packages.bootstrap = pkgs.writeShellApplication {
