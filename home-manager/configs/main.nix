@@ -7,6 +7,7 @@
     ./compton.nix
     ./i3.nix
     ./polybar.nix
+    ./wayland/sway.nix
     ./rofi.nix
     ./fish.nix
     ./fzf.nix
