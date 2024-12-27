@@ -1,49 +1,22 @@
-{ config, pkgs, lib, environment, ... }:
+{ config, pkgs, pkgs-stable, lib, environment, ... }:
 
-{
-  home.stateVersion = "22.11";
-  home.username = environment.username;
-  home.homeDirectory = environment.homeDir;
-
-  nixpkgs.config.allowUnfree = true;
-
-  home.packages = with pkgs; [
+let
+  packages_stable = with pkgs-stable; [
     # MISC
+    google-chrome
     cachix
-    appimage-run
-    appimagekit
+    # appimage-run
+    # appimagekit
     arandr
-    tmate
+
+    # SYSTEM
+    ripgrep
+    autorandr
     networkmanagerapplet
     flameshot
     pavucontrol
     brightnessctl
     pulsemixer
-    ripgrep
-    autorandr
-    jq
-    yq-go
-    gh
-    delta
-    kubectl
-    kubelogin
-    kubectx
-    kubernetes-helm
-    azure-cli
-    nmap
-    whois
-    tcpdump
-    google-chrome
-
-    # TERMINAL
-    any-nix-shell
-    gotop
-    htop
-    neofetch
-    zip
-    unzip
-    gnupg
-    feh
 
     # DEVELOPMENT
     gnumake
@@ -57,15 +30,47 @@
     # vlc
     # spotify
     # spotifyd
+  ];
+
+  packages_unstable = with pkgs; [
+    # MISC
+    nmap
+    whois
+    tcpdump
     xclip
     zathura
 
-    #Tilt
+    # DEVELOPMENT
     kind
     ctlptl
     tilt
+    jq
+    yq-go
+    gh
+    delta
+    kubectl
+    kubelogin
+    kubectx
+    kubernetes-helm
+    azure-cli
 
+    # TERMINAL
+    any-nix-shell
+    gotop
+    htop
+    neofetch
+    zip
+    unzip
+    gnupg
+    feh
   ];
+in
+{
+  home.stateVersion = "22.11";
+  home.username = environment.username;
+  home.homeDirectory = environment.homeDir;
+
+  home.packages = packages_stable ++ packages_unstable;
 
   imports = [ ./configs/main.nix ];
 }
