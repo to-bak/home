@@ -3,3 +3,4 @@
 !config.org
 !init.el
 !custom.el
+!/straight/versions/default.el

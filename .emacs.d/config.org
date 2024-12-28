@@ -2,6 +2,33 @@
 #+AUTHOR: Oliver Bak
 #+OPTIONS: num:nil
 * Meta
+** straight.el
+#+BEGIN_SRC emacs-lisp
+(setq package-enable-at-startup nil)
+
+(defvar bootstrap-version)
+(let ((bootstrap-file
+       (expand-file-name
+        "straight/repos/straight.el/bootstrap.el"
+        (or (bound-and-true-p straight-base-dir)
+            user-emacs-directory)))
+      (bootstrap-version 7))
+  (unless (file-exists-p bootstrap-file)
+    (with-current-buffer
+        (url-retrieve-synchronously
+         "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
+         'silent 'inhibit-cookies)
+      (goto-char (point-max))
+      (eval-print-last-sexp)))
+  (load bootstrap-file nil 'nomessage))
+
+;; Install use-package with straight.el
+(straight-use-package 'use-package)
+
+;; Install packages by default in `use-package` forms,
+;; without having to specify `:straight t`
+(setq straight-use-package-by-default t)
+#+END_SRC
 ** Package managers
 Fetch external package managers to download packages from
 #+BEGIN_SRC emacs-lisp
@@ -30,8 +57,6 @@ When fetched, update and initialize package managers
 #+END_SRC
 
 * General
-- Note taken on [2023-10-13 Fri 23:21] \\
-  sdf
 ** Get rid of ugly emacs logo
 #+BEGIN_SRC emacs-lisp
   (setq inhibit-startup-message t)
@@ -109,6 +134,10 @@ https://www.reddit.com/r/emacs/comments/sn8pma/how_to_pasteyank_into_minibuffer_
 #+BEGIN_SRC elisp
 (define-key minibuffer-local-map (kbd "C-v") 'yank)
 #+END_SRC
+** warning log-level
+#+BEGIN_SRC emacs-lisp
+(setq warning-minimum-level :error)
+#+END_SRC
 * Development
 ** Line numbers
 #+BEGIN_SRC emacs-lisp
@@ -146,26 +175,24 @@ Dired lets you manage your Linux file system from Emacs. Includes:
 - deletion of files/folders
 - visual file navigation
 #+BEGIN_SRC emacs-lisp
-  (use-package dired
-      :ensure nil
-      :commands (dired dired-jump)
-      :bind (("C-x C-j" . dired-jump))
-      :custom ((dired-listing-switches "-agho --group-directories-first"))
-      :config
-  )
+(use-package dired
+    :straight (:type built-in)
+    :ensure nil
+    :commands (dired dired-jump)
+    :bind (("C-x C-j" . dired-jump))
+    :custom ((dired-listing-switches "-agho --group-directories-first"))
+    :config
+)
 
-    (use-package dired-single)
+(put 'dired-find-alternate-file 'disabled nil)
 
-    (put 'dired-find-alternate-file 'disabled nil)
-
-  ;; https://stackoverflow.com/questions/1839313/how-do-i-stop-emacs-dired-mode-from-opening-so-many-buffers
-  (setf dired-kill-when-opening-new-dired-buffer t)
+;; https://stackoverflow.com/questions/1839313/how-do-i-stop-emacs-dired-mode-from-opening-so-many-buffers
+(setf dired-kill-when-opening-new-dired-buffer t)
 
 #+END_SRC
 ** Project
 #+BEGIN_SRC emacs-lisp
-  (use-package project
-    :bind-keymap ("C-c p" . project-prefix-map))
+  (use-package project :bind-keymap ("C-c p" . project-prefix-map))
 
   (use-package consult-project-extra)
   ;; Add magit to list of project commands
@@ -456,14 +483,14 @@ To fetch tags with force (i.e. overriding existing tags), we allow to fetch with
 * Latex
 This package requires Latex locally installed on your system
 #+BEGIN_SRC emacs-lisp
-(use-package tex
-:ensure auctex)
+;; (use-package tex
+;; :ensure auctex)
 
-(use-package pdf-tools)
+;; (use-package pdf-tools)
 
-(add-hook 'TeX-after-compilation-finished-functions #'TeX-revert-document-buffer) ;; revert pdf after compile
+;; (add-hook 'TeX-after-compilation-finished-functions #'TeX-revert-document-buffer) ;; revert pdf after compile
 ;; (setq TeX-view-program-selection '((output-pdf "zathura"))) ;; use pdf-tools for viewing
-(setq LaTeX-command "latex --synctex=1") ;; optional: enable synctex
+;; (setq LaTeX-command "latex --synctex=1") ;; optional: enable synctex
 
 ;; lstlisting in latex org export
 ;;(use-package ox-latex)
@@ -671,9 +698,6 @@ Language server protol setup in Emacs
     :custom
     (org-superstar-remove-leading-stars t)
     (org-superstar-headline-bullets-list '("◉" "○" "●" "○" "●" "○" "●")))
-
-  ;; Make sure org-indent face is available
-  (use-package 'org-indent)
 #+END_SRC
 ** Roam
 #+BEGIN_SRC elisp
