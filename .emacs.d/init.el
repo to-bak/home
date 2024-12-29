@@ -27,8 +27,8 @@
 (setq custom-file "~/.emacs.d/custom.el")
 (load custom-file)
 
-;: get rid of emacs logo
-(setq inhibit-startup-message t)
+;; get rid of emacs logo
+;; (setq inhibit-startup-message t)
 
 ;; goto themes: gruvbox, twilight, doom-badger
 (use-package doom-themes)
@@ -42,6 +42,12 @@
 (use-package doom-modeline
   :init (doom-modeline-mode 1))
 
+(use-package dashboard
+  :ensure t
+  :config
+  (dashboard-setup-startup-hook))
+
+(add-hook 'server-after-make-frame-hook (lambda () (dashboard-refresh-buffer)))
 ;; puts emacs autosave files in /tmp
 (setq backup-directory-alist
       `((".*" . ,temporary-file-directory)))
@@ -769,3 +775,15 @@ _SPC_ cancel	_o_nly this     _d_elete
    ("Z" winner-redo)
    ("SPC" nil)
    )
+
+(defhydra hydra-global-org (:color blue)
+  "Org"
+  ("t" org-timer-start "Start Timer")
+  ("s" org-timer-stop "Stop Timer")
+  ("r" org-timer-set-timer "Set Timer") ; This one requires you be in an orgmode doc, as it sets the timer for the header
+  ("p" org-timer "Print Timer") ; output timer value to buffer
+  ("w" (org-clock-in '(4)) "Clock-In") ; used with (org-clock-persistence-insinuate) (setq org-clock-persist t)
+  ("o" org-clock-out "Clock-Out") ; you might also want (setq org-log-note-clock-out t)
+  ("j" org-clock-goto "Clock Goto") ; global visit the clocked task
+  ("c" org-capture "Capture") ; Don't forget to define the captures you want http://orgmode.org/manual/Capture.html
+  ("l" org-capture-goto-last-stored "Last Capture"))
