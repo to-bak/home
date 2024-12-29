@@ -365,6 +365,7 @@
 ;; ---------------------------------------------------------------------
 ;; Version control
 ;; ---------------------------------------------------------------------
+;; https://www.reddit.com/r/emacs/comments/11auxod/magit_quits_after_a_commit_happen/
 (use-package magit
   :ensure t
   :config
