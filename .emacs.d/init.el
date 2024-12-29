@@ -366,6 +366,9 @@
 ;; Version control
 ;; ---------------------------------------------------------------------
 (use-package magit
+  :ensure t
+  :config
+  (add-hook 'git-commit-post-finish-hook 'magit)
   :custom
   (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
 
