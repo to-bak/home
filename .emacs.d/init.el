@@ -201,7 +201,6 @@
   (setq corfu-popupinfo-delay 0))
   ;; (set-face-attribute 'corfu-current nil :inherit 'highlight :background nil :foreground nil))
 
-;; vertico
 (use-package vertico
   :ensure t
   :bind (:map vertico-map
@@ -242,7 +241,6 @@
   ;; disable recursive minibuffers (enabled in vertico config on readme page)
   (setq enable-recursive-minibuffers nil))
 
-;; orderless
 (use-package orderless
   :init
   ;; Configure a custom style dispatcher (see the Consult wiki)
@@ -345,7 +343,6 @@
 (define-key project-prefix-map (kbd "r") 'consult-ripgrep)
 (use-package consult-project-extra)
 
-;; marginalia
 (use-package marginalia
   :after vertico
   :ensure t
@@ -354,10 +351,19 @@
   :init
   (marginalia-mode))
 
+;; since embark-export buffers is read-only by default
+;; remove read-only before deleting line
+(defun obp/evil-delete-whole-line-disable-read-only ()
+  (interactive)
+  (read-only-mode -1)
+  (call-interactively 'evil-delete-whole-line)
+  )
+
 ;; embark
 (use-package embark
   :bind
-  ("C-c C-o" . embark-export))
+  ("C-c C-o" . embark-export)
+  ("C-c C-d" . obp/evil-delete-whole-line-disable-read-only))
 
 (use-package embark-consult)
 
