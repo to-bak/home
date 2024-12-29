@@ -1,3 +1,6 @@
+;; ---------------------------------------------------------------------
+;; Package managment
+;; ---------------------------------------------------------------------
 (setq package-enable-at-startup nil)
 
 (defvar bootstrap-version)
@@ -23,6 +26,10 @@
 ;; without having to specify `:straight t`
 (setq straight-use-package-by-default t)
 
+
+;; ---------------------------------------------------------------------
+;; Misc
+;; ---------------------------------------------------------------------
 ;; https://stackoverflow.com/questions/2548673/how-do-i-get-emacs-to-evaluate-a-file-when-a-frame-is-raised
 (setq custom-file "~/.emacs.d/custom.el")
 (load custom-file)
@@ -48,6 +55,7 @@
   (dashboard-setup-startup-hook))
 
 (add-hook 'server-after-make-frame-hook (lambda () (dashboard-refresh-buffer)))
+
 ;; puts emacs autosave files in /tmp
 (setq backup-directory-alist
       `((".*" . ,temporary-file-directory)))
@@ -66,7 +74,7 @@
 (set-fringe-mode 10)        ; Give some breathing room
 (menu-bar-mode -1)          ; Disable the menu bar
 
-;; font
+;; fonts
 (defvar efs/default-font-size 180)
 (defvar efs/default-variable-font-size 180)
 (set-face-attribute 'default nil :height 130)
@@ -119,16 +127,45 @@
 
 (put 'dired-find-alternate-file 'disabled nil)
 
+;; direnv integration
+;; (use-package direnv
+;; :init
+;; ;; (add-hook 'prog-mode-hook #'direnv-update-environment)
+;; :config
+;; (direnv-mode))
+
+;; alternative to direnv-mode
+(use-package envrc)
+(envrc-global-mode)
+
 ;; https://stackoverflow.com/questions/1839313/how-do-i-stop-emacs-dired-mode-from-opening-so-many-buffers
 (setf dired-kill-when-opening-new-dired-buffer t)
 
 (use-package project :bind-keymap ("C-c p" . project-prefix-map))
 
+(use-package rainbow-delimiters
+  :hook (prog-mode . rainbow-delimiters-mode))
 
+;; writeable grep buffer
+(use-package wgrep)
+
+;; indentation
+(setq-default indent-tabs-mode nil)
+
+;; cleanup whitespace on save.
+(add-hook 'before-save-hook 'whitespace-cleanup)
+
+;; Automatically add a newline at the end of a file when a file is
+;; saved. The POSIX standard defines a "line" as ending in a newline
+;; character.
+(setq require-final-newline t)
+
+(setq-default fill-column 80)
+
+
+;; ---------------------------------------------------------------------
 ;; Completion
 ;; ---------------------------------------------------------------------
-
-
 ;; Enhanced completion at point with Corfu and Cape.
 ;; https://github.com/minad/corfu
 (use-package cape)
@@ -177,6 +214,7 @@
   (vertico-cycle t)
   :init
   (vertico-mode))
+
 ;; Persist history over Emacs restarts. Vertico sorts by history position.
 (use-package savehist
   :init
@@ -201,8 +239,8 @@
         '(read-only t cursor-intangible t face minibuffer-prompt))
   (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
 
-;; disable recursive minibuffers (enabled in vertico config on readme page)
-(setq enable-recursive-minibuffers nil))
+  ;; disable recursive minibuffers (enabled in vertico config on readme page)
+  (setq enable-recursive-minibuffers nil))
 
 ;; orderless
 (use-package orderless
@@ -323,18 +361,10 @@
 
 (use-package embark-consult)
 
-;; direnv integration
-;; (use-package direnv
-;; :init
-;; ;; (add-hook 'prog-mode-hook #'direnv-update-environment)
-;; :config
-;; (direnv-mode))
 
-;; alternative to direnv-mode
-(use-package envrc)
-(envrc-global-mode)
-
-;; magit
+;; ---------------------------------------------------------------------
+;; Version control
+;; ---------------------------------------------------------------------
 (use-package magit
   :custom
   (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
@@ -357,23 +387,11 @@
   ;; Default is 0, meaning update indicators on saving the file.
   ;; (setq git-gutter:update-interval 0.02)
   )
-(use-package rainbow-delimiters
-  :hook (prog-mode . rainbow-delimiters-mode))
 
-;; writeable grep buffer
-(use-package wgrep)
 
-;; indentation
-(setq-default indent-tabs-mode nil)
-
-;; cleanup whitespace on save.
-(add-hook 'before-save-hook 'whitespace-cleanup)
-
-;; Automatically add a newline at the end of a file when a file is
-;; saved. The POSIX standard defines a "line" as ending in a newline
-;; character.
-(setq require-final-newline t)
-
+;; ---------------------------------------------------------------------
+;; Latex
+;; ---------------------------------------------------------------------
 ;; latex integration with zathura
 ;; (use-package tex
 ;; :ensure auctex)
@@ -401,10 +419,9 @@
 ;;     (expand-file-name "/home/vchg38/Downloads/plantuml-1.2023.4.jar"))
 
 
+;; ---------------------------------------------------------------------
 ;; Evil
 ;; ---------------------------------------------------------------------
-
-
 (use-package evil
   :init
   (setq evil-want-integration t)
@@ -436,7 +453,6 @@
 ;; ---------------------------------------------------------------------
 ;; Languages
 ;; ---------------------------------------------------------------------
-
 (use-package elixir-mode)
 (use-package haskell-mode)
 (use-package cc-mode)
@@ -454,7 +470,6 @@
 ;; ---------------------------------------------------------------------
 ;; LSP
 ;; ---------------------------------------------------------------------
-
 ;; (use-package lsp-mode
 ;;   :commands (lsp lsp-deferred)
 ;;   :custom
@@ -503,12 +518,10 @@
 (setq lsp-completion-provider :none)
 ;; (setq lsp-diagnostics-provider :none)
 
+
+;; ---------------------------------------------------------------------
 ;; Org
 ;; ---------------------------------------------------------------------
-
-;; TODO: Mode this to another section
-(setq-default fill-column 80)
-
 ;; Turn on indentation and auto-fill mode for Org files
 (defun dw/org-mode-setup ()
   (org-indent-mode)
@@ -587,11 +600,6 @@
   :ensure t
   :custom
   (org-roam-directory (file-truename "~/org/roam"))
-  :bind (("C-c n f"   . org-roam-node-find)
-         ("C-c n g"   . org-roam-graph)
-         ("C-c n i" . org-roam-insert)
-         ("C-c c" . org-capture)
-         ("C-c n I" . org-roam-insert-immediate))
   :config
   ;; If you're using a vertical completion framework, you might want a more informative completion interface
   (org-roam-db-autosync-mode))
@@ -628,8 +636,17 @@
 (use-package org-download
   :after org)
 
-;; Org keymaps
+(setq org-default-agenda-file (concat (file-truename "~/org") "/Tasks.org"))
+
+(defun obp/open-agenda-file ()
+  (interactive)
+  (find-file org-default-agenda-file))
+
+
 ;; ---------------------------------------------------------------------
+;; Hydras
+;; ---------------------------------------------------------------------
+(use-package hydra)
 
 (defun org-priority-wrapper ()
 "Tries to call org-agenda-priority, followed by org-priority if former fails"
@@ -690,100 +707,61 @@
     (error
     (org-set-property))))
 
-(setq org-default-agenda-file (concat (file-truename "~/org") "/Tasks.org"))
+(defhydra hydra-org-agenda ()
+  "
+Misc^^        ^Properties^       ^Roam^
+------------------------------------------
+_j_ ↓         _d_eadline         _g_raph
+_k_ ↑         _s_chedule         _r_ node
+_c_apture     _p_riority
+_a_genda      _n_ote
+_f_ile        _t_ags
+_q_uit        _o_rder
+"
+  ("a" org-agenda-list)
+  ("j" evil-next-visual-line)
+  ("k" evil-previous-visual-line)
+  ("c" org-capture)
+  ("f" obp/open-agenda-file)
 
-(defun obp/open-agenda-file ()
-  (interactive)
-  (find-file org-default-agenda-file))
+  ("d" org-deadline-wrapper)
+  ("s" org-schedule-wrapper)
+  ("n" org-add-note-wrapper)
+  ("t" org-set-tags-wrapper)
+  ("o" org-toggle-ordered-property)
+  ("p" org-priority-wrapper)
+  ("l" org-set-propery-wrapper)
 
-(define-prefix-command 'agenda-keymap)
-(define-key agenda-keymap (kbd "a") 'org-agenda)
-(define-key agenda-keymap (kbd "d") 'org-deadline-wrapper)
-(define-key agenda-keymap (kbd "s") 'org-schedule-wrapper)
-(define-key agenda-keymap (kbd "n") 'org-add-note-wrapper)
-(define-key agenda-keymap (kbd "t") 'org-set-tags-wrapper)
-(define-key agenda-keymap (kbd "o") 'org-toggle-ordered-property)
-(define-key agenda-keymap (kbd "p") 'org-priority-wrapper)
-(define-key agenda-keymap (kbd "l") 'org-set-property-wrapper)
-(define-key agenda-keymap (kbd "f") 'obp/open-agenda-file)
-(define-key agenda-keymap (kbd "v") 'org-insert-todo-heading)
-(global-set-key (kbd "C-c a") 'agenda-keymap)
+  ("g" org-roam-graph)
+  ("r" org-roam-node-find)
 
-;; Hydras
-;; ---------------------------------------------------------------------
+  ("q" nil))
 
-(use-package hydra)
-
+(global-set-key (kbd "C-c o") 'hydra-org-agenda/body)
 
 (defhydra hydra-window ()
-   "
-Movement^^        ^Split^         ^Switch^		^Resize^
-----------------------------------------------------------------
-_h_ ←           _v_ertical      _b_uffer		_q_ X←
-_j_ ↓           _x_ horizontal	_f_ind files	_w_ X↓
-_k_ ↑           _z_ undo        _a_ce 1		_e_ X↑
-_l_ →           _Z_ reset       _s_wap		_r_ X→
-_F_ollow		_D_lt Other     _S_ave		max_i_mize
-_SPC_ cancel	_o_nly this     _d_elete
+  "
+Movement^^    ^Zoom^
+-----------------------
+_h_ ←         _+_
+_j_ ↓         _-_
+_k_ ↑         _0_ reset
+_l_ →
+_q_uit
 "
-   ("h" windmove-left )
-   ("j" windmove-down )
-   ("k" windmove-up )
-   ("l" windmove-right )
-   ("q" hydra-move-splitter-left)
-   ("w" hydra-move-splitter-down)
-   ("e" hydra-move-splitter-up)
-   ("r" hydra-move-splitter-right)
-   ("b" helm-mini)
-   ("f" helm-find-files)
-   ("F" follow-mode)
-   ("a" (lambda ()
-          (interactive)
-          (ace-window 1)
-          (add-hook 'ace-window-end-once-hook
-                    'hydra-window/body))
-       )
-   ("v" (lambda ()
-          (interactive)
-          (split-window-right)
-          (windmove-right))
-       )
-   ("x" (lambda ()
-          (interactive)
-          (split-window-below)
-          (windmove-down))
-       )
-   ("s" (lambda ()
-          (interactive)
-          (ace-window 4)
-          (add-hook 'ace-window-end-once-hook
-                    'hydra-window/body)))
-   ("S" save-buffer)
-   ("d" delete-window)
-   ("D" (lambda ()
-          (interactive)
-          (ace-window 16)
-          (add-hook 'ace-window-end-once-hook
-                    'hydra-window/body))
-       )
-   ("o" delete-other-windows)
-   ("i" ace-maximize-window)
-   ("z" (progn
-          (winner-undo)
-          (setq this-command 'winner-undo))
-   )
-   ("Z" winner-redo)
-   ("SPC" nil)
-   )
+  ("h" evil-window-decrease-width)
+  ("j" evil-window-decrease-height)
+  ("k" evil-window-increase-height)
+  ("l" evil-window-increase-width)
+  ("+" (lambda ()
+         (interactive)
+         (text-scale-increase 1)))
+  ("-" (lambda ()
+         (interactive)
+         (text-scale-decrease 1)))
+  ("0" (lambda ()
+         (interactive)
+         (text-scale-adjust 0)))
+  ("q" nil))
 
-(defhydra hydra-global-org (:color blue)
-  "Org"
-  ("t" org-timer-start "Start Timer")
-  ("s" org-timer-stop "Stop Timer")
-  ("r" org-timer-set-timer "Set Timer") ; This one requires you be in an orgmode doc, as it sets the timer for the header
-  ("p" org-timer "Print Timer") ; output timer value to buffer
-  ("w" (org-clock-in '(4)) "Clock-In") ; used with (org-clock-persistence-insinuate) (setq org-clock-persist t)
-  ("o" org-clock-out "Clock-Out") ; you might also want (setq org-log-note-clock-out t)
-  ("j" org-clock-goto "Clock Goto") ; global visit the clocked task
-  ("c" org-capture "Capture") ; Don't forget to define the captures you want http://orgmode.org/manual/Capture.html
-  ("l" org-capture-goto-last-stored "Last Capture"))
+(global-set-key (kbd "C-c w") 'hydra-window/body)
