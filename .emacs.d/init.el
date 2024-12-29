@@ -746,8 +746,9 @@ Movement^^    ^Zoom^
 _h_ ←         _+_
 _j_ ↓         _-_
 _k_ ↑         _0_ reset
-_l_ →
-_q_uit
+_l_ →         _C-+_
+_q_uit        _C--_
+              _C-0_ global reset
 "
   ("h" evil-window-decrease-width)
   ("j" evil-window-decrease-height)
@@ -762,6 +763,15 @@ _q_uit
   ("0" (lambda ()
          (interactive)
          (text-scale-adjust 0)))
+  ("C-+" (lambda ()
+         (interactive)
+         (global-text-scale-adjust 1)))
+  ("C--" (lambda ()
+         (interactive)
+         (global-text-scale-adjust -1)))
+  ("C-0" (lambda ()
+         (interactive)
+         (global-text-scale-adjust 0)))
   ("q" nil))
 
 (global-set-key (kbd "C-c w") 'hydra-window/body)
