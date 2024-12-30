@@ -281,7 +281,6 @@
         completion-category-defaults nil
         completion-category-overrides '((file (styles partial-completion)))))
 
-
 ;; consult
 (use-package consult
   ;; Replace bindings. Lazily loaded due by `use-package'.
@@ -521,53 +520,55 @@
 ;; ---------------------------------------------------------------------
 ;; LSP
 ;; ---------------------------------------------------------------------
-;; (use-package lsp-mode
-;;   :commands (lsp lsp-deferred)
-;;   :custom
-;;   (lsp-completion-provider :none)  ;; Use Corfu for LSP completion
+(use-package lsp-mode
+  :commands (lsp lsp-deferred)
+  :custom
+  (lsp-completion-provider :none)  ;; Use Corfu for LSP completion
 
-;;   :init
-;;   (setq lsp-keymap-prefix "C-c l")
+  :init
+  (setq lsp-keymap-prefix "C-c l")
 
-;;   (defun akh/orderless-dispatch-flex-first (_pattern index _total)
-;;     (and (eq index 0) 'orderless-flex))
+  (defun akh/orderless-dispatch-flex-first (_pattern index _total)
+    (and (eq index 0) 'orderless-flex))
 
-;;   (defun akh/lsp-mode-setup-completion ()
-;;     (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
-;;           '(orderless)))
+  (defun akh/lsp-mode-setup-completion ()
+    (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
+          '(orderless)))
 
-;;   ;; Optionally configure the first word as flex filtered.
-;;   (add-hook 'orderless-style-dispatchers #'my/orderless-dispatch-flex-first nil 'local)
+  ;; Optionally configure the first word as flex filtered.
+  (add-hook 'orderless-style-dispatchers #'my/orderless-dispatch-flex-first nil 'local)
 
-;;   ;; Optionally configure the cape-capf-buster.
-;;   (setq-local completion-at-point-functions (list (cape-capf-buster #'lsp-completion-at-point)))
+  ;; Optionally configure the cape-capf-buster.
+  (setq-local completion-at-point-functions (list (cape-capf-buster #'lsp-completion-at-point)))
 
-;;   :hook (;; replace XXX-mode with concrete major-mode(e. g. python-mode)
-;;          (elixir-mode . lsp)
-;;          ;;(XXX-mode . lsp)
-;;          ;; if you want which-key integration
-;;          (lsp-mode . lsp-enable-which-key-integration)
-;;          (lsp-completion-mode . akh/lsp-mode-setup-completion))
+  :hook (;; replace XXX-mode with concrete major-mode(e. g. python-mode)
+         (elixir-mode . lsp)
+         ;;(XXX-mode . lsp)
+         ;; if you want which-key integration
+         (lsp-mode . lsp-enable-which-key-integration)
+         (lsp-completion-mode . akh/lsp-mode-setup-completion))
 
-;;   :config
-;;   (setq lsp-headerline-breadcrumb-enable nil))
+;; https://emacs-lsp.github.io/lsp-mode/tutorials/how-to-turn-off/
+  :config
+  ;; (setq lsp-ui-doc-enable nil)
+  ;; (setq lsp-lens-enable nil)
+  ;; (setq lsp-headerline-breadcrumb-enable nil)
+  ;; (setq lsp-ui-sideline-enable nil)
+  ;; (setq lsp-modeline-code-actions-enable nil)
+  ;; (setq lsp-modeline-diagnostics-enable nil)
+  ;; (setq lsp-signature-render-documentation nil)
+  ;; (setq lsp-completion-provider :none)
+  ;; (setq lsp-diagnostics-provider :none)
+  (setq lsp-headerline-breadcrumb-enable nil))
 
-;; (use-package lsp-ui
-;;   :config
-;;   (setq lsp-ui-doc-max-height 8
-;;         lsp-ui-doc-max-width 80         ; 150 (default) is too wide
-;;         lsp-ui-doc-delay 0.75           ; 0.2 (default) is too naggy
-;;         lsp-ui-doc-show-with-mouse nil  ; don't disappear on mouseover
-;;         lsp-ui-doc-position 'at-point))
+(use-package lsp-ui
+  :config
+  (setq lsp-ui-doc-max-height 8
+        lsp-ui-doc-max-width 80         ; 150 (default) is too wide
+        lsp-ui-doc-delay 0.75           ; 0.2 (default) is too naggy
+        lsp-ui-doc-show-with-mouse nil  ; don't disappear on mouseover
+        lsp-ui-doc-position 'at-point))
 
-;; (setq lsp-ui-doc-enable nil)
-(setq lsp-lens-enable nil)
-(setq lsp-headerline-breadcrumb-enable nil)
-(setq lsp-ui-sideline-enable nil)
-;; (setq lsp-modeline-code-actions-enable nil)
-;; (setq lsp-modeline-diagnostics-enable nil)
-(setq lsp-completion-provider :none)
-;; (setq lsp-diagnostics-provider :none)
 
 
 ;; ---------------------------------------------------------------------
@@ -669,6 +670,7 @@
       (concat "${title:*} "
               (propertize "${tags:10}" 'face 'org-tag)))
 
+
 (defhydra hydra-org-roam ()
   "
 Roam^^        ^Misc^
@@ -719,7 +721,8 @@ _r_m tags
 
 ;; https://stackoverflow.com/questions/7986935/using-org-capture-templates-to-schedule-a-todo-for-the-day-after-today
 (setq org-capture-templates
-      '(("a" "Agenda" entry (file+headline org-default-agenda-file "Inbox")
+      '(("a" "Agenda" entry
+         (file+headline org-default-agenda-file "Inbox")
          "* TODO %?\nSCHEDULED: <%(org-read-date nil nil \"+1d\")>\n%a")))
 
 (use-package org-fancy-priorities
@@ -729,64 +732,17 @@ _r_m tags
   :config
   (setq org-fancy-priorities-list '("🔥" "☕" "💤")))
 
-(defun org-priority-wrapper ()
-  "Tries to call org-agenda-priority, followed by org-priority if former fails"
+;; since agenda.org file and org-agenda view uses
+;; different functions, create wrapper to
+;; to use the same function context independent,
+;; by trying both functions.
+(defun obp/org-or-agenda (func-agenda func-org)
   (interactive)
   (condition-case e
-      (org-agenda-priority)
+      (call-interactively func-agenda)
     (error
-     (org-priority))))
-
-(defun org-schedule-wrapper ()
-  "Tries to call org-agenda-schedule, followed by org-schedule if former fails"
-  (interactive)
-  (condition-case e
-      (org-agenda-schedule nil)
-    (error
-     (org-schedule nil))))
-
-(defun org-deadline-wrapper ()
-  "Tries to call org-agenda-deadline, followed by org-deadline if former fails"
-  (interactive)
-  (condition-case e
-      (org-agenda-deadline nil)
-    (error
-     (org-deadline nil))))
-
-(defun org-set-property-wrapper ()
-  (interactive)
-  (condition-case e
-      (org-agenda-set-property)
-    (error
-     (org-set-property))))
-
-(defun org-add-note-wrapper ()
-  (interactive)
-  (condition-case e
-      (org-agenda-add-note)
-    (error
-     (org-add-note))))
-
-(defun org-set-effort-wrapper ()
-  (interactive)
-  (condition-case e
-      (org-agenda-set-effort)
-    (error
-     (org-set-effort))))
-
-(defun org-set-tags-wrapper ()
-  (interactive)
-  (condition-case e
-      (org-agenda-set-tags)
-    (error
-     (org-set-tags-command))))
-
-(defun org-set-property-wrapper ()
-  (interactive)
-  (condition-case e
-      (org-agenda-set-property)
-    (error
-     (org-set-property))))
+     (call-interactively func-org)
+     )))
 
 (defhydra hydra-org-agenda ()
   "
@@ -812,14 +768,26 @@ _o_rder
          (org-capture nil "a"))
    :color blue)
   ("f" obp/open-agenda-file :color blue)
-
-  ("d" org-deadline-wrapper)
-  ("s" org-schedule-wrapper)
-  ("n" org-add-note-wrapper)
-  ("t" org-set-tags-wrapper)
+  ("d" (lambda ()
+         (interactive)
+         (obp/org-or-agenda 'org-deadline 'org-agenda-deadline)))
+  ("s" (lambda ()
+         (interactive)
+         (obp/org-or-agenda 'org-agenda-schedule 'org-schedule)))
+  ("n" (lambda ()
+         (interactive)
+         (obp/org-or-agenda 'org-agenda-add-note 'org-add-note))
+   :color blue)
+  ("t" (lambda ()
+         (interactive)
+         (obp/org-or-agenda 'org-agenda-set-tags 'org-set-tags-command)))
   ("o" org-toggle-ordered-property)
-  ("p" org-priority-wrapper)
-  ("l" org-set-propery-wrapper)
+  ("p" (lambda ()
+         (interactive)
+         (obp/org-or-agenda 'org-agenda-priority 'org-priority)))
+  ("l" (lambda ()
+         (interactive)
+         (obp/org-or-agenda 'org-agenda-set-property 'org-set-property)))
   ("q" nil))
 
 (global-set-key (kbd "C-c a") 'hydra-org-agenda/body)
