@@ -399,37 +399,6 @@
 
 
 ;; ---------------------------------------------------------------------
-;; Version control
-;; ---------------------------------------------------------------------
-;; https://www.reddit.com/r/emacs/comments/11auxod/magit_quits_after_a_commit_happen/
-(use-package magit
-  :ensure t
-  :config
-  (add-hook 'git-commit-post-finish-hook 'magit)
-  :custom
-  (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
-
-;; to fetch tags with force (i.e. overriding existing tags), we allow to fetch with the --force flag enabled:
-(transient-append-suffix 'magit-fetch "-t"
-  '("-f" "Bypass safety checks" "--force"))
-
-(use-package magit-delta
-  :hook (magit-mode . magit-delta-mode))
-
-;; Add magit to list of project commands
-(add-to-list 'project-switch-commands '(magit-project-status "Magit" ?m))
-
-;; Git gutter indicators
-;; https://ianyepan.github.io/posts/emacs-git-gutter/
-(use-package git-gutter
-  :hook (prog-mode . git-gutter-mode)
-  :config
-  ;; Default is 0, meaning update indicators on saving the file.
-  ;; (setq git-gutter:update-interval 0.02)
-  )
-
-
-;; ---------------------------------------------------------------------
 ;; Latex
 ;; ---------------------------------------------------------------------
 ;; latex integration with zathura
@@ -489,7 +458,7 @@
   :config
   (global-evil-visualstar-mode))
 
-(defun save-and-kill-buffer ()
+(defun obp/save-and-kill-buffer ()
   "Save the current buffer to file, then kill it."
   (interactive)
   (save-buffer)
@@ -497,7 +466,39 @@
 
 ;; https://emacs.stackexchange.com/questions/72394/how-to-make-q-in-spacemacs-evil-mode-kill-the-buffer-and-delete-the-window
 (evil-ex-define-cmd "q" 'kill-buffer-and-window)
-(evil-ex-define-cmd "wq" 'save-and-kill-buffer)
+(evil-ex-define-cmd "wq" 'obp/save-and-kill-buffer)
+
+
+;; ---------------------------------------------------------------------
+;; Version control
+;; ---------------------------------------------------------------------
+;; https://www.reddit.com/r/emacs/comments/11auxod/magit_quits_after_a_commit_happen/
+(use-package magit
+  :ensure t
+  :config
+  (add-hook 'git-commit-post-finish-hook 'magit)
+  :custom
+  (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
+
+;; to fetch tags with force (i.e. overriding existing tags), we allow to fetch with the --force flag enabled:
+(transient-append-suffix 'magit-fetch "-t"
+  '("-f" "Bypass safety checks" "--force"))
+
+(use-package magit-delta
+  :hook (magit-mode . magit-delta-mode))
+
+;; Add magit to list of project commands
+(add-to-list 'project-switch-commands '(magit-project-status "Magit" ?m))
+
+;; Git gutter indicators
+;; https://ianyepan.github.io/posts/emacs-git-gutter/
+(use-package git-gutter
+  :hook (prog-mode . git-gutter-mode)
+  :config
+  ;; Default is 0, meaning update indicators on saving the file.
+  ;; (setq git-gutter:update-interval 0.02)
+  )
+
 
 ;; ---------------------------------------------------------------------
 ;; Languages
