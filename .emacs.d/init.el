@@ -26,7 +26,6 @@
 ;; without having to specify `:straight t`
 (setq straight-use-package-by-default t)
 
-
 ;; ---------------------------------------------------------------------
 ;; Misc
 ;; ---------------------------------------------------------------------
@@ -490,6 +489,15 @@
   :config
   (global-evil-visualstar-mode))
 
+(defun save-and-kill-buffer ()
+  "Save the current buffer to file, then kill it."
+  (interactive)
+  (save-buffer)
+  (kill-buffer-and-window))
+
+;; https://emacs.stackexchange.com/questions/72394/how-to-make-q-in-spacemacs-evil-mode-kill-the-buffer-and-delete-the-window
+(evil-ex-define-cmd "q" 'kill-buffer-and-window)
+(evil-ex-define-cmd "wq" 'save-and-kill-buffer)
 
 ;; ---------------------------------------------------------------------
 ;; Languages
@@ -797,7 +805,10 @@ _o_rder
   ("A" org-agenda :color blue)
   ("j" evil-next-visual-line)
   ("k" evil-previous-visual-line)
-  ("c" org-capture :color blue)
+  ("c" (lambda ()
+         (interactive)
+         (org-capture nil "a"))
+   :color blue)
   ("f" obp/open-agenda-file :color blue)
 
   ("d" org-deadline-wrapper)
