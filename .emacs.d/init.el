@@ -748,7 +748,7 @@
 (defun org-set-property-wrapper ()
 (interactive)
 (condition-case e
-    (org-agenda-set-propert)
+    (org-agenda-set-property)
     (error
     (org-set-property))))
 
