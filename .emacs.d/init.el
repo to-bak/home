@@ -135,13 +135,13 @@
 ;; Dired
 ;; ---------------------------------------------------------------------
 (use-package dired
-    :straight (:type built-in)
-    :ensure nil
-    :commands (dired dired-jump)
-    :bind (("C-x C-j" . dired-jump))
-    :custom ((dired-listing-switches "-agho --group-directories-first"))
-    :config
-)
+  :straight (:type built-in)
+  :ensure nil
+  :commands (dired dired-jump)
+  :bind (("C-x C-j" . dired-jump))
+  :custom ((dired-listing-switches "-agho --group-directories-first"))
+  :config
+  )
 
 ;; https://stackoverflow.com/questions/1839313/how-do-i-stop-emacs-dired-mode-from-opening-so-many-buffers
 (setf dired-kill-when-opening-new-dired-buffer t)
@@ -230,7 +230,7 @@
 
   (setq corfu-auto-prefix 3)
   (setq corfu-popupinfo-delay 0))
-  ;; (set-face-attribute 'corfu-current nil :inherit 'highlight :background nil :foreground nil))
+;; (set-face-attribute 'corfu-current nil :inherit 'highlight :background nil :foreground nil))
 
 (use-package vertico
   :ensure t
@@ -647,11 +647,17 @@
 ;; ---------------------------------------------------------------------
 (use-package org-roam
   :ensure t
+  :init
+  (setq org-roam-v2-ack t)
   :custom
   (org-roam-directory (file-truename "~/org/roam"))
   :config
   ;; If you're using a vertical completion framework, you might want a more informative completion interface
   (org-roam-db-autosync-mode))
+
+(setq org-roam-node-display-template
+      (concat "${title:*} "
+              (propertize "${tags:10}" 'face 'org-tag)))
 
 
 ;; ---------------------------------------------------------------------
@@ -694,63 +700,66 @@
   (setq org-fancy-priorities-list '("🔥" "☕" "💤")))
 
 (defun org-priority-wrapper ()
-"Tries to call org-agenda-priority, followed by org-priority if former fails"
-(interactive)
-(condition-case e
-    (org-agenda-priority)
+  "Tries to call org-agenda-priority, followed by org-priority if former fails"
+  (interactive)
+  (condition-case e
+      (org-agenda-priority)
     (error
-    (org-priority))))
+     (org-priority))))
 
 (defun org-schedule-wrapper ()
-"Tries to call org-agenda-schedule, followed by org-schedule if former fails"
-(interactive)
-(condition-case e
-    (org-agenda-schedule nil)
+  "Tries to call org-agenda-schedule, followed by org-schedule if former fails"
+  (interactive)
+  (condition-case e
+      (org-agenda-schedule nil)
     (error
-    (org-schedule nil))))
+     (org-schedule nil))))
 
 (defun org-deadline-wrapper ()
-"Tries to call org-agenda-deadline, followed by org-deadline if former fails"
-(interactive)
-(condition-case e
-    (org-agenda-deadline nil)
+  "Tries to call org-agenda-deadline, followed by org-deadline if former fails"
+  (interactive)
+  (condition-case e
+      (org-agenda-deadline nil)
     (error
-    (org-deadline nil))))
+     (org-deadline nil))))
 
 (defun org-set-property-wrapper ()
-(interactive)
-(condition-case e
-    (org-agenda-set-property)
+  (interactive)
+  (condition-case e
+      (org-agenda-set-property)
     (error
-    (org-set-property))))
+     (org-set-property))))
 
 (defun org-add-note-wrapper ()
-(interactive)
-(condition-case e
-    (org-agenda-add-note)
+  (interactive)
+  (condition-case e
+      (org-agenda-add-note)
     (error
-    (org-add-note))))
+     (org-add-note))))
 
 (defun org-set-effort-wrapper ()
-(interactive)
-(condition-case e
-    (org-agenda-set-effort)
+  (interactive)
+  (condition-case e
+      (org-agenda-set-effort)
     (error
-    (org-set-effort))))
+     (org-set-effort))))
 
 (defun org-set-tags-wrapper ()
-(interactive)
-(condition-case e
-    (org-agenda-set-tags)
+  (interactive)
+  (condition-case e
+      (org-agenda-set-tags)
     (error
-    (org-set-tags-command))))
+     (condition-case ep
+         (org-set-tags-command)
+       (error
+        (call-interactively 'org-roam-tag-add))))))
 
 (defun org-set-property-wrapper ()
-(interactive)
-(condition-case e
-    (org-agenda-set-property)
+  (interactive)
+  (condition-case e
+      (org-agenda-set-property)
     (error
-    (org-set-property))))
+     (org-set-property))))
 
 (defhydra hydra-org-agenda ()
   "
@@ -759,7 +768,7 @@ Misc^^      ^Agenda^       ^Properties^   ^Roam^
 _j_ ↓       _a_genda       _d_eadline     _G_raph
 _k_ ↑       _A_ll aggenda  _s_chedule     _g_oto node
 _q_uit      _f_ile         _p_riority     _i_nsert node
-          _c_apture      _n_ote
+          _c_apture      _n_ote          _?_tag
                        _t_ags
                        _o_rder
 "
@@ -818,14 +827,14 @@ _q_uit        _C--_
          (interactive)
          (text-scale-adjust 0)))
   ("C-+" (lambda ()
-         (interactive)
-         (global-text-scale-adjust 1)))
+           (interactive)
+           (global-text-scale-adjust 1)))
   ("C--" (lambda ()
-         (interactive)
-         (global-text-scale-adjust -1)))
+           (interactive)
+           (global-text-scale-adjust -1)))
   ("C-0" (lambda ()
-         (interactive)
-         (global-text-scale-adjust 0)))
+           (interactive)
+           (global-text-scale-adjust 0)))
   ("q" nil))
 
 (global-set-key (kbd "C-c w") 'hydra-window/body)
