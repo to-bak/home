@@ -659,11 +659,29 @@
       (concat "${title:*} "
               (propertize "${tags:10}" 'face 'org-tag)))
 
+(defhydra hydra-org-roam ()
+  "
+Roam^^        ^Misc^
+-------------------------
+_f_ind        _j_ ↓
+_i_nsert      _k_ ↑
+_g_raph       _q_uit
+_t_ags
+_r_m tags
+"
+  ("f" org-roam-node-find)
+  ("i" org-roam-node-insert)
+  ("t" org-roam-tag-add)
+  ("r" org-roam-tag-remove)
+  ("g" org-roam-graph)
+  ("q" nil))
+
+(global-set-key (kbd "C-c n") 'hydra-org-roam/body)
+
 
 ;; ---------------------------------------------------------------------
 ;; Org Agenda
 ;; ---------------------------------------------------------------------
-
 (setq org-default-agenda-file (concat (file-truename "~/org") "/Tasks.org"))
 
 (defun obp/open-agenda-file ()
@@ -749,10 +767,7 @@
   (condition-case e
       (org-agenda-set-tags)
     (error
-     (condition-case ep
-         (org-set-tags-command)
-       (error
-        (call-interactively 'org-roam-tag-add))))))
+     (org-set-tags-command))))
 
 (defun org-set-property-wrapper ()
   (interactive)
@@ -763,14 +778,14 @@
 
 (defhydra hydra-org-agenda ()
   "
-Misc^^      ^Agenda^       ^Properties^   ^Roam^
--------------------------  ----------------------------
-_j_ ↓       _a_genda       _d_eadline     _G_raph
-_k_ ↑       _A_ll aggenda  _s_chedule     _g_oto node
-_q_uit      _f_ile         _p_riority     _i_nsert node
-          _c_apture      _n_ote          _?_tag
-                       _t_ags
-                       _o_rder
+Properties^^   ^Agenda^        ^Misc^
+-------------------------------------
+_d_eadline     _a_genda        _j_ ↓
+_s_chedule     _A_ll agenda    _k_ ↑
+_p_riority     _f_ile          _q_uit
+_n_ote         _c_apture
+_t_ags
+_o_rder
 "
   ("a" (lambda ()
          (interactive)
@@ -788,20 +803,14 @@ _q_uit      _f_ile         _p_riority     _i_nsert node
   ("o" org-toggle-ordered-property)
   ("p" org-priority-wrapper)
   ("l" org-set-propery-wrapper)
-
-  ("G" org-roam-graph)
-  ("g" org-roam-node-find)
-  ("i" org-roam-node-insert)
-
   ("q" nil))
 
-(global-set-key (kbd "C-c o") 'hydra-org-agenda/body)
+(global-set-key (kbd "C-c a") 'hydra-org-agenda/body)
 
 
 ;; ---------------------------------------------------------------------
 ;; Window Management
 ;; ---------------------------------------------------------------------
-
 (defhydra hydra-window ()
   "
 Movement^^    ^Zoom^
