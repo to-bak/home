@@ -690,7 +690,8 @@ _r_m tags
   (find-file org-default-agenda-file))
 
 (setq org-tag-alist
-      '(("@planning" . ?p)
+      '(("@work" . ?w)
+        ("@planning" . ?p)
         ("@coding" . ?c)
         ("@meeting" . ?m)))
 
