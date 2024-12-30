@@ -548,7 +548,7 @@
          (lsp-mode . lsp-enable-which-key-integration)
          (lsp-completion-mode . akh/lsp-mode-setup-completion))
 
-;; https://emacs-lsp.github.io/lsp-mode/tutorials/how-to-turn-off/
+  ;; https://emacs-lsp.github.io/lsp-mode/tutorials/how-to-turn-off/
   :config
   ;; (setq lsp-ui-doc-enable nil)
   ;; (setq lsp-lens-enable nil)
