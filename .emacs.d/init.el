@@ -97,7 +97,6 @@
 ;; changing size when scrolling past line 100.
 (setq-default display-line-numbers-width 3)
 
-
 (global-hl-line-mode 1) ; Highlight current line
 
 ;; which-key
@@ -106,33 +105,6 @@
   :diminish which-key-mode
   :config
   (setq which-key-idle-delay 1))
-
-
-;; dired
-(use-package dired
-    :straight (:type built-in)
-    :ensure nil
-    :commands (dired dired-jump)
-    :bind (("C-x C-j" . dired-jump))
-    :custom ((dired-listing-switches "-agho --group-directories-first"))
-    :config
-)
-
-(put 'dired-find-alternate-file 'disabled nil)
-
-;; direnv integration
-;; (use-package direnv
-;; :init
-;; ;; (add-hook 'prog-mode-hook #'direnv-update-environment)
-;; :config
-;; (direnv-mode))
-
-;; alternative to direnv-mode
-(use-package envrc)
-(envrc-global-mode)
-
-;; https://stackoverflow.com/questions/1839313/how-do-i-stop-emacs-dired-mode-from-opening-so-many-buffers
-(setf dired-kill-when-opening-new-dired-buffer t)
 
 (use-package project :bind-keymap ("C-c p" . project-prefix-map))
 
@@ -153,7 +125,40 @@
 ;; character.
 (setq require-final-newline t)
 
+;; line-width
 (setq-default fill-column 80)
+
+
+;; ---------------------------------------------------------------------
+;; Dired
+;; ---------------------------------------------------------------------
+(use-package dired
+    :straight (:type built-in)
+    :ensure nil
+    :commands (dired dired-jump)
+    :bind (("C-x C-j" . dired-jump))
+    :custom ((dired-listing-switches "-agho --group-directories-first"))
+    :config
+)
+
+;; https://stackoverflow.com/questions/1839313/how-do-i-stop-emacs-dired-mode-from-opening-so-many-buffers
+(setf dired-kill-when-opening-new-dired-buffer t)
+(put 'dired-find-alternate-file 'disabled nil)
+
+
+;; ---------------------------------------------------------------------
+;; Direnv integration
+;; ---------------------------------------------------------------------
+;; direnv integration
+;; (use-package direnv
+;; :init
+;; ;; (add-hook 'prog-mode-hook #'direnv-update-environment)
+;; :config
+;; (direnv-mode))
+
+;; alternative to direnv-mode
+(use-package envrc)
+(envrc-global-mode)
 
 
 ;; ---------------------------------------------------------------------
@@ -750,7 +755,7 @@ Misc^^        ^Properties^       ^Roam^
 ------------------------------------------
 _j_ ↓         _d_eadline         _g_raph
 _k_ ↑         _s_chedule         _r_ node
-_c_apture     _p_riority
+_c_apture     _p_riority         _i_nsert node
 _a_genda      _n_ote
 _f_ile        _t_ags
 _q_uit        _o_rder
@@ -773,6 +778,7 @@ _q_uit        _o_rder
 
   ("g" org-roam-graph)
   ("r" org-roam-node-find)
+  ("i" org-roam-node-insert)
 
   ("q" nil))
 
