@@ -128,6 +128,8 @@
 ;; line-width
 (setq-default fill-column 80)
 
+(use-package hydra)
+
 
 ;; ---------------------------------------------------------------------
 ;; Dired
@@ -625,11 +627,6 @@
   (require 'evil-org-agenda)
   (evil-org-agenda-set-keys))
 
-(use-package org-super-agenda)
-
-;; (use-package org-superstar
-;; :after org
-;; :hook (org-mode . org-superstar-mode))
 (use-package org-superstar
   :after org
   :hook (org-mode . org-superstar-mode)
@@ -637,6 +634,17 @@
   (org-superstar-remove-leading-stars t)
   (org-superstar-headline-bullets-list '("◉" "○" "●" "○" "●" "○" "●")))
 
+(use-package org-autolist
+  :hook (org-mode . org-autolist-mode))
+(add-hook 'org-mode-hook (lambda () (org-autolist-mode)))
+
+(use-package org-download
+  :after org)
+
+
+;; ---------------------------------------------------------------------
+;; Org Roam
+;; ---------------------------------------------------------------------
 (use-package org-roam
   :ensure t
   :custom
@@ -644,6 +652,22 @@
   :config
   ;; If you're using a vertical completion framework, you might want a more informative completion interface
   (org-roam-db-autosync-mode))
+
+
+;; ---------------------------------------------------------------------
+;; Org Agenda
+;; ---------------------------------------------------------------------
+
+(setq org-default-agenda-file (concat (file-truename "~/org") "/Tasks.org"))
+
+(defun obp/open-agenda-file ()
+  (interactive)
+  (find-file org-default-agenda-file))
+
+(setq org-tag-alist
+      '(("@planning" . ?p)
+        ("@coding" . ?c)
+        ("@meeting" . ?m)))
 
 (setq org-agenda-start-with-log-mode t)
 (setq org-log-done 'time)
@@ -657,9 +681,10 @@
       org-agenda-start-on-weekday nil
       org-agenda-start-day "-7d")
 
-(use-package org-autolist
-  :hook (org-mode . org-autolist-mode))
-(add-hook 'org-mode-hook (lambda () (org-autolist-mode)))
+;; https://stackoverflow.com/questions/7986935/using-org-capture-templates-to-schedule-a-todo-for-the-day-after-today
+(setq org-capture-templates
+      '(("a" "Agenda" entry (file+headline org-default-agenda-file "Inbox")
+         "* TODO %?\nSCHEDULED: <%(org-read-date nil nil \"+1d\")>\n%a")))
 
 (use-package org-fancy-priorities
   :ensure t
@@ -667,28 +692,6 @@
   (org-mode . org-fancy-priorities-mode)
   :config
   (setq org-fancy-priorities-list '("🔥" "☕" "💤")))
-
-;; https://stackoverflow.com/questions/7986935/using-org-capture-templates-to-schedule-a-todo-for-the-day-after-today
-(setq org-capture-templates
-      '(("a" "Agenda" entry (file+headline org-default-agenda-file "Inbox")
-         "* TODO %?\nSCHEDULED: <%(org-read-date nil nil \"+1d\")>\n%a")
-        ("n" "Roam" entry (file+headline "~/org/roam/Inbox.org" "Inbox")
-         "* TODO %?\n%a")))
-
-(use-package org-download
-  :after org)
-
-(setq org-default-agenda-file (concat (file-truename "~/org") "/Tasks.org"))
-
-(defun obp/open-agenda-file ()
-  (interactive)
-  (find-file org-default-agenda-file))
-
-
-;; ---------------------------------------------------------------------
-;; Hydras
-;; ---------------------------------------------------------------------
-(use-package hydra)
 
 (defun org-priority-wrapper ()
 "Tries to call org-agenda-priority, followed by org-priority if former fails"
@@ -753,8 +756,8 @@
   "
 Misc^^        ^Properties^       ^Roam^
 ------------------------------------------
-_j_ ↓         _d_eadline         _g_raph
-_k_ ↑         _s_chedule         _r_ node
+_j_ ↓         _d_eadline         g_r_aph
+_k_ ↑         _s_chedule         _g_oto node
 _c_apture     _p_riority         _i_nsert node
 _a_genda      _n_ote
 _f_ile        _t_ags
@@ -776,13 +779,18 @@ _q_uit        _o_rder
   ("p" org-priority-wrapper)
   ("l" org-set-propery-wrapper)
 
-  ("g" org-roam-graph)
-  ("r" org-roam-node-find)
+  ("r" org-roam-graph)
+  ("g" org-roam-node-find)
   ("i" org-roam-node-insert)
 
   ("q" nil))
 
 (global-set-key (kbd "C-c o") 'hydra-org-agenda/body)
+
+
+;; ---------------------------------------------------------------------
+;; Window Management
+;; ---------------------------------------------------------------------
 
 (defhydra hydra-window ()
   "
