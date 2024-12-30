@@ -669,11 +669,12 @@ _g_raph       _q_uit
 _t_ags
 _r_m tags
 "
-  ("f" org-roam-node-find)
+  ;; :color blue closes hydra when pressed
+  ("f" org-roam-node-find :color blue)
   ("i" org-roam-node-insert)
   ("t" org-roam-tag-add)
   ("r" org-roam-tag-remove)
-  ("g" org-roam-graph)
+  ("g" org-roam-graph :color blue)
   ("q" nil))
 
 (global-set-key (kbd "C-c n") 'hydra-org-roam/body)
@@ -787,14 +788,16 @@ _n_ote         _c_apture
 _t_ags
 _o_rder
 "
+  ;; :color blue closes hydra when pressed
   ("a" (lambda ()
          (interactive)
-         (org-agenda nil "n")))
-  ("A" org-agenda)
+         (org-agenda nil "n"))
+   :color blue)
+  ("A" org-agenda :color blue)
   ("j" evil-next-visual-line)
   ("k" evil-previous-visual-line)
-  ("c" org-capture)
-  ("f" obp/open-agenda-file)
+  ("c" org-capture :color blue)
+  ("f" obp/open-agenda-file :color blue)
 
   ("d" org-deadline-wrapper)
   ("s" org-schedule-wrapper)
