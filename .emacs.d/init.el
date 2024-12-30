@@ -754,18 +754,19 @@
 
 (defhydra hydra-org-agenda ()
   "
-Misc^^        ^Properties^       ^Roam^
-------------------------------------------
-_j_ ↓         _d_eadline         g_r_aph
-_k_ ↑         _s_chedule         _g_oto node
-_c_apture     _p_riority         _i_nsert node
-_a_genda      _n_ote
-_f_ile        _t_ags
-_q_uit        _o_rder
+Misc^^      ^Agenda^       ^Properties^   ^Roam^
+-------------------------  ----------------------------
+_j_ ↓       _a_genda       _d_eadline     _G_raph
+_k_ ↑       _A_ll aggenda  _s_chedule     _g_oto node
+_q_uit      _f_ile         _p_riority     _i_nsert node
+          _c_apture      _n_ote
+                       _t_ags
+                       _o_rder
 "
   ("a" (lambda ()
          (interactive)
          (org-agenda nil "n")))
+  ("A" org-agenda)
   ("j" evil-next-visual-line)
   ("k" evil-previous-visual-line)
   ("c" org-capture)
@@ -779,7 +780,7 @@ _q_uit        _o_rder
   ("p" org-priority-wrapper)
   ("l" org-set-propery-wrapper)
 
-  ("r" org-roam-graph)
+  ("G" org-roam-graph)
   ("g" org-roam-node-find)
   ("i" org-roam-node-insert)
 
