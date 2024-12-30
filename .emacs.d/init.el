@@ -49,13 +49,6 @@
 (use-package doom-modeline
   :init (doom-modeline-mode 1))
 
-(use-package dashboard
-  :ensure t
-  :config
-  (dashboard-setup-startup-hook))
-
-(add-hook 'server-after-make-frame-hook (lambda () (dashboard-refresh-buffer)))
-
 ;; puts emacs autosave files in /tmp
 (setq backup-directory-alist
       `((".*" . ,temporary-file-directory)))
@@ -161,6 +154,37 @@
 (setq require-final-newline t)
 
 (setq-default fill-column 80)
+
+
+;; ---------------------------------------------------------------------
+;; Dashboard
+;; ---------------------------------------------------------------------
+(use-package dashboard
+  :ensure t
+  :config
+  (dashboard-setup-startup-hook))
+
+(add-hook 'server-after-make-frame-hook (lambda () (dashboard-refresh-buffer)))
+(setq dashboard-banner-logo-title "Welcome to Emacs")
+(setq dashboard-startup-banner 'official)
+(setq dashboard-center-content t)
+(setq dashboard-vertically-center-content t)
+(setq dashboard-show-shortcuts nil)
+
+(setq dashboard-display-icons-p t)     ; display icons on both GUI and terminal
+(setq dashboard-icon-type 'nerd-icons) ; use `nerd-icons' package
+
+(setq dashboard-items '((recents   . 5)
+                        (projects  . 5)
+                        (agenda    . 20)))
+(setq dashboard-item-names '(("Agenda for today:"           . "Today's agenda:")
+                             ("Agenda for the coming week:" . "Agenda:")))
+(setq dashboard-set-heading-icons t)
+(setq dashboard-set-file-icons t)
+(setq dashboard-heading-icons '((recents   . "nf-oct-history")
+                                (agenda    . "nf-oct-calendar")
+                                (projects  . "nf-oct-rocket")))
+(setq dashboard-agenda-sort-strategy '(priority-up))
 
 
 ;; ---------------------------------------------------------------------
@@ -596,6 +620,8 @@
   (require 'evil-org-agenda)
   (evil-org-agenda-set-keys))
 
+(use-package org-super-agenda)
+
 ;; (use-package org-superstar
 ;; :after org
 ;; :hook (org-mode . org-superstar-mode))
@@ -637,9 +663,10 @@
   :config
   (setq org-fancy-priorities-list '("🔥" "☕" "💤")))
 
+;; https://stackoverflow.com/questions/7986935/using-org-capture-templates-to-schedule-a-todo-for-the-day-after-today
 (setq org-capture-templates
       '(("a" "Agenda" entry (file+headline org-default-agenda-file "Inbox")
-         "* TODO %?\n%a")
+         "* TODO %?\nSCHEDULED: <%(org-read-date nil nil \"+1d\")>\n%a")
         ("n" "Roam" entry (file+headline "~/org/roam/Inbox.org" "Inbox")
          "* TODO %?\n%a")))
 
@@ -728,7 +755,9 @@ _a_genda      _n_ote
 _f_ile        _t_ags
 _q_uit        _o_rder
 "
-  ("a" org-agenda-list)
+  ("a" (lambda ()
+         (interactive)
+         (org-agenda nil "n")))
   ("j" evil-next-visual-line)
   ("k" evil-previous-visual-line)
   ("c" org-capture)
