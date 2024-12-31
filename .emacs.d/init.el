@@ -695,7 +695,7 @@ _r_m tags
 ;; ---------------------------------------------------------------------
 ;; Org Agenda
 ;; ---------------------------------------------------------------------
-(setq org-default-agenda-file (concat (file-truename "~/org") "/Tasks.org"))
+(setq org-default-agenda-file (concat (file-truename "~/org") "/agenda.org"))
 
 (defun obp/open-agenda-file ()
   (interactive)
@@ -710,7 +710,7 @@ _r_m tags
 (setq org-agenda-start-with-log-mode t)
 (setq org-log-done 'time)
 (setq org-log-into-drawer t)
-(setq org-agenda-files (list "~/org/Tasks.org"))
+(setq org-agenda-files (list org-default-agenda-file))
 (setq org-todo-keywords
       '((sequence "TODO" "INPROGRESS" "PARKED" "DONE")))
 (advice-add 'org-refile :after 'org-save-all-org-buffers)
@@ -752,7 +752,7 @@ _d_eadline     _a_genda        _j_ ↓
 _s_chedule     _A_ll agenda    _k_ ↑
 _p_riority     _f_ile          _q_uit
 _n_ote         _c_apture
-_t_ags
+_t_ags         _C_apture
 _o_rder
 "
   ;; :color blue closes hydra when pressed
@@ -767,6 +767,7 @@ _o_rder
          (interactive)
          (org-capture nil "a"))
    :color blue)
+  ("C" org-capture :color blue)
   ("f" obp/open-agenda-file :color blue)
   ("d" (lambda ()
          (interactive)
