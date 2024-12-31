@@ -721,7 +721,7 @@ _r_m tags
 
 ;; https://stackoverflow.com/questions/7986935/using-org-capture-templates-to-schedule-a-todo-for-the-day-after-today
 (setq org-capture-templates
-      '(("a" "Agenda" entry
+      '(("a" "agenda - add todo" entry
          (file+headline org-default-agenda-file "Inbox")
          "* TODO %?\nSCHEDULED: <%(org-read-date nil nil \"+1d\")>\n%a")))
 
