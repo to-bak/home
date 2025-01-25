@@ -12,6 +12,7 @@
     ./fzf.nix
     ./dunst.nix
     ./stylix.nix
+    ./ripgrep.nix
   ];
 
   programs = {

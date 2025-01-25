@@ -10,7 +10,6 @@ let
     arandr
 
     # SYSTEM
-    ripgrep
     autorandr
     networkmanagerapplet
     flameshot

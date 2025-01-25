@@ -284,51 +284,9 @@
 ;; consult
 (use-package consult
   ;; Replace bindings. Lazily loaded due by `use-package'.
-  :bind (;; C-c bindings in `mode-specific-map'
-         ("C-c M-x" . consult-mode-command)
-         ("C-c h" . consult-history)
-         ("C-c k" . consult-kmacro)
-         ("C-c m" . consult-man)
-         ("C-c i" . consult-info)
-         ([remap Info-search] . consult-info)
-         ;; C-x bindings in `ctl-x-map'
-         ("C-x M-:" . consult-complex-command)     ;; orig. repeat-complex-command
-         ("C-x r b" . consult-bookmark)            ;; orig. bookmark-jump
-         ("C-x c" . comment-dwim)            ;; orig. bookmark-jump
-         ;; M-g bindings in `goto-map'
-         ("M-g e" . consult-compile-error)
-         ("M-g f" . consult-flymake)               ;; Alternative: consult-flycheck
-         ("M-g g" . consult-goto-line)             ;; orig. goto-line
-         ("M-g M-g" . consult-goto-line)           ;; orig. goto-line
-         ("M-g o" . consult-outline)               ;; Alternative: consult-org-heading
-         ("M-g m" . consult-mark)
-         ("M-g k" . consult-global-mark)
-         ("M-g i" . consult-imenu)
-         ("M-g I" . consult-imenu-multi)
-         ;; M-s bindings in `search-map'
-         ("M-s d" . consult-find)
-         ("M-s D" . consult-locate)
-         ("M-s g" . consult-grep)
-         ("M-s G" . consult-git-grep)
-         ("M-s l" . consult-line)
-         ("M-s L" . consult-line-multi)
-         ("M-s k" . consult-keep-lines)
-         ("M-s u" . consult-focus-lines)
-         ("C-x b" . consult-buffer)
-         ;; Isearch integration
-         ("M-s e" . consult-isearch-history)
-         :map isearch-mode-map
-         ("M-e" . consult-isearch-history)         ;; orig. isearch-edit-string
-         ("M-s e" . consult-isearch-history)       ;; orig. isearch-edit-string
-         ("M-s l" . consult-line)                  ;; needed by consult-line to detect isearch
-         ("M-s L" . consult-line-multi)            ;; needed by consult-line to detect isearch
-         ;; Minibuffer history
-         :map minibuffer-local-map
-         ("M-s" . consult-history)                 ;; orig. next-matching-history-element
-         ("M-r" . consult-history)                ;; orig. previous-matching-history-element
-         ;; Project integration
-         :map project-prefix-map
-         ("C-c p r" . consult-ripgrep)
+  :config
+
+  :bind (:map project-prefix-map
          ("C-c p b" . consult-project-buffer))
 
   ;; Enable automatic preview at point in the *Completions* buffer. This is
@@ -368,7 +326,6 @@
   ;; Optionally configure the narrowing key.
   ;; Both < and C-+ work reasonably well.
   (setq consult-narrow-key "<")) ;; "C-+")
-
 
 (define-key project-prefix-map (kbd "r") 'consult-ripgrep)
 (use-package consult-project-extra)
