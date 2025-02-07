@@ -10,9 +10,8 @@
       bars = [ ];
       window.border = 0;
 
-      gaps.smartGaps = true;
-
       gaps = {
+        smartGaps = true;
         inner = 5;
         outer = 5;
       };
