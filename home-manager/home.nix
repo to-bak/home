@@ -16,6 +16,7 @@ let
     pavucontrol
     brightnessctl
     pulsemixer
+    texlive.combined.scheme-full
 
     # DEVELOPMENT
     gnumake
