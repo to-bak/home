@@ -475,57 +475,9 @@
 
 
 ;; ---------------------------------------------------------------------
-;; LSP
+;; LSP (eglot, built-in from emacs 29)
 ;; ---------------------------------------------------------------------
-(use-package lsp-mode
-  :commands (lsp lsp-deferred)
-  :custom
-  (lsp-completion-provider :none)  ;; Use Corfu for LSP completion
-
-  :init
-  (setq lsp-keymap-prefix "C-c l")
-
-  (defun akh/orderless-dispatch-flex-first (_pattern index _total)
-    (and (eq index 0) 'orderless-flex))
-
-  (defun akh/lsp-mode-setup-completion ()
-    (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
-          '(orderless)))
-
-  ;; Optionally configure the first word as flex filtered.
-  (add-hook 'orderless-style-dispatchers #'my/orderless-dispatch-flex-first nil 'local)
-
-  ;; Optionally configure the cape-capf-buster.
-  (setq-local completion-at-point-functions (list (cape-capf-buster #'lsp-completion-at-point)))
-
-  :hook (;; replace XXX-mode with concrete major-mode(e. g. python-mode)
-         (elixir-mode . lsp)
-         ;;(XXX-mode . lsp)
-         ;; if you want which-key integration
-         (lsp-mode . lsp-enable-which-key-integration)
-         (lsp-completion-mode . akh/lsp-mode-setup-completion))
-
-  ;; https://emacs-lsp.github.io/lsp-mode/tutorials/how-to-turn-off/
-  :config
-  ;; (setq lsp-ui-doc-enable nil)
-  ;; (setq lsp-lens-enable nil)
-  ;; (setq lsp-headerline-breadcrumb-enable nil)
-  ;; (setq lsp-ui-sideline-enable nil)
-  ;; (setq lsp-modeline-code-actions-enable nil)
-  ;; (setq lsp-modeline-diagnostics-enable nil)
-  ;; (setq lsp-signature-render-documentation nil)
-  ;; (setq lsp-completion-provider :none)
-  ;; (setq lsp-diagnostics-provider :none)
-  (setq lsp-headerline-breadcrumb-enable nil))
-
-(use-package lsp-ui
-  :config
-  (setq lsp-ui-doc-max-height 8
-        lsp-ui-doc-max-width 80         ; 150 (default) is too wide
-        lsp-ui-doc-delay 0.75           ; 0.2 (default) is too naggy
-        lsp-ui-doc-show-with-mouse nil  ; don't disappear on mouseover
-        lsp-ui-doc-position 'at-point))
-
+;; (add-hook 'rust-mode-hook 'eglot-ensure)
 
 
 ;; ---------------------------------------------------------------------

@@ -24,6 +24,9 @@
           buildInputs = [
             rust-bin.stable."1.82.0".default
             protobuf
+            rust-analyzer
+            go
+            cmake
           ];
 
           LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath buildInputs;
