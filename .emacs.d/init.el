@@ -372,9 +372,9 @@
 ;;(use-package ox-latex)
 ;;(setq org-latex-listings t)
 
-;; (use-package openwith
-;; :init (openwith-mode))
-;; (setq openwith-associations '(("\\.pdf\\'" "zathura" (file))))
+(use-package openwith
+:init (openwith-mode))
+(setq openwith-associations '(("\\.pdf\\'" "zathura" (file))))
 
 ;; plantuml
 ;; (org-babel-do-load-languages

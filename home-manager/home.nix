@@ -21,7 +21,6 @@ let
     # DEVELOPMENT
     gnumake
     gdb
-    neovim
     emacs29
     nixfmt-classic
 
@@ -39,6 +38,7 @@ let
     tcpdump
     xclip
     zathura
+    neovim
 
     # DEVELOPMENT
     kind

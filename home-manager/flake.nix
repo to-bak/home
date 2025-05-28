@@ -2,7 +2,7 @@
   description = "Home Manager configuration";
 
   inputs.nixpkgs-stable.url = "github:nixos/nixpkgs";
-  inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+  inputs.nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
 
   inputs.home-manager = {
     url = "github:nix-community/home-manager";
@@ -32,7 +32,7 @@
         config.allowUnfree = true;
       };
 
-      pkgs-stable = import nixpkgs {
+      pkgs-stable = import nixpkgs-stable {
         inherit system;
         overlays = [ nixgl.overlay ];
         config.allowUnfree = true;
