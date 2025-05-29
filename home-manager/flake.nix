@@ -68,6 +68,7 @@
             ln -sfn "$DOT_DIR"/nix.conf "$HOME"/.config/nix/nix.conf && \
             ln -sfn "$DOT_DIR"/autorandr "$HOME"/.config/autorandr && \
             ln -sfn "$DOT_DIR"/.emacs.d "$HOME"/.emacs.d && \
+            ln -sfn "$DOT_DIR"/neovim "$HOME"/.config/nvim && \
             ln -sfn "$DOT_DIR"/.profile "$HOME"/.profile && \
             echo "==> updating flake-env to reflect local environment" && \
             cd "$DOT_DIR"/home-manager && \

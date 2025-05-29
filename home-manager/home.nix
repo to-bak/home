@@ -39,6 +39,8 @@ let
     xclip
     zathura
     neovim
+    luarocks
+    lua5_1
 
     # DEVELOPMENT
     kind
