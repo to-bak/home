@@ -386,6 +386,14 @@
 
 
 ;; ---------------------------------------------------------------------
+;; Avy
+;; ---------------------------------------------------------------------
+(use-package avy)
+(global-set-key (kbd "C-s") 'avy-goto-word-0)
+(setq avy-timeout-seconds 0.3)
+
+
+;; ---------------------------------------------------------------------
 ;; Evil
 ;; ---------------------------------------------------------------------
 (use-package evil
@@ -397,11 +405,14 @@
   :config
   (evil-mode 1)
   (define-key evil-insert-state-map (kbd "C-g") 'evil-normal-state)
+  (define-key evil-motion-state-map (kbd "C-e") 'avy-goto-char-timer)
   ;; Use visual line motions even outside of visual-line-mode buffers
   (evil-global-set-key 'motion "j" 'evil-next-visual-line)
   (evil-global-set-key 'motion "k" 'evil-previous-visual-line)
   (evil-set-initial-state 'messages-buffer-mode 'normal)
   (evil-set-initial-state 'dashboard-mode 'normal))
+
+(setq evil-symbol-word-search t)
 
 (use-package evil-collection
   :after evil
