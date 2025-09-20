@@ -1,9 +1,9 @@
-{ config, pkgs, pkgs-stable, lib, environment, ... }:
+{ config, pkgs, pkgs-stable, pkgs-kubelogin, lib, environment, ... }:
 
 let
   packages_stable = with pkgs-stable; [
     # MISC
-    google-chrome
+    firefox
     cachix
     # appimage-run
     # appimagekit
@@ -21,8 +21,8 @@ let
     # DEVELOPMENT
     gnumake
     gdb
-    emacs29
     nixfmt-classic
+    emacs-git
 
     # DEFAULT
 
@@ -41,6 +41,7 @@ let
     neovim
     luarocks
     lua5_1
+    # google-chrome
 
     # DEVELOPMENT
     kind
@@ -51,10 +52,10 @@ let
     gh
     delta
     kubectl
-    kubelogin
     kubectx
     kubernetes-helm
     azure-cli
+    websocat
 
     # TERMINAL
     any-nix-shell
@@ -66,13 +67,17 @@ let
     gnupg
     feh
   ];
+
+  packages_kubelogin = with pkgs-kubelogin; [
+    kubelogin
+  ];
 in
 {
   home.stateVersion = "22.11";
   home.username = environment.username;
   home.homeDirectory = environment.homeDir;
 
-  home.packages = packages_stable ++ packages_unstable;
+  home.packages = packages_stable ++ packages_unstable ++ packages_kubelogin;
 
   imports = [ ./configs/main.nix ];
 }

@@ -3,7 +3,9 @@
 
   inputs.nixpkgs-stable.url = "github:nixos/nixpkgs";
   inputs.nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
-
+  # kubelogin 2.x has a persistent token bug. We revert to 0.1.7 found in nixpkgs: 0bd7f95e4588643f2c2d403b38d8a2fe44b0fc73
+  # Found using: https://lazamar.co.uk/nix-versions/?channel=nixpkgs-unstable&package=kubelogin
+  inputs.nixpkgs-kubelogin.url = "github:nixos/nixpkgs/0bd7f95e4588643f2c2d403b38d8a2fe44b0fc73";
   inputs.home-manager = {
     url = "github:nix-community/home-manager";
     inputs.nixpkgs.follows = "nixpkgs";
@@ -12,16 +14,19 @@
   inputs.flake-utils.url = "github:numtide/flake-utils";
   inputs.flake-env.url = "flake:flake-env";
   inputs.stylix.url = "github:danth/stylix";
+  inputs.emacs-overlay.url = "github:nix-community/emacs-overlay";
 
   outputs =
     inputs@{
       nixgl,
       nixpkgs,
       nixpkgs-stable,
+      nixpkgs-kubelogin,
       home-manager,
       flake-utils,
       flake-env,
       stylix,
+      emacs-overlay,
       ...
     }:
     flake-utils.lib.eachDefaultSystem (system:
@@ -34,7 +39,12 @@
 
       pkgs-stable = import nixpkgs-stable {
         inherit system;
-        overlays = [ nixgl.overlay ];
+        overlays = [ nixgl.overlay emacs-overlay.overlay ];
+        config.allowUnfree = true;
+      };
+
+      pkgs-kubelogin = import nixpkgs-kubelogin {
+        inherit system;
         config.allowUnfree = true;
       };
 
@@ -44,7 +54,7 @@
         home-manager.lib.homeManagerConfiguration {
           inherit pkgs;
           modules = [ ./home.nix stylix.homeManagerModules.stylix ];
-          extraSpecialArgs = { inherit environment pkgs-stable; };
+          extraSpecialArgs = { inherit environment pkgs-stable pkgs-kubelogin; };
         };
         packages.bootstrap = pkgs.writeShellApplication {
           name = "bootstrap";
