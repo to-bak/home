@@ -123,13 +123,13 @@
         "nixpkgs": "nixpkgs_2"
       },
       "locked": {
-        "lastModified": 1734642874,
-        "narHash": "sha256-AyHNpssRb2QiJ+iN13eAl3cT/LMbjabrKkMSxvTdScw=",
+        "lastModified": 1734560371,
+        "narHash": "sha256-+OyDDiVGWV0b7VNEKCKsbn7QEiRbGnQEFj8FZ3mi0gE=",
         "ref": "refs/heads/master",
-        "rev": "859d5eddc973bd8a56525f3c9aa3e3276f0b4172",
-        "revCount": 1,
+        "rev": "8f2a8ae92274b1f2880ea04755855dc31a98663f",
+        "revCount": 2,
         "type": "git",
-        "url": "file:////home/vchg38@ds.mot.com/.flake-env/"
+        "url": "file:////home/oliverbak/.flake-env/"
       },
       "original": {
         "id": "flake-env",

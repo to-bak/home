@@ -572,24 +572,10 @@
 (use-package org-download
   :after org)
 
-
-;; ---------------------------------------------------------------------
-;; Org Roam
-;; ---------------------------------------------------------------------
-(use-package org-roam
-  :ensure t
-  :init
-  (setq org-roam-v2-ack t)
-  :custom
-  (org-roam-directory (file-truename "~/org/roam"))
-  :config
-  ;; If you're using a vertical completion framework, you might want a more informative completion interface
-  (org-roam-db-autosync-mode))
-
-(setq org-roam-node-display-template
-      (concat "${title:*} "
-              (propertize "${tags:10}" 'face 'org-tag)))
-
+(defun obp/browse-org-directory ()
+  (interactive)
+  (let ((default-directory "~/org/"))
+    (call-interactively 'find-file)))
 
 (defhydra hydra-org-roam ()
   "
@@ -602,11 +588,11 @@ _t_ags
 _r_m tags
 "
   ;; :color blue closes hydra when pressed
-  ("f" org-roam-node-find :color blue)
-  ("i" org-roam-node-insert)
-  ("t" org-roam-tag-add)
-  ("r" org-roam-tag-remove)
-  ("g" org-roam-graph :color blue)
+  ("f" obp/browse-org-directory :color blue)
+  ("c" (lambda ()
+         (interactive)
+         (org-capture nil "j"))
+   :color blue)
   ("q" nil))
 
 (global-set-key (kbd "C-c n") 'hydra-org-roam/body)
@@ -616,6 +602,7 @@ _r_m tags
 ;; Org Agenda
 ;; ---------------------------------------------------------------------
 (setq org-default-agenda-file (concat (file-truename "~/org") "/agenda.org"))
+(setq org-default-journal-file (concat (file-truename "~/org") "/journal.org"))
 
 (defun obp/open-agenda-file ()
   (interactive)
@@ -641,9 +628,16 @@ _r_m tags
 
 ;; https://stackoverflow.com/questions/7986935/using-org-capture-templates-to-schedule-a-todo-for-the-day-after-today
 (setq org-capture-templates
-      '(("a" "agenda - add todo" entry
-         (file+headline org-default-agenda-file "Inbox")
-         "* TODO %?\nSCHEDULED: <%(org-read-date nil nil \"+1d\")>\n%a")))
+    '(
+      ("a" "agenda - add todo" entry
+       (file+headline org-default-agenda-file "Inbox")
+       "* TODO %?\nSCHEDULED: <%(org-read-date nil nil \"+1d\")>\n%a")
+
+      ("j" "journal - daily entry" entry
+       (file+datetree org-default-journal-file)
+       " * %U - Daily Journal 1\\. How fresh did you feel today?: %^{How fresh did you feel today?} 1\\. What did I accomplish today? 2\\. What challenged me today, and how did I respond? 3\\. What am I grateful for today? 4\\. What did I learn today? 5\\. How can I improve tomorrow?" :empty-lines 1)
+     )
+)
 
 (use-package org-fancy-priorities
   :ensure t
