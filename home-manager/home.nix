@@ -38,9 +38,9 @@ let
     tcpdump
     xclip
     zathura
-    neovim
     luarocks
     lua5_1
+    chromium
     # google-chrome
 
     # DEVELOPMENT

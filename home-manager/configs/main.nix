@@ -2,6 +2,7 @@
 
 {
   imports = [
+    ./neovim.nix
     ./direnv.nix
     ./alacritty.nix
     ./compton.nix
