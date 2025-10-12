@@ -67,10 +67,10 @@
             DOT_DIR=$HOME/.config/home-manager
 
             if [ ! -d "$DOT_DIR" ]; then
-            echo "==> .dotfiles doesn't exist, cloning into ~/.dotfiles"
+            echo "==> $DOT_DIR doesn't exist, cloning into $DOT_DIR"
             git clone https://github.com/to-bak/home.git "$DOT_DIR"
             else
-            echo "==> ~/.dotfiles already exists, proceeding bootstrapping."
+            echo "==> $DOT_DIR already exists, proceeding bootstrapping."
             fi
 
             home-manager switch -b backup --extra-experimental-features 'nix-command flakes'
