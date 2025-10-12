@@ -53,11 +53,29 @@
 
       environment = flake-env.nixosModules.${system}.environment;
     in {
-      packages.homeConfigurations.${environment.username} =
+      homeConfigurations.${environment.username} =
         home-manager.lib.homeManagerConfiguration {
           inherit pkgs;
           modules = [ ./hosts/ubuntu_24_04_desktop_home.nix ];
           extraSpecialArgs = { inherit environment pkgs-stable pkgs-kubelogin extendedLib; };
         };
+
+      packages.bootstrap = pkgs.writeShellApplication {
+          name = "bootstrap";
+          runtimeInputs = [ pkgs.git pkgs.home-manager ];
+          text = ''
+            DOT_DIR=$HOME/.config/home-manager
+
+            if [ ! -d "$DOT_DIR" ]; then
+            echo "==> .dotfiles doesn't exist, cloning into ~/.dotfiles"
+            git clone https://github.com/to-bak/home.git "$DOT_DIR"
+            else
+            echo "==> ~/.dotfiles already exists, proceeding bootstrapping."
+            fi
+
+            home-manager switch --extra-experimental-features 'nix-command flakes'
+          '';
+        };
+
     });
 }

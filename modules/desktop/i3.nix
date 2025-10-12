@@ -30,5 +30,13 @@ in
       source = ../../configs/i3;
       recursive = true;
     };
+
+    home.file.".local/share/applications/i3.desktop" = {
+      source = ../../configs/desktop_entries/i3.desktop;
+    };
+
+    home.file.".profile" = {
+      source = ../../configs/x11/.profile;
+    };
   };
 }

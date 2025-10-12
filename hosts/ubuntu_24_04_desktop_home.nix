@@ -50,6 +50,10 @@ in
     terminal.alacritty.enable = true;
   };
 
+  home.file.".config/nix/" = {
+    source = ../configs/nix;
+    recursive = true;
+  };
 
   programs.home-manager.enable = true;
   programs.command-not-found.enable = true;
