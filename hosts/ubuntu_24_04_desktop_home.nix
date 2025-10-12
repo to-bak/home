@@ -15,6 +15,8 @@ in
   imports = [
     ../modules/home.nix
     ../modules/desktop
+    ../modules/services
+    ../modules/editors
     ../modules/misc
   ];
 
@@ -24,9 +26,14 @@ in
 
   nixpkgs.config.allowUnfreePredicate = _: true;
 
-  modules.desktop = { i3.enable = true; };
-
-  # modules.editors.emacs.enable = true;
+  modules.desktop = { 
+    i3.enable = true; 
+    rofi.enable = true;
+    polybar.enable = true;
+  };
+  modules.editors.neovim.enable = true;
 
   programs.home-manager.enable = true;
+  programs.command-not-found.enable = true;
+  programs.ssh.enable = true;
 }
