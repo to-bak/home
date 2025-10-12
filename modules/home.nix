@@ -42,6 +42,8 @@ in
       # like Firefox, Steam, and LMMS.
       XDG_FAKE_HOME = cfg.fakeDir;
       XDG_DESKTOP_DIR = cfg.fakeDir;
+      SHELL = "$HOME/.nix-profile/bin/fish";
+      TERMINAL = "alacritty";
     };
 
     xdg = {

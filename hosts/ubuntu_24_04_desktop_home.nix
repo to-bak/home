@@ -56,6 +56,7 @@ in
     shell.fish.enable = true;
     browser.chromium.enable = true;
     terminal.alacritty.enable = true;
+    terminal.tmux.enable = true;
   };
 
   home.file.".config/nix/" = {

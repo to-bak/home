@@ -50,6 +50,9 @@
       extendedLib = import ./lib args;
 
     in {
+      environment.shells = with pkgs; [ fish ];
+      users.defaultUserShell = pkgs.fish;
+
       packages.homeConfigurations.oliverbak =
         home-manager.lib.homeManagerConfiguration {
           inherit pkgs;
