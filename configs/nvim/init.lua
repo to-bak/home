@@ -43,9 +43,10 @@ require("neorg").setup {
       ["core.dirman"] = {
          config = {
             workspaces = {
-               org = "~/org",
+               personal = "~/personal",
+	       work = "~/work",
             },
-            default_workspace = "org",
+            default_workspace = "personal",
          },
       },
    },
