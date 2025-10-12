@@ -54,7 +54,7 @@ in
     kubernetes.enable = true;
     ripgrep.enable = true;
     shell.fish.enable = true;
-    browser.google_chrome.enable = true;
+    browser.chromium.enable = true;
     terminal.alacritty.enable = true;
   };
 
