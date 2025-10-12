@@ -38,5 +38,9 @@ in
     home.file.".profile" = {
       source = ../../configs/x11/.profile;
     };
+
+    home.file.".config/autorandr/postswitch" = {
+      source = ../../configs/autorandr/postswitch;
+    };
   };
 }
