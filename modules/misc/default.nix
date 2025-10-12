@@ -16,13 +16,13 @@ let
     pavucontrol
     brightnessctl
     pulsemixer
-    texlive.combined.scheme-full
+    # texlive.combined.scheme-full
 
     # DEVELOPMENT
     gnumake
     gdb
     nixfmt-classic
-    emacs-git
+    # emacs-git
 
     # DEFAULT
 
@@ -73,11 +73,5 @@ let
   ];
 in
 {
-  home.stateVersion = "22.11";
-  home.username = environment.username;
-  home.homeDirectory = environment.homeDir;
-
   home.packages = packages_stable ++ packages_unstable ++ packages_kubelogin;
-
-  imports = [ ./configs/main.nix ];
 }
