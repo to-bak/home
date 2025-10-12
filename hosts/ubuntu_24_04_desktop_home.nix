@@ -3,6 +3,7 @@
   extendedLib,
   pkgs,
   nixpkgs,
+  nixGL,
   ...
 }:
 
@@ -27,6 +28,13 @@ in
   home.packages = with pkgs; [
     nixgl.nixGLIntel
   ];
+
+  nixGL = {
+    packages = nixGL.packages; # you must set this or everything will be a noop
+    defaultWrapper = "mesa"; # choose from options
+    installScripts = ["mesa"];
+    vulkan.enable = false;
+  };
 
   nixpkgs.config.allowUnfreePredicate = _: true;
 

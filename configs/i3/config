@@ -30,7 +30,7 @@ bindsym Mod4+Ctrl+h move workspace to output left
 bindsym Mod4+Ctrl+l move workspace to output right
 bindsym Mod4+Down focus down
 bindsym Mod4+Left focus left
-bindsym Mod4+Return exec nixGLIntel alacritty
+bindsym Mod4+Return exec alacritty
 bindsym Mod4+Right focus right
 bindsym Mod4+Shift+0 move container to workspace number 10
 bindsym Mod4+Shift+1 move container to workspace number 1
@@ -62,7 +62,7 @@ bindsym Mod4+Shift+x exec i3lock -c 000000
 bindsym Mod4+Up focus up 
 bindsym Mod4+a focus parent 
 bindsym Mod4+ae split h 
-bindsym Mod4+d exec rofi -show drun -theme ~/.dotfiles/configs/rofi/themes/theme1/launcher.sh 
+bindsym Mod4+d exec rofi -show drun -theme ~/.config/home-manager/configs/rofi/themes/theme1/launcher.sh 
 bindsym Mod4+e layout toggle split 
 bindsym Mod4+f fullscreen toggle 
 bindsym Mod4+h focus left 
@@ -100,7 +100,7 @@ smart_gaps on
 
 exec_always --no-startup-id i3-msg workspace 1 
 exec_always --no-startup-id systemctl --user restart polybar.service 
-exec_always --no-startup-id feh --bg-scale $HOME/.dotfiles/wallpapers/forest.png 
+exec_always --no-startup-id feh --bg-scale $HOME/.config/home-manager/wallpapers/forest.png 
 exec_always --no-startup-id picom --transparent-clipping -b 
 exec --no-startup-id autorandr -c
 exec --no-startup-id nm-applet --sm-disable

@@ -1,4 +1,4 @@
-{ config, pkgs, pkgs-stable, pkgs-kubelogin, lib, environment, ... }:
+{ pkgs, pkgs-stable, ... }:
 
 {
   home.packages = with pkgs-stable; [

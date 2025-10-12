@@ -1,4 +1,4 @@
-{ config, pkgs, extendedLib, ... }:
+{ config, pkgs, extendedLib, nixGL, ... }:
 
 with extendedLib;
 let 
@@ -12,6 +12,7 @@ in
   config = mkIf cfg.enable {
     programs.alacritty = {
       enable = true;
+      package = config.lib.nixGL.wrap pkgs.alacritty;
 
       settings = {
         window = {
@@ -24,7 +25,7 @@ in
           };
         };
 
-        shell = { program = "${pkgs.fish}/bin/fish"; };
+       terminal.shell = { program = "${pkgs.fish}/bin/fish"; };
       };
     };
   };

@@ -1,4 +1,4 @@
-{ config, pkgs, pkgs-stable, pkgs-kubelogin, lib, environment, ... }:
+{ ... }:
 
 {
   imports = [

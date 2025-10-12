@@ -10,21 +10,19 @@
     url = "github:nix-community/home-manager";
     inputs.nixpkgs.follows = "nixpkgs";
   };
-  inputs.nixgl.url = "github:nix-community/nixGL";
+  inputs.nixGL.url = "github:nix-community/nixGL";
   inputs.flake-utils.url = "github:numtide/flake-utils";
-  inputs.flake-env.url = "flake:flake-env";
   inputs.emacs-overlay.url = "github:nix-community/emacs-overlay";
 
   outputs =
     inputs@{
       self,
-      nixgl,
+      nixGL,
       nixpkgs,
       nixpkgs-stable,
       nixpkgs-kubelogin,
       home-manager,
       flake-utils,
-      flake-env,
       emacs-overlay,
       ...
     }:
@@ -32,13 +30,13 @@
     let
       pkgs = import nixpkgs {
         inherit system;
-        overlays = [ nixgl.overlay ];
+        overlays = [ nixGL.overlay ];
         config.allowUnfree = true;
       };
 
       pkgs-stable = import nixpkgs-stable {
         inherit system;
-        overlays = [ nixgl.overlay emacs-overlay.overlay ];
+        overlays = [ nixGL.overlay emacs-overlay.overlay ];
         config.allowUnfree = true;
       };
 
@@ -51,13 +49,12 @@
 
       extendedLib = import ./lib args;
 
-      environment = flake-env.nixosModules.${system}.environment;
     in {
       packages.homeConfigurations.oliverbak =
         home-manager.lib.homeManagerConfiguration {
           inherit pkgs;
           modules = [ ./hosts/ubuntu_24_04_desktop_home.nix ];
-          extraSpecialArgs = { inherit environment pkgs-stable pkgs-kubelogin extendedLib; };
+          extraSpecialArgs = { inherit pkgs-stable pkgs-kubelogin extendedLib nixGL; };
         };
 
       packages.bootstrap = pkgs.writeShellApplication {

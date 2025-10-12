@@ -1,5 +1,3 @@
 home-manager/variables.nix
 home-manager/packages/result
 nix/registry.json
-flake-env/environment.nix
-flake-env/.git
