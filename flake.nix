@@ -53,7 +53,7 @@
 
       environment = flake-env.nixosModules.${system}.environment;
     in {
-      homeConfigurations.oliverbak =
+      packages.homeConfigurations.oliverbak =
         home-manager.lib.homeManagerConfiguration {
           inherit pkgs;
           modules = [ ./hosts/ubuntu_24_04_desktop_home.nix ];
