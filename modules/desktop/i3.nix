@@ -2,13 +2,14 @@
   config,
   extendedLib,
   options,
-  pkgs,
+  pkgs-stable,
   ...
 }:
 
 with extendedLib;
 let
   cfg = config.modules.desktop.i3;
+  pkgs = pkgs-stable;
 in
 {
   options.modules.desktop.i3 = with types; {
@@ -16,7 +17,14 @@ in
   };
 
   config = mkIf cfg.enable {
-    home.packages = with pkgs; [ ];
+    home.packages = with pkgs; [ 
+      arandr
+      autorandr
+      networkmanagerapplet
+      brightnessctl
+      pulsemixer
+      feh
+    ];
 
     home.configFile."i3" = {
       source = ../../configs/i3;

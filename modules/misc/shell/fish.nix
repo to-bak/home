@@ -1,5 +1,15 @@
-{ pkgs, ... }:
+{ config, pkgs, extendedLib, ... }:
+
+with extendedLib;
+let 
+   cfg = config.modules.misc.shell.fish;
+in
 {
+  options.modules.misc.shell.fish = {
+    enable = mkBoolOpt false;
+  };
+
+  config = mkIf cfg.enable {
     programs.fish = {
       enable = true;
       plugins = [{
@@ -22,4 +32,5 @@
       # export NIX_REMOTE=daemon
     '';
     };
+  };
 }

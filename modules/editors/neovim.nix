@@ -30,6 +30,11 @@ in
       tree-sitter-grammars.tree-sitter-norg-meta
     ];
 
+    home.packages = with pkgs-stable; [
+      luarocks
+      lua5_1
+    ];
+
     home.file = {
       ".config/nvim" = {
         source = ../../configs/nvim;

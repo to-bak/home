@@ -30,7 +30,7 @@ bindsym Mod4+Ctrl+h move workspace to output left
 bindsym Mod4+Ctrl+l move workspace to output right
 bindsym Mod4+Down focus down
 bindsym Mod4+Left focus left
-bindsym Mod4+Return exec /nix/store/48bax03vq8cixqbscrmyq2jdby44z3rk-nixGLIntel/bin/nixGLIntel /nix/store/h601phmb09d9dwwziwsim6m0r31qajr3-alacritty-0.15.1/bin/alacritty
+bindsym Mod4+Return exec nixGLIntel alacritty
 bindsym Mod4+Right focus right
 bindsym Mod4+Shift+0 move container to workspace number 10
 bindsym Mod4+Shift+1 move container to workspace number 1
@@ -47,7 +47,7 @@ bindsym Mod4+Shift+Left move left
 bindsym Mod4+Shift+Right move right
 bindsym Mod4+Shift+Up move up
 bindsym Mod4+Shift+c reload
-bindsym Mod4+Shift+d exec /nix/store/1f44g3f0g4xcnbhg1p56lmb5hmzw2w4h-rofi-1.7.9/bin/rofi -show window
+bindsym Mod4+Shift+d exec rofi -show window
 bindsym Mod4+Shift+e exec i3-nagbar -t warning -m 'Do you want to exit i3?' -b 'Yes' 'i3-msg exit'
 bindsym Mod4+Shift+h move left
 bindsym Mod4+Shift+j move down
@@ -58,48 +58,50 @@ bindsym Mod4+Shift+q kill
 bindsym Mod4+Shift+r restart
 bindsym Mod4+Shift+space floating toggle
 bindsym Mod4+Shift+x exec i3lock -c 000000
-bindsym Mod4+Up focus up
-bindsym Mod4+a focus parent
-bindsym Mod4+ae split h
-bindsym Mod4+d exec /nix/store/1f44g3f0g4xcnbhg1p56lmb5hmzw2w4h-rofi-1.7.9/bin/rofi -show drun -theme ~/.dotfiles/rofi/themes/theme1/launcher.sh
-bindsym Mod4+e layout toggle split
-bindsym Mod4+f fullscreen toggle
-bindsym Mod4+h focus left
-bindsym Mod4+j focus down
-bindsym Mod4+k focus up
-bindsym Mod4+l focus right
-bindsym Mod4+minus scratchpad show
-bindsym Mod4+r mode resize
-bindsym Mod4+s layout stacking
-bindsym Mod4+space focus mode_toggle
-bindsym Mod4+v split v
-bindsym Mod4+w layout tabbed
-bindsym XF86AudioLowerVolume exec amixer -D pulse sset Master 4%-
-bindsym XF86AudioMute exec amixer -D pulse sset Master toggle
-bindsym XF86AudioRaiseVolume exec amixer -D pulse sset Master 4%+
-bindsym XF86MonBrightnessDown exec brightnessctl set 4%-
-bindsym XF86MonBrightnessUp exec brightnessctl set 4%+
+
+bindsym Mod4+Up focus up 
+bindsym Mod4+a focus parent 
+bindsym Mod4+ae split h 
+bindsym Mod4+d exec rofi -show drun -theme ~/.dotfiles/configs/rofi/themes/theme1/launcher.sh 
+bindsym Mod4+e layout toggle split 
+bindsym Mod4+f fullscreen toggle 
+bindsym Mod4+h focus left 
+bindsym Mod4+j focus down 
+bindsym Mod4+k focus up 
+bindsym Mod4+l focus right 
+bindsym Mod4+minus scratchpad show 
+bindsym Mod4+r mode resize 
+bindsym Mod4+s layout stacking 
+bindsym Mod4+space focus mode_toggle 
+bindsym Mod4+v split v 
+bindsym Mod4+w layout tabbed 
+bindsym XF86AudioLowerVolume exec amixer -D pulse sset Master 4%- 
+bindsym XF86AudioMute exec amixer -D pulse sset Master toggle 
+bindsym XF86AudioRaiseVolume exec amixer -D pulse sset Master 4%+ 
+bindsym XF86MonBrightnessDown exec brightnessctl set 4%- 
+bindsym XF86MonBrightnessUp exec brightnessctl set 4%+ 
 
 mode "resize" {
-  bindsym Down resize grow height 10 px or 10 ppt
-  bindsym Escape mode default
-  bindsym Left resize shrink width 10 px or 10 ppt
-  bindsym Return mode default
-  bindsym Right resize grow width 10 px or 10 ppt
-  bindsym Up resize shrink height 10 px or 10 ppt
-  bindsym h resize grow width 10 px or 10 ppt
-  bindsym j resize grow height 10 px or 10 ppt
-  bindsym k resize shrink height 10 px or 10 ppt
-  bindsym l resize shrink width 10 px or 10 ppt
+  bindsym Down resize grow height 10 px or 10 ppt 
+  bindsym Escape mode default 
+  bindsym Left resize shrink width 10 px or 10 ppt 
+  bindsym Return mode default 
+  bindsym Right resize grow width 10 px or 10 ppt 
+  bindsym Up resize shrink height 10 px or 10 ppt 
+  bindsym h resize grow width 10 px or 10 ppt 
+  bindsym j resize grow height 10 px or 10 ppt 
+  bindsym k resize shrink height 10 px or 10 ppt 
+  bindsym l resize shrink width 10 px or 10 ppt 
 }
 
-gaps inner 5
-gaps outer 5
-smart_gaps on
-exec_always --no-startup-id exec i3-msg workspace 1
-exec_always --no-startup-id systemctl --user restart polybar.service
-exec_always --no-startup-id /nix/store/inq35a4836v0zsvkwvb44ibm5n31518x-feh-3.10.3/bin/feh --bg-scale $HOME/.dotfiles/wallpapers/forest.png
-exec_always --no-startup-id /nix/store/ccjgrbzc3nahx5phfp0ypwn1j44cps0z-picom-12.5/bin/picom --transparent-clipping -b
-exec --no-startup-id /nix/store/igp430ar80v1ivmyr82fjqn0winj5vl3-autorandr-1.15/bin/autorandr -c
-exec --no-startup-id /nix/store/x3iydbn56v8fv3fpv735ckr8cbp3gxn4-network-manager-applet-1.36.0/bin/nm-applet --sm-disable
-exec --no-startup-id /nix/store/kbmza5n8y8r0pwvbszsavnbz54x4c8ml-flameshot-12.1.0-unstable-2025-05-04/bin/flameshot
+gaps inner 5 
+gaps outer 5 
+smart_gaps on 
+
+exec_always --no-startup-id i3-msg workspace 1 
+exec_always --no-startup-id systemctl --user restart polybar.service 
+exec_always --no-startup-id feh --bg-scale $HOME/.dotfiles/wallpapers/forest.png 
+exec_always --no-startup-id picom --transparent-clipping -b 
+exec --no-startup-id autorandr -c
+exec --no-startup-id nm-applet --sm-disable
+exec --no-startup-id flameshot

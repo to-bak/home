@@ -1,77 +1,31 @@
 { config, pkgs, pkgs-stable, pkgs-kubelogin, lib, environment, ... }:
 
-let
-  packages_stable = with pkgs-stable; [
-    # MISC
-    firefox
-    cachix
-    # appimage-run
-    # appimagekit
-    arandr
-
-    # SYSTEM
-    autorandr
-    networkmanagerapplet
-    flameshot
-    pavucontrol
-    brightnessctl
-    pulsemixer
-    # texlive.combined.scheme-full
-
-    # DEVELOPMENT
-    gnumake
-    gdb
-    nixfmt-classic
-    # emacs-git
-
-    # DEFAULT
-
-    # vlc
-    # spotify
-    # spotifyd
-  ];
-
-  packages_unstable = with pkgs; [
-    # MISC
-    nmap
-    whois
-    tcpdump
-    xclip
-    zathura
-    luarocks
-    lua5_1
-    chromium
-    # google-chrome
-
-    # DEVELOPMENT
-    kind
-    ctlptl
-    tilt
-    jq
-    yq-go
-    gh
-    delta
-    kubectl
-    kubectx
-    kubernetes-helm
-    azure-cli
-    websocat
-
-    # TERMINAL
-    any-nix-shell
-    gotop
-    htop
-    neofetch
-    zip
-    unzip
-    gnupg
-    feh
-  ];
-
-  packages_kubelogin = with pkgs-kubelogin; [
-    kubelogin
-  ];
-in
 {
-  home.packages = packages_stable ++ packages_unstable ++ packages_kubelogin;
+  home.packages = with pkgs-stable; [
+    # MISC
+    pkgs-stable.firefox
+    pkgs-stable.cachix
+    pkgs-stable.networkmanagerapplet
+    pkgs-stable.flameshot
+    pkgs-stable.gnumake
+    pkgs-stable.gdb
+    pkgs-stable.nixfmt-classic
+    pkgs.nmap
+    pkgs.whois
+    pkgs.tcpdump
+    pkgs.xclip
+    pkgs.zathura
+    pkgs.jq
+    pkgs.yq-go
+    pkgs.gh
+    pkgs.delta
+    pkgs.websocat
+    pkgs.any-nix-shell
+    pkgs.gotop
+    pkgs.htop
+    pkgs.neofetch
+    pkgs.zip
+    pkgs.unzip
+    pkgs.gnupg
+  ];
 }
