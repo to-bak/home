@@ -10,6 +10,7 @@
     pkgs-stable.gnumake
     pkgs-stable.gdb
     pkgs-stable.nixfmt-classic
+    pkgs-stable.git
     pkgs.nmap
     pkgs.whois
     pkgs.tcpdump
