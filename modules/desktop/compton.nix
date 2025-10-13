@@ -13,7 +13,7 @@ in
     services.picom = {
       enable = true;
 
-      activeOpacity = 0.94;
+      activeOpacity = 0.96;
       inactiveOpacity = 0.86;
       opacityRules = [
         "100:class_g = 'Chromium-browser'"
