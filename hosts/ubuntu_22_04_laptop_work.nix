@@ -55,6 +55,7 @@ in
     ripgrep.enable = true;
     shell.fish.enable = true;
     # browser.chromium.enable = true;
+    terminal.kitty.enable = true;
     terminal.alacritty.enable = true;
     terminal.tmux.enable = true;
   };

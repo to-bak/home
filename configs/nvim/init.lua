@@ -3,7 +3,8 @@ vim.opt.clipboard:append("unnamedplus")
 vim.o.ignorecase = true
 
 -- Telescope
-require("telescope").setup
+local telescope = require('telescope')
+telescope.setup
 {
    defaults = {
       mappings = {
@@ -21,7 +22,10 @@ require("telescope").setup
    },
 }
 
+telescope.load_extension('fzf')
+
 local telescope_builtin = require('telescope.builtin')
+
 
 vim.keymap.set('n', '<C-c>pr', telescope_builtin.live_grep, { desc = 'Telescope live grep' })
 vim.keymap.set('n', '<C-c>pf', telescope_builtin.find_files, { desc = 'Telescope find_files' })
@@ -36,7 +40,9 @@ require("nvim-treesitter.configs").setup {
 }
 
 -- Neorg
-require("neorg").setup {
+local neorg_builtin = require("neorg")
+
+neorg_builtin.setup {
    load = {
       ["core.defaults"] = {},
       ["core.concealer"] = {},
@@ -51,6 +57,8 @@ require("neorg").setup {
       },
    },
 }
+
+vim.keymap.set('n', '<C-c><C-t>', "<Plug>(neorg.qol.todo-items.todo.task-cycle)", { desc = 'cycle todo item' })
 
 
 -- Neogit
@@ -96,3 +104,14 @@ require("snacks").setup({
 })
 
 vim.keymap.set('n', '<C-x>g', function() Snacks.lazygit() end, { desc = 'Lazygit' })
+
+local toggleterm = require("toggleterm")
+toggleterm.setup({
+  size = 20
+})
+
+vim.keymap.set('n', '<C-t>', "<cmd>ToggleTerm size=40 direction=float<CR>", { desc = 'Floating terminal' })
+vim.keymap.set('t', '<C-t>', "<cmd>ToggleTerm size=40 direction=float<CR>", { desc = 'Floating terminal' })
+
+-- Misc
+vim.keymap.set("i", "<C-BS>", "<C-W>", { desc = "delete whole word" })

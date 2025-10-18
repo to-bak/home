@@ -25,7 +25,7 @@ in
           };
         };
 
-       terminal.shell = { program = "${pkgs.fish}/bin/fish"; };
+        terminal.shell = { program = "${pkgs.fish}/bin/fish"; };
       };
     };
   };

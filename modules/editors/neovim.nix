@@ -17,13 +17,14 @@ in
       vimPlugins.nvim-treesitter.withAllGrammars
       vimPlugins.nvim-treesitter
       vimPlugins.telescope-nvim
-      vimPlugins.telescope-project-nvim
+      vimPlugins.telescope-fzf-native-nvim
       vimPlugins.neorg
       vimPlugins.neogit
       vimPlugins.oxocarbon-nvim
       vimPlugins.dashboard-nvim
       vimPlugins.noice-nvim
       vimPlugins.snacks-nvim
+      vimPlugins.toggleterm-nvim
     ];
 
     programs.neovim.extraPackages = with pkgs-stable; [
