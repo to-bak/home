@@ -25,6 +25,8 @@ in
       vimPlugins.noice-nvim
       vimPlugins.snacks-nvim
       vimPlugins.toggleterm-nvim
+      vimPlugins.nvim-bqf
+      vimPlugins.fzf-vim
     ];
 
     programs.neovim.extraPackages = with pkgs-stable; [

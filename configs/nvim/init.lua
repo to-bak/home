@@ -119,3 +119,9 @@ vim.keymap.set('t', '<C-t>', "<cmd>ToggleTerm size=40 direction=float<CR>", { de
 -- 1. Tmux ignores Ctrl-Backspace. Solution: remap Ctrl-Backspace to <Esc><DEL> in alacritty.
 -- 2. 
 vim.keymap.set("i", "<M-BS>", "<C-w>", { expr = false })
+
+
+-- Better QuickFix lists
+
+require("bqf").setup()
+
