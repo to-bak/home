@@ -28,5 +28,6 @@
     pkgs.zip
     pkgs.unzip
     pkgs.gnupg
+    pkgs.lazygit
   ];
 }

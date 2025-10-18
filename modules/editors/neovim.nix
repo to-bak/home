@@ -22,6 +22,8 @@ in
       vimPlugins.neogit
       vimPlugins.oxocarbon-nvim
       vimPlugins.dashboard-nvim
+      vimPlugins.noice-nvim
+      vimPlugins.snacks-nvim
     ];
 
     programs.neovim.extraPackages = with pkgs-stable; [

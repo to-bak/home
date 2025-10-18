@@ -53,12 +53,20 @@
       environment.shells = with pkgs; [ fish ];
       users.defaultUserShell = pkgs.fish;
 
-      packages.homeConfigurations.oliverbak =
-        home-manager.lib.homeManagerConfiguration {
-          inherit pkgs;
-          modules = [ ./hosts/ubuntu_24_04_desktop_home.nix ];
-          extraSpecialArgs = { inherit pkgs-stable pkgs-kubelogin extendedLib nixGL; };
-        };
+      packages.homeConfigurations = {
+        oliverbak =
+          home-manager.lib.homeManagerConfiguration {
+            inherit pkgs;
+            modules = [ ./hosts/ubuntu_24_04_desktop_home.nix ];
+            extraSpecialArgs = { inherit pkgs-stable pkgs-kubelogin extendedLib nixGL; };
+          };
+        vchg38 =
+          home-manager.lib.homeManagerConfiguration {
+            inherit pkgs;
+            modules = [ ./hosts/ubuntu_22_04_laptop_work.nix ];
+            extraSpecialArgs = { inherit pkgs-stable pkgs-kubelogin extendedLib nixGL; };
+          };
+      };
 
       packages.bootstrap = pkgs.writeShellApplication {
           name = "bootstrap";

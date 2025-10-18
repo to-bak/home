@@ -94,9 +94,9 @@ mode "resize" {
   bindsym l resize shrink width 10 px or 10 ppt 
 }
 
-gaps inner 5 
-gaps outer 5 
-smart_gaps on 
+gaps inner 5
+gaps outer 5
+smart_gaps on
 
 exec_always --no-startup-id i3-msg workspace 1 
 exec_always --no-startup-id systemctl --user restart polybar.service 
