@@ -25,6 +25,23 @@ in
           };
         };
 
+        # 1. Running showkeys -a, alacritty doesn't distinguish
+	# between Ctrl-Backspace and Backspace (both returns 0x7f)
+
+	# 2. This makes Ctrl-Backspace unavailable in Tmux. 
+	# Solution: remap to <ESC><DEL>, which
+	# is interpreted similar by Tmux and Alacritty.
+
+	# 3. Neovim (and other applications) must remap <ESC><DEL> to
+	# be interpreted as Ctrl-Backspace
+        keyboard.bindings = [
+            {
+              key = "Back";
+              mods = "Control";
+              chars = "\\u001b\\u007f";
+            }
+          ];
+
         terminal.shell = { program = "${pkgs.fish}/bin/fish"; };
       };
     };

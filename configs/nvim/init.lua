@@ -114,4 +114,8 @@ vim.keymap.set('n', '<C-t>', "<cmd>ToggleTerm size=40 direction=float<CR>", { de
 vim.keymap.set('t', '<C-t>', "<cmd>ToggleTerm size=40 direction=float<CR>", { desc = 'Floating terminal' })
 
 -- Misc
-vim.keymap.set("i", "<C-BS>", "<C-W>", { desc = "delete whole word" })
+
+-- This is a collaboration between Alacritty|Tmux|Neovim
+-- 1. Tmux ignores Ctrl-Backspace. Solution: remap Ctrl-Backspace to <Esc><DEL> in alacritty.
+-- 2. 
+vim.keymap.set("i", "<M-BS>", "<C-w>", { expr = false })
