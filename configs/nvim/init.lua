@@ -127,5 +127,15 @@ vim.keymap.set("i", "<M-BS>", "<C-w>", { expr = false })
 
 -- Better QuickFix lists
 require("quicker").setup()
-
 require("bqf").setup({ })
+
+
+local flash = require("flash")
+flash.setup({
+  highlight = {
+    matches = false,
+    multi_label = true,
+  }
+})
+vim.keymap.set("n", "<C-e>", flash.jump, { desc = 'Toggle flash' })
+
