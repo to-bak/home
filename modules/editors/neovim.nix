@@ -27,6 +27,7 @@ in
       vimPlugins.toggleterm-nvim
       vimPlugins.nvim-bqf
       vimPlugins.fzf-vim
+      vimPlugins.quicker-nvim
     ];
 
     programs.neovim.extraPackages = with pkgs-stable; [

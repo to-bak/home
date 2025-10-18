@@ -4,6 +4,8 @@ vim.o.ignorecase = true
 
 -- Telescope
 local telescope = require('telescope')
+local telescope_actions = require('telescope.actions')
+
 telescope.setup
 {
    defaults = {
@@ -13,10 +15,12 @@ telescope.setup
             ["<C-k>"] = "move_selection_previous",
             ["<C-n>"] = "cycle_history_next",
             ["<C-p>"] = "cycle_history_prev",
+	    ["<C-o>"] = telescope_actions.smart_send_to_qflist + telescope_actions.open_qflist,
          },
          n = {
             ["<C-j>"] = "move_selection_next",
             ["<C-k>"] = "move_selection_previous",
+	    ["<C-o>"] = telescope_actions.smart_send_to_qflist + telescope_actions.open_qflist,
          },
       },
    },
@@ -117,11 +121,11 @@ vim.keymap.set('t', '<C-t>', "<cmd>ToggleTerm size=40 direction=float<CR>", { de
 
 -- This is a collaboration between Alacritty|Tmux|Neovim
 -- 1. Tmux ignores Ctrl-Backspace. Solution: remap Ctrl-Backspace to <Esc><DEL> in alacritty.
--- 2. 
+-- 2. Neovim must now remap <Esc><DEL> to interpret it as Ctrl-Backspace/Ctrl-w
 vim.keymap.set("i", "<M-BS>", "<C-w>", { expr = false })
 
 
 -- Better QuickFix lists
+require("quicker").setup()
 
-require("bqf").setup()
-
+require("bqf").setup({ })
