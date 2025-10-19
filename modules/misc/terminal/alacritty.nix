@@ -18,7 +18,7 @@ in
         window = {
           title = "Terminal";
 
-          padding = { y = 10; x=10;};
+          padding = { y = 5; x=5;};
           dimensions = {
             lines = 75;
             columns = 100;

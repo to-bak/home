@@ -75,11 +75,6 @@ vim.opt.background = "dark" -- set this to dark or light
 vim.cmd("colorscheme oxocarbon")
 
 
--- Dashboard
-require('dashboard').setup {
-  theme = "doom",
-}
-
 -- Noice
 require("noice").setup({
   lsp = {
@@ -103,15 +98,24 @@ require("noice").setup({
 -- Snacks
 require("snacks").setup({
   opts = {
-    lazygit = { }
+    lazygit = { enabled = true },
+    bigfile = { enabled = true },
+    quickfile = { enabled = true },
+    statuscolumn = { enabled = true },
+    bufdelete = { enabled = true },
+    gitbrowse = { enabled = true },
   }
 })
 
 vim.keymap.set('n', '<C-x>g', function() Snacks.lazygit() end, { desc = 'Lazygit' })
+vim.keymap.set('n', '<C-x>t', function() Snacks.gitbrowse() end, { desc = 'Git in browser' })
 
 local toggleterm = require("toggleterm")
+
 toggleterm.setup({
-  size = 20
+  float_opts = {
+    border = 'curved'
+  }
 })
 
 vim.keymap.set('n', '<C-t>', "<cmd>ToggleTerm size=40 direction=float<CR>", { desc = 'Floating terminal' })

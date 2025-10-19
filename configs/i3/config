@@ -100,7 +100,7 @@ smart_gaps on
 
 exec_always --no-startup-id i3-msg workspace 1 
 exec_always --no-startup-id systemctl --user restart polybar.service 
-exec_always --no-startup-id feh --bg-scale $HOME/.config/home-manager/wallpapers/serenity.jpg 
+exec_always --no-startup-id feh --bg-scale $HOME/.config/home-manager/wallpapers/misty-forest.jpg 
 exec_always --no-startup-id picom --transparent-clipping -b 
 exec --no-startup-id autorandr -c
 exec --no-startup-id nm-applet --sm-disable

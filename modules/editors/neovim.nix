@@ -21,7 +21,6 @@ in
       vimPlugins.neorg
       vimPlugins.neogit
       vimPlugins.oxocarbon-nvim
-      vimPlugins.dashboard-nvim
       vimPlugins.noice-nvim
       vimPlugins.snacks-nvim
       vimPlugins.toggleterm-nvim
