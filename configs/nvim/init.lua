@@ -143,3 +143,6 @@ flash.setup({
 })
 vim.keymap.set("n", "<C-e>", flash.jump, { desc = 'Toggle flash' })
 
+-- Git signs
+require('gitsigns').setup({})
+

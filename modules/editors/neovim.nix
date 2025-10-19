@@ -28,6 +28,7 @@ in
       vimPlugins.fzf-vim
       vimPlugins.quicker-nvim
       vimPlugins.flash-nvim
+      vimPlugins.gitsigns-nvim
     ];
 
     programs.neovim.extraPackages = with pkgs-stable; [
