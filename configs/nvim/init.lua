@@ -2,6 +2,9 @@ vim.wo.number = true
 vim.opt.clipboard:append("unnamedplus")
 vim.o.ignorecase = true
 
+-- Plenary.nvim
+local async = require "plenary.async"
+
 -- Telescope
 local telescope = require('telescope')
 local telescope_actions = require('telescope.actions')
@@ -34,6 +37,9 @@ local telescope_builtin = require('telescope.builtin')
 vim.keymap.set('n', '<C-c>pr', telescope_builtin.live_grep, { desc = 'Telescope live grep' })
 vim.keymap.set('n', '<C-c>pf', telescope_builtin.find_files, { desc = 'Telescope find_files' })
 vim.keymap.set('n', '<C-c>b', telescope_builtin.buffers, { desc = 'Telescope buffers' })
+
+-- Which-key
+local which_key = require("which-key")
 
 -- Treesitter
 require("nvim-treesitter.configs").setup {

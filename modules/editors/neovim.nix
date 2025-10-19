@@ -29,6 +29,8 @@ in
       vimPlugins.quicker-nvim
       vimPlugins.flash-nvim
       vimPlugins.gitsigns-nvim
+      vimPlugins.plenary-nvim
+      vimPlugins.which-key-nvim
     ];
 
     programs.neovim.extraPackages = with pkgs-stable; [
