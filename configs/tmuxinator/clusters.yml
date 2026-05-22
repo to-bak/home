@@ -1,0 +1,6 @@
+name: clusters
+root: ~/
+
+windows:
+  - k9s: k9s
+  - lazydocker: lazydocker

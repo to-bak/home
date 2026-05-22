@@ -1,0 +1,80 @@
+# Plugin list
+# NOTE: plugins are managed by nix, which will run-shell plugins after this configuration file
+# is loaded. See tmux.nix.
+
+# set -g @plugin 'tmux-plugins/tmux-sensible'
+
+
+# Configuration
+bind-key r source-file ~/.config/tmux/tmux.conf \; display-message "Configuration reloaded"
+
+set-option -g mouse 1
+set-option -g default-shell $SHELL
+
+# Window renaming: "cmd:dir"
+set-option -g status-interval 5
+set-option -g automatic-rename on
+set-option -g automatic-rename-format '#{pane_current_command}:#{b:pane_current_path}'
+
+# No delay on escape
+set-option -g escape-time 0
+set -g mode-keys vi
+
+set -g default-terminal "tmux-256color"
+
+# Prefix
+unbind C-a
+unbind C-b
+
+set-option -g prefix C-space
+set-option -g renumber-windows on
+
+# VIM integration 
+# https://medium.com/@musickcorym/fixing-the-lag-why-i-ditched-vim-tmux-navigator-for-a-faster-plugin-free-setup-239da138e4aa
+is_vim="ps -o state= -o comm= -t '#{pane_tty}' | grep -iqE '^[^TXZ ]+ +(n?vim|vimx?)'"
+
+bind-key -n C-w switch-client -T window-move
+
+bind -T window-move h if-shell "$is_vim" "send-keys 'C-\\' 'C-n' 'C-w' 'h'" "select-pane -L"
+bind -T window-move j if-shell "$is_vim" "send-keys 'C-\\' 'C-n' 'C-w' 'j'" "select-pane -D"
+bind -T window-move k if-shell "$is_vim" "send-keys 'C-\\' 'C-n' 'C-w' 'k'" "select-pane -U"
+bind -T window-move l if-shell "$is_vim" "send-keys 'C-\\' 'C-n' 'C-w' 'l'" "select-pane -R"
+bind -T window-move c if-shell "$is_vim" "send-keys 'C-\\' 'C-n' 'C-w' 'c'" "killp"
+bind -T window-move s if-shell "$is_vim" "send-keys 'C-\\' 'C-n' 'C-w' 's'" "splitw"
+bind -T window-move v if-shell "$is_vim" "send-keys 'C-\\' 'C-n' 'C-w' 'v'" "splitw -h"
+
+# Recommended by nvim healthcheck for autoread
+set-option -g focus-events on
+
+# set window index to start at 1
+set -g base-index 1
+
+# Switch pane Alt + {h,j,k,l}
+bind-key -n M-h select-pane -L
+bind-key -n M-j select-pane -D
+bind-key -n M-k select-pane -U
+bind-key -n M-l select-pane -R
+
+# Next/Previous window Ctrl + Alt + {h,l}
+bind-key -n M-C-l next-window
+bind-key -n M-C-h previous-window
+
+bind-key f run-shell '\
+  S="$HOME/.scripts/sessionizer"; \
+  STATE=$(mktemp /tmp/sessionizer_XXXXX); \
+  echo 0 > "$STATE"; \
+  $S list | fzf-tmux -p 90%,80% \
+    --ansi --no-sort --tac \
+    --with-nth=1 --delimiter="\t" \
+    --header "[ Sessions ]   Agents    Panes" \
+    --bind "ctrl-l:transform:$S tab-go next $STATE" \
+    --bind "ctrl-h:transform:$S tab-go prev $STATE" \
+    --preview "$S preview {1} {2}" \
+    | $S attach-smart; \
+  rm -f "$STATE"'
+
+# Synchronize panes
+bind C-s setw synchronize-panes
+
+# Nix will source plugins here
+# ...
