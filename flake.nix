@@ -75,32 +75,22 @@
 
       extendedLib = import ./lib args;
 
-      # Local (gitignored) host configurations loaded via --impure.
-      # Defined in hosts/local.nix as { configName = [ ./module.nix ]; }
-      localConfigPath = builtins.getEnv "HOME" + "/.config/home-manager/hosts/local.nix";
-      localHosts =
-        if builtins.pathExists localConfigPath
-        then builtins.mapAttrs (_: modules:
-          home-manager.lib.homeManagerConfiguration {
-            inherit pkgs;
-            inherit modules;
-            extraSpecialArgs = { inherit pkgs-stable pkgs-kubelogin pkgs-sesh pkgs-orgmode extendedLib nixGL; };
-          }
-        ) (import localConfigPath)
-        else {};
+      # Host configs: hosts/hosts.nix maps profile names to filenames.
+      # Host files are resolved from the filesystem (requires --impure).
+      hostsDir = builtins.getEnv "HOME" + "/.config/home-manager/hosts";
+      hostConfigs = builtins.mapAttrs (_: filename:
+        home-manager.lib.homeManagerConfiguration {
+          inherit pkgs;
+          modules = [ (hostsDir + "/${filename}") ];
+          extraSpecialArgs = { inherit pkgs-stable pkgs-kubelogin pkgs-sesh pkgs-orgmode extendedLib nixGL; };
+        }
+      ) (import ./hosts/hosts.nix);
 
     in {
       environment.shells = with pkgs; [ fish ];
       users.defaultUserShell = pkgs.fish;
 
-      packages.homeConfigurations = {
-        oliverbak =
-          home-manager.lib.homeManagerConfiguration {
-            inherit pkgs;
-            modules = [ ./hosts/ubuntu_24_04_desktop_home.nix ];
-            extraSpecialArgs = { inherit pkgs-stable pkgs-kubelogin pkgs-sesh pkgs-orgmode extendedLib nixGL; };
-          };
-      } // localHosts;
+      packages.homeConfigurations = hostConfigs;
 
       packages.bootstrap = pkgs.writeShellApplication {
           name = "bootstrap";
