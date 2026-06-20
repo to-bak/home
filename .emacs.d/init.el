@@ -518,6 +518,10 @@
 ;; ---------------------------------------------------------------------
 ;; (add-hook 'rust-mode-hook 'eglot-ensure)
 
+(use-package dumb-jump
+  :config
+  (add-hook 'xref-backend-functions #'dumb-jump-xref-activate))
+
 
 ;; ---------------------------------------------------------------------
 ;; Org
@@ -796,7 +800,9 @@ _q_uit        _C--_
 (global-set-key (kbd "C-c w") 'hydra-window/body)
 
 ;; ---------------------------------------------------------------------
-;; Tab-line (buffer tabs per window, rendered invisibly)
+;; Tab Bar
 ;; ---------------------------------------------------------------------
-;; Enable tab-line globally so Emacs tracks tabs behind the hood.
-(global-tab-line-mode 1)
+(setq tab-bar-show nil)
+(add-hook 'after-init-hook #'tab-bar-mode)
+(global-set-key (kbd "C-c f") 'tab-switch)
+(global-set-key (kbd "C-c F") 'tab-close)
