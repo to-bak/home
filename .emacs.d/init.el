@@ -39,7 +39,8 @@
 
 ;; goto themes: gruvbox, twilight, doom-badger
 (use-package doom-themes)
-(load-theme 'doom-badger t)
+(load-theme 'doom-tomorrow-night t)
+;; (load-theme 'doom-badger t)
 ;; (load-theme 'plan9 t)
 
 ;; Required by `doom-modeline` to display icons.
