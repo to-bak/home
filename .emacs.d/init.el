@@ -39,8 +39,10 @@
 
 ;; goto themes: gruvbox, twilight, doom-badger
 (use-package doom-themes)
-(load-theme 'doom-tomorrow-night t)
-;; (load-theme 'doom-badger t)
+;; (load-theme 'doom-sourcerer t)
+;; (load-theme 'doom-tomorrow-night t)
+(load-theme 'doom-badger t)
+;; (load-theme 'doom-snazzy)
 ;; (load-theme 'plan9 t)
 
 ;; Required by `doom-modeline` to display icons.
@@ -419,7 +421,6 @@
 (global-set-key (kbd "C-s") 'avy-goto-word-0)
 (setq avy-timeout-seconds 0.3)
 
-
 ;; ---------------------------------------------------------------------
 ;; Evil
 ;; ---------------------------------------------------------------------
@@ -794,7 +795,8 @@ _q_uit        _C--_
 
 (global-set-key (kbd "C-c w") 'hydra-window/body)
 
-
 ;; ---------------------------------------------------------------------
-;; Terminal (vterm + multi-vterm)
+;; Tab-line (buffer tabs per window, rendered invisibly)
 ;; ---------------------------------------------------------------------
+;; Enable tab-line globally so Emacs tracks tabs behind the hood.
+(global-tab-line-mode 1)
