@@ -87,6 +87,7 @@
 ;; line numbers
 (column-number-mode)
 (global-display-line-numbers-mode t)
+(setq display-line-numbers 'relative)
 
 ;; Disable line numbers for some modes
 (dolist (mode '(term-mode-hook
