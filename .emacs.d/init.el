@@ -109,7 +109,7 @@
         vterm-kill-buffer-on-exit t))
 
 (use-package multi-vterm
-  :bind (("C-c t" . multi-vterm)))
+  :bind (("C-c t" . multi-vterm-project)))
 
 (with-eval-after-load 'vterm
   (setq vterm-shell (concat (executable-find "fish") " --login")))

@@ -54,39 +54,40 @@
 
       extendedLib = import ./lib args;
 
-      # Host configs: hosts/hosts.nix maps profile names to filenames.
-      # Host files are resolved from the filesystem (requires --impure).
-      hostsDir = builtins.getEnv "HOME" + "/.config/home-manager/hosts";
-      hostConfigs = builtins.mapAttrs (_: filename:
-        home-manager.lib.homeManagerConfiguration {
-          inherit pkgs;
-          modules = [ (hostsDir + "/${filename}") ];
-          extraSpecialArgs = { inherit pkgs-emacs pkgs-kubelogin pkgs-orgmode extendedLib nixGL; };
-        }
-      ) (import ./hosts/hosts.nix);
+      hostConfigs = builtins.listToAttrs (
+        map (filename: {
+          name  = nixpkgs.lib.removeSuffix ".nix" filename;
+          value = home-manager.lib.homeManagerConfiguration {
+            inherit pkgs;
+            modules = [ (./hosts + "/${filename}") ];
+            extraSpecialArgs = {
+              inherit pkgs-emacs pkgs-kubelogin pkgs-orgmode extendedLib nixGL;
+            };
+          };
+        })
+        (builtins.attrNames (nixpkgs.lib.filterAttrs
+          (n: v: v == "regular" && nixpkgs.lib.hasSuffix ".nix" n)
+          (builtins.readDir ./hosts)))
+      );
 
     in {
-      environment.shells = with pkgs; [ fish ];
-      users.defaultUserShell = pkgs.fish;
-
       packages.homeConfigurations = hostConfigs;
 
       packages.bootstrap = pkgs.writeShellApplication {
-          name = "bootstrap";
-          runtimeInputs = [ pkgs.git pkgs.home-manager ];
-          text = ''
-            DOT_DIR=$HOME/.config/home-manager
+        name = "bootstrap";
+        runtimeInputs = [ pkgs.git pkgs.home-manager ];
+        text = ''
+          DOT_DIR=$HOME/.config/home-manager
 
-            if [ ! -d "$DOT_DIR" ]; then
+          if [ ! -d "$DOT_DIR" ]; then
             echo "==> $DOT_DIR doesn't exist, cloning into $DOT_DIR"
             git clone https://github.com/to-bak/home.git "$DOT_DIR"
-            else
+          else
             echo "==> $DOT_DIR already exists, proceeding bootstrapping."
-            fi
+          fi
 
-            home-manager switch -b backup --extra-experimental-features 'nix-command flakes'
-          '';
-        };
-
+          home-manager switch -b backup --extra-experimental-features 'nix-command flakes'
+        '';
+      };
     });
 }

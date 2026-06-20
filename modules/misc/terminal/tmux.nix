@@ -20,7 +20,7 @@ in
       };
       agentCommands = mkOption {
         type = with types; listOf str;
-        default = [ "claude" "copilot" ];
+        default = [ "claude" "copilot" "agy" ];
         description = "Process names to identify as AI agent panes.";
       };
     };
