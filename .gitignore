@@ -1,3 +1,9 @@
 home-manager/variables.nix
 home-manager/packages/result
 nix/registry.json
+
+# straight.el - only track the lockfile, not repos/build artifacts
+.emacs.d/straight/repos/
+.emacs.d/straight/build/
+.emacs.d/straight/build-cache/
+.emacs.d/straight/cache.el

@@ -2,6 +2,7 @@ vim.wo.number = true
 vim.opt.clipboard:append("unnamedplus")
 vim.o.ignorecase = true
 vim.opt.swapfile = false
+vim.cmd('packadd cfilter')
 
 -- Plenary.nvim
 local async = require "plenary.async"
@@ -44,6 +45,7 @@ telescope.setup
 }
 
 telescope.load_extension('fzf')
+telescope.load_extension('ui-select')
 
 local telescope_builtin = require('telescope.builtin')
 
@@ -51,6 +53,7 @@ local telescope_builtin = require('telescope.builtin')
 vim.keymap.set('n', '<C-c>pr', telescope_builtin.live_grep, { desc = 'Telescope live grep' })
 vim.keymap.set('n', '<C-c>pf', telescope_builtin.find_files, { desc = 'Telescope find_files' })
 vim.keymap.set('n', '<C-c>b', telescope_builtin.buffers, { desc = 'Telescope buffers' })
+vim.keymap.set('n', '<C-c>pq', telescope_builtin.quickfix, { desc = 'Telescope quickfix' })
 
 -- Which-key
 local which_key = require("which-key")
@@ -226,12 +229,6 @@ require('orgmode').setup({
       target = '~/notes/work/inbox.org',
       headline = 'Tasks',
     },
-    m = {
-      description = 'Meeting',
-      template = '* %T %^{Meeting title}\n** Attendees\n- %?\n** Agenda\n- \n** Notes\n- \n** Gemini Notes\n** Action Items\n*** TODO ',
-      target = '~/notes/work/inbox.org',
-      headline = 'Meetings',
-    },
   },
   org_agenda_custom_commands = {
     o = {
@@ -301,6 +298,43 @@ local org_custom = require('org_custom')
 vim.keymap.set('n', '<C-c>or', org_custom.refile, { desc = 'Refile (full path)' })
 vim.keymap.set('n', '<C-c>oP', org_custom.set_property, { desc = 'Set property' })
 -- vim.keymap.set('n', '<C-c>ol', org_custom.insert_link, { desc = 'Insert link' })
+
+-- Org-roam
+require("org-roam").setup({
+  directory = "~/notes/work",
+  bindings = {
+    prefix = "<C-c>n",
+  },
+  templates = {
+    d = {
+      description = "default",
+      target = "%<%Y%m%d%H%M%S>-%[slug].org",
+      template = "%?",
+    },
+    m = {
+      description = "meeting",
+      target = "roam/meetings/%<%Y%m%d>-%[slug].org",
+      template = "* Attendees\n- %?\n* Agenda\n- \n* Notes\n- \n* Gemini Notes\n* Action Items\n** TODO ",
+    },
+  },
+})
+
+which_key.add({ '<C-c>n', group = 'Org Roam' })
+which_key.add({ '<C-c>nd', group = 'Org Roam Dailies' })
+
+-- Forward links in quickfix
+vim.keymap.set('n', '<C-c>nQ', function()
+  require("org-roam").ui.open_quickfix_list({ links = true, show_preview = true })
+end, { desc = 'Quickfix forward links' })
+
+-- C-j/C-k navigation in org-roam select picker
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = "org-roam-select",
+  callback = function(ev)
+    vim.keymap.set("i", "<C-j>", "<C-n>", { buffer = ev.buf, remap = true })
+    vim.keymap.set("i", "<C-k>", "<C-p>", { buffer = ev.buf, remap = true })
+  end,
+})
 
 -- Ensure org TODO keywords are visible against headline backgrounds
 vim.api.nvim_set_hl(0, '@org.keyword.todo', { fg = '#ee5396', bold = true })

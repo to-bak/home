@@ -2,14 +2,13 @@
   config,
   extendedLib,
   options,
-  pkgs-stable,
+  pkgs,
   ...
 }:
 
 with extendedLib;
 let
   cfg = config.modules.desktop.i3;
-  pkgs = pkgs-stable;
 in
 {
   options.modules.desktop.i3 = with types; {

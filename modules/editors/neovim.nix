@@ -18,6 +18,7 @@ in
       vimPlugins.nvim-treesitter.withAllGrammars
       vimPlugins.telescope-nvim
       vimPlugins.telescope-fzf-native-nvim
+      vimPlugins.telescope-ui-select-nvim
       vimPlugins.neorg
       vimPlugins.neogit
       vimPlugins.oxocarbon-nvim
@@ -33,6 +34,7 @@ in
       vimPlugins.which-key-nvim
       vimPlugins.render-markdown-nvim
       pkgs-orgmode.vimPlugins.orgmode
+      pkgs-orgmode.vimPlugins.org-roam-nvim
       vimPlugins.headlines-nvim
     ];
 

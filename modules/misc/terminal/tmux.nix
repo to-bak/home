@@ -1,4 +1,4 @@
-{ config, pkgs, pkgs-stable, pkgs-sesh, extendedLib, nixGL, ... }:
+{ config, pkgs, extendedLib, nixGL, ... }:
 
 with extendedLib;
 let 

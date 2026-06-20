@@ -54,6 +54,8 @@
       `((".*" . ,temporary-file-directory)))
 (setq auto-save-file-name-transforms
       `((".*" ,temporary-file-directory t)))
+(setq lock-file-name-transforms
+      `((".*" ,temporary-file-directory t)))
 
 ;; file backup in ~/backup
 (add-to-list 'backup-directory-alist
@@ -99,6 +101,22 @@
 
 (global-hl-line-mode 1) ; Highlight current line
 
+(use-package vterm
+  :straight nil
+  :commands vterm
+  :config
+  (setq vterm-max-scrollback 10000
+        vterm-kill-buffer-on-exit t))
+
+(use-package multi-vterm
+  :bind (("C-c t" . multi-vterm)))
+
+(with-eval-after-load 'vterm
+  (setq vterm-shell (concat (executable-find "fish") " --login")))
+
+(with-eval-after-load 'evil
+  (evil-set-initial-state 'vterm-mode 'emacs))
+
 ;; which-key
 (use-package which-key
   :init (which-key-mode)
@@ -106,7 +124,12 @@
   :config
   (setq which-key-idle-delay 1))
 
-(use-package project :bind-keymap ("C-c p" . project-prefix-map))
+(use-package project
+  :ensure nil
+  :bind-keymap ("C-c p" . project-prefix-map))
+
+;; drop the prompt menu, go straight into find-file
+(setq project-switch-commands #'magit-project-status)
 
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
@@ -129,7 +152,6 @@
 (setq-default fill-column 80)
 
 (use-package hydra)
-
 
 ;; ---------------------------------------------------------------------
 ;; Dired
@@ -281,13 +303,17 @@
         completion-category-defaults nil
         completion-category-overrides '((file (styles partial-completion)))))
 
+(with-eval-after-load 'consult
+  (setq consult-ripgrep-args
+        "rg --null --line-buffered --color=never --max-columns=1000 --path-separator /   --smart-case --no-heading --with-filename --line-number --search-zip --hidden --glob=!.git/"))
+
 ;; consult
 (use-package consult
   ;; Replace bindings. Lazily loaded due by `use-package'.
   :config
 
   :bind (:map project-prefix-map
-         ("C-c p b" . consult-project-buffer))
+         ("b" . consult-project-buffer))
 
   ;; Enable automatic preview at point in the *Completions* buffer. This is
   ;; relevant when you use the default completion UI.
@@ -376,10 +402,13 @@
 :init (openwith-mode))
 (setq openwith-associations '(("\\.pdf\\'" "zathura" (file))))
 
-;; plantuml
-;; (org-babel-do-load-languages
-;; 'org-babel-load-languages
-;; '((plantuml . t))) ; this line activates plantuml
+;; org-babel
+(org-babel-do-load-languages
+ 'org-babel-load-languages
+ '((shell . t)
+   (emacs-lisp . t)
+   (python . t)
+   (plantuml . t)))
 
 ;; ---------------------------------------------------------------------
 ;; Avy
@@ -452,7 +481,7 @@
   :hook (magit-mode . magit-delta-mode))
 
 ;; Add magit to list of project commands
-(add-to-list 'project-switch-commands '(magit-project-status "Magit" ?m))
+;; (add-to-list 'project-switch-commands '(magit-project-status "Magit" ?m))
 
 ;; Git gutter indicators
 ;; https://ianyepan.github.io/posts/emacs-git-gutter/
@@ -499,6 +528,9 @@
 (use-package org
   :straight (:type built-in)
   :defer t
+  :init
+  ;; Must be set before org loads; makes evil motion work correctly on hidden link syntax
+  (setq org-fold-core-style 'overlays)
   :hook (org-mode . dw/org-mode-setup)
   :config
   (setq org-ellipsis " ▾"
@@ -525,6 +557,9 @@
   (setq org-outline-path-complete-in-steps nil)
   (setq org-refile-use-outline-path t)
 
+  ;; Follow links in same window, use C-c & to go back
+  (setf (cdr (assoc 'file org-link-frame-setup)) 'find-file)
+
   (evil-define-key '(normal insert visual) org-mode-map (kbd "C-j") 'org-next-visible-heading)
   (evil-define-key '(normal insert visual) org-mode-map (kbd "C-k") 'org-previous-visible-heading)
 
@@ -533,7 +568,7 @@
 
 ;; these following commands sets font:sizing across various levels
 ;; of org mode text
-(with-eval-after-load 'org-faces (set-face-attribute 'org-document-title nil :font "Iosevka" :weight 'bold :height 1.3))
+(with-eval-after-load 'org-faces (set-face-attribute 'org-document-title nil :font "JetBrainsMono Nerd Font" :weight 'bold :height 1.3))
 (with-eval-after-load 'org-faces
   (dolist
       (face '((org-level-1 . 1.2)
@@ -544,15 +579,23 @@
               (org-level-6 . 1.1)
               (org-level-7 . 1.1)
               (org-level-8 . 1.1)))
-    (set-face-attribute (car face) nil :font "Iosevka" :weight 'medium :height (cdr face))))
+    (set-face-attribute (car face) nil :font "JetBrainsMono Nerd Font" :weight 'medium :height (cdr face))))
 
 (use-package evil-org
   :ensure t
   :after org
-  :hook (org-mode . (lambda () evil-org-mode))
+  :hook (org-mode . evil-org-mode)
   :config
+  (evil-org-set-key-theme '(navigation insert textobjects additional calendar))
   (require 'evil-org-agenda)
   (evil-org-agenda-set-keys))
+
+(use-package org-appear
+  :hook (org-mode . org-appear-mode)
+  :custom
+  (org-appear-autolinks t)
+  (org-appear-autosubmarkers t)
+  (org-appear-trigger 'always))
 
 (use-package org-superstar
   :after org
@@ -568,41 +611,81 @@
 (use-package org-download
   :after org)
 
-(defun obp/browse-org-directory ()
-  (interactive)
-  (let ((default-directory "~/org/"))
-    (call-interactively 'find-file)))
+(use-package org-roam
+  :ensure t
+  :custom
+  (org-roam-directory (file-truename "~/notes/work/roam"))
+  :bind (("C-c n l" . org-roam-buffer-toggle)
+         ("C-c n f" . org-roam-node-find)
+         ("C-c n i" . org-roam-node-insert)
+         ("C-c n c" . org-roam-capture)
+         ("C-c n a" . org-roam-alias-add)
+         ("C-c n t" . org-roam-tag-add)
+         ("C-c n T" . org-roam-tag-remove)
+         ;; Dailies
+         ("C-c n j" . org-roam-dailies-capture-today))
+  :config
+  (setq org-roam-node-display-template (concat "${title:*} " (propertize "${tags:10}" 'face 'org-tag)))
+  (setq org-roam-capture-templates
+        '(("d" "default" plain "%?"
+           :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
+                              "#+title: ${title}\n")
+           :unnarrowed t)
+          ("m" "meeting" plain
+           "* Attendees\n- %?\n* Agenda\n- \n* Notes\n- \n* Gemini Notes\n* Action Items\n** TODO "
+           :target (file+head "meetings/%<%Y%m%d>-${slug}.org"
+                              "#+title: ${title}\n")
+           :unnarrowed t)
+          ("c" "contact" plain
+           "- Email: %^{Email}\n- Department: %^{Department}\n- Project: %^{Project}\n%?"
+           :target (file+head "contacts/${slug}.org"
+                              "#+title: ${title}\n#+filetags: :contact:\n")
+           :unnarrowed t)))
+  (org-roam-db-autosync-mode)
+  (require 'org-roam-protocol))
 
-(defhydra hydra-org-roam ()
-  "
-Roam^^        ^Misc^
--------------------------
-_f_ind        _j_ ↓
-_i_nsert      _k_ ↑
-_g_raph       _q_uit
-_t_ags
-_r_m tags
-"
-  ;; :color blue closes hydra when pressed
-  ("f" obp/browse-org-directory :color blue)
-  ("c" (lambda ()
-         (interactive)
-         (org-capture nil "j"))
-   :color blue)
-  ("q" nil))
+(use-package org-roam-ui
+  :after org-roam
+  :bind (("C-c n g" . org-roam-ui-mode))
+  :config
+  (setq org-roam-ui-sync-theme t
+        org-roam-ui-follow t
+        org-roam-ui-update-on-save t
+        org-roam-ui-open-on-start t))
 
-(global-set-key (kbd "C-c n") 'hydra-org-roam/body)
+(use-package consult-org-roam
+   :ensure t
+   :after org-roam
+   :custom
+   ;; Use `ripgrep' for searching with `consult-org-roam-search'
+   (consult-org-roam-grep-func #'consult-ripgrep)
+   ;; Configure a custom narrow key for `consult-buffer'
+   (consult-org-roam-buffer-narrow-key ?r)
+   ;; Display org-roam buffers right after non-org-roam buffers
+   ;; in consult-buffer (and not down at the bottom)
+   (consult-org-roam-buffer-after-buffers t)
+   :config
+   ;; Activate the minor mode
+   (consult-org-roam-mode 1)
+   ;; Eventually suppress previewing for certain functions
+   (consult-customize
+    consult-org-roam-forward-links
+    :preview-key "M-.")
+   :bind
+   ;; Define some convenient keybindings as an addition
+   ("C-c n e" . consult-org-roam-file-find)
+   ("C-c n b" . consult-org-roam-backlinks)
+   ("C-c n B" . consult-org-roam-backlinks-recursive)
+   ("C-c n l" . consult-org-roam-forward-links)
+   ("C-c n r" . consult-org-roam-search))
 
+(use-package org-ql
+  :after org)
 
 ;; ---------------------------------------------------------------------
 ;; Org Agenda
 ;; ---------------------------------------------------------------------
-(setq org-default-agenda-file (concat (file-truename "~/org") "/agenda.org"))
-(setq org-default-journal-file (concat (file-truename "~/org") "/journal.org"))
-
-(defun obp/open-agenda-file ()
-  (interactive)
-  (find-file org-default-agenda-file))
+(setq org-default-agenda-file (concat (file-truename "~/notes/work") "/inbox.org"))
 
 (setq org-tag-alist
       '(("@work" . ?w)
@@ -613,27 +696,20 @@ _r_m tags
 (setq org-agenda-start-with-log-mode t)
 (setq org-log-done 'time)
 (setq org-log-into-drawer t)
-(setq org-agenda-files (list org-default-agenda-file))
+(setq org-agenda-files (file-expand-wildcards "~/notes/work/*.org"))
 (setq org-todo-keywords
-      '((sequence "TODO" "INPROGRESS" "PARKED" "DONE")))
+      '((sequence "TODO" "NEXT" "STARTED" "WAITING" "FUTURE" "|" "DONE" "CANCELLED")))
+(setq org-archive-location "~/notes/work/archive.org::* Archive")
 (advice-add 'org-refile :after 'org-save-all-org-buffers)
 
 (setq org-agenda-span 18
       org-agenda-start-on-weekday nil
       org-agenda-start-day "-7d")
 
-;; https://stackoverflow.com/questions/7986935/using-org-capture-templates-to-schedule-a-todo-for-the-day-after-today
 (setq org-capture-templates
-    '(
-      ("a" "agenda - add todo" entry
-       (file+headline org-default-agenda-file "Inbox")
-       "* TODO %?\nSCHEDULED: <%(org-read-date nil nil \"+1d\")>\n%a")
-
-      ("j" "journal - daily entry" entry
-       (file+datetree org-default-journal-file)
-       " * %U - Daily Journal 1\\. How fresh did you feel today?: %^{How fresh did you feel today?} 1\\. What did I accomplish today? 2\\. What challenged me today, and how did I respond? 3\\. What am I grateful for today? 4\\. What did I learn today? 5\\. How can I improve tomorrow?" :empty-lines 1)
-     )
-)
+      '(("a" "Agenda - task" entry
+         (file+headline org-default-agenda-file "Inbox")
+         "* TODO %?\nSCHEDULED: <%(org-read-date nil nil \"+1d\")>\n%a")))
 
 (use-package org-fancy-priorities
   :ensure t
@@ -642,66 +718,38 @@ _r_m tags
   :config
   (setq org-fancy-priorities-list '("🔥" "☕" "💤")))
 
-;; since agenda.org file and org-agenda view uses
-;; different functions, create wrapper to
-;; to use the same function context independent,
-;; by trying both functions.
-(defun obp/org-or-agenda (func-agenda func-org)
-  (interactive)
-  (condition-case e
-      (call-interactively func-agenda)
-    (error
-     (call-interactively func-org)
-     )))
+;; C-c o prefix for org commands
+(define-prefix-command 'obp/org-prefix-map)
+(global-set-key (kbd "C-c o") 'obp/org-prefix-map)
 
-(defhydra hydra-org-agenda ()
-  "
-Properties^^   ^Agenda^        ^Misc^
--------------------------------------
-_d_eadline     _a_genda        _j_ ↓
-_s_chedule     _A_ll agenda    _k_ ↑
-_p_riority     _f_ile          _q_uit
-_n_ote         _c_apture
-_t_ags         _C_apture
-_o_rder
-"
-  ;; :color blue closes hydra when pressed
-  ("a" (lambda ()
-         (interactive)
-         (org-agenda nil "n"))
-   :color blue)
-  ("A" org-agenda :color blue)
-  ("j" evil-next-visual-line)
-  ("k" evil-previous-visual-line)
-  ("c" (lambda ()
-         (interactive)
-         (org-capture nil "a"))
-   :color blue)
-  ("C" org-capture :color blue)
-  ("f" obp/open-agenda-file :color blue)
-  ("d" (lambda ()
-         (interactive)
-         (obp/org-or-agenda 'org-deadline 'org-agenda-deadline)))
-  ("s" (lambda ()
-         (interactive)
-         (obp/org-or-agenda 'org-agenda-schedule 'org-schedule)))
-  ("n" (lambda ()
-         (interactive)
-         (obp/org-or-agenda 'org-agenda-add-note 'org-add-note))
-   :color blue)
-  ("t" (lambda ()
-         (interactive)
-         (obp/org-or-agenda 'org-agenda-set-tags 'org-set-tags-command)))
-  ("o" org-toggle-ordered-property)
-  ("p" (lambda ()
-         (interactive)
-         (obp/org-or-agenda 'org-agenda-priority 'org-priority)))
-  ("l" (lambda ()
-         (interactive)
-         (obp/org-or-agenda 'org-agenda-set-property 'org-set-property)))
-  ("q" nil))
+;; Global org keybindings (work everywhere)
+(define-key obp/org-prefix-map (kbd "a") (lambda () (interactive) (org-agenda nil "n")))
+(define-key obp/org-prefix-map (kbd "A") 'org-agenda)
+(define-key obp/org-prefix-map (kbd "c") 'org-capture)
+(define-key obp/org-prefix-map (kbd "l") 'org-store-link)
+(define-key obp/org-prefix-map (kbd "q") 'org-ql-search)
 
-(global-set-key (kbd "C-c a") 'hydra-org-agenda/body)
+;; org-mode-map keybindings (org buffers only)
+(with-eval-after-load 'org
+  (define-key org-mode-map (kbd "C-c o d") 'org-deadline)
+  (define-key org-mode-map (kbd "C-c o s") 'org-schedule)
+  (define-key org-mode-map (kbd "C-c o p") 'org-priority)
+  (define-key org-mode-map (kbd "C-c o t") 'org-set-tags-command)
+  (define-key org-mode-map (kbd "C-c o n") 'org-add-note)
+  (define-key org-mode-map (kbd "C-c o r") 'org-refile)
+  (define-key org-mode-map (kbd "C-c o x") 'org-archive-subtree)
+  (define-key org-mode-map (kbd "C-c o o") 'org-open-at-point)
+  (define-key org-mode-map (kbd "C-c o L") 'org-insert-link))
+
+;; org-agenda-mode-map keybindings (agenda view only)
+(with-eval-after-load 'org-agenda
+  (define-key org-agenda-mode-map (kbd "C-c o d") 'org-agenda-deadline)
+  (define-key org-agenda-mode-map (kbd "C-c o s") 'org-agenda-schedule)
+  (define-key org-agenda-mode-map (kbd "C-c o p") 'org-agenda-priority)
+  (define-key org-agenda-mode-map (kbd "C-c o t") 'org-agenda-set-tags)
+  (define-key org-agenda-mode-map (kbd "C-c o n") 'org-agenda-add-note)
+  (define-key org-agenda-mode-map (kbd "C-c o r") 'org-agenda-refile)
+  (define-key org-agenda-mode-map (kbd "C-c o x") 'org-agenda-archive))
 
 
 ;; ---------------------------------------------------------------------
@@ -743,3 +791,8 @@ _q_uit        _C--_
   ("q" nil))
 
 (global-set-key (kbd "C-c w") 'hydra-window/body)
+
+
+;; ---------------------------------------------------------------------
+;; Terminal (vterm + multi-vterm)
+;; ---------------------------------------------------------------------

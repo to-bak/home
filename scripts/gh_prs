@@ -52,7 +52,4 @@ GH_USER=$(gh api user --jq '.login')
 
 search_prs "$1" |
   format_prs |
-  sort_prs |
-  column -t -s $'\t' |
-  fzf --with-nth ..-2 --accept-nth -1 \
-    --bind 'enter:execute-silent(google-chrome {-1})'
+  sort_prs

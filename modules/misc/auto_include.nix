@@ -1,35 +1,43 @@
-{ pkgs, pkgs-stable, ... }:
-
+{ pkgs, ... }:
+let
+  tex = pkgs.texlive.combine {
+    inherit (pkgs.texlive)
+      scheme-medium               # Your base engine and standard tools
+      collection-latexextra       # Thousands of extra packages (includes wrapfig, rotating, capt-of, ulem)
+      collection-fontsrecommended # Standard widely-used fonts
+      collection-mathscience;     # Everything you need for math, physics, and computer science
+  };
+in
 {
-  home.packages = with pkgs-stable; [
+  home.packages = with pkgs; [
     # MISC
-    pkgs-stable.firefox
-    pkgs-stable.cachix
-    pkgs-stable.networkmanagerapplet
-    pkgs-stable.flameshot
-    pkgs-stable.gnumake
-    pkgs-stable.gdb
-    pkgs-stable.nixfmt-classic
-    pkgs-stable.git
-    pkgs.nmap
-    pkgs.awscli
-    pkgs.whois
-    pkgs.tcpdump
-    pkgs.xclip
-    pkgs.zathura
-    pkgs.jq
-    pkgs.yq-go
-    pkgs.gh
-    pkgs.delta
-    pkgs.websocat
-    pkgs.any-nix-shell
-    pkgs.gotop
-    pkgs.htop
-    pkgs.zip
-    pkgs.unzip
-    pkgs.gnupg
-    pkgs.lazygit
-    pkgs.lazydocker
-    pkgs.mscgen
+    tex
+    cachix
+    networkmanagerapplet
+    flameshot
+    gnumake
+    gdb
+    nixfmt-classic
+    git
+    nmap
+    awscli
+    whois
+    tcpdump
+    xclip
+    zathura
+    jq
+    yq-go
+    gh
+    delta
+    websocat
+    any-nix-shell
+    gotop
+    htop
+    zip
+    unzip
+    gnupg
+    lazygit
+    lazydocker
+    mscgen
   ];
 }
