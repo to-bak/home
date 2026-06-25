@@ -736,6 +736,10 @@
    ("C-c n l" . consult-org-roam-forward-links)
    ("C-c n r" . consult-org-roam-search))
 
+(defun obp/force-roam-tabspace (orig-fun &rest args)
+  (tabspaces-switch-or-create-workspace "roam")
+  (apply orig-fun args))
+
 (use-package org-ql
   :after org)
 
@@ -751,6 +755,7 @@
   (tabspaces-remove-to-default t)
   (tabspaces-include-buffers '("*scratch*" "*Messages*"))
   :config
+
   (defun obp/force-tabspaces-on-project-switch (orig-fun dir &rest args)
     (let* ((proj (project-current nil dir))
            (name (project-name proj))
@@ -760,6 +765,9 @@
       (unless tab-exists
         (apply orig-fun dir args))))
 
+  (advice-add 'org-roam-node-find :around #'obp/force-roam-tabspace)
+  (advice-add 'org-roam-node-insert :around #'obp/force-roam-tabspace)
+  (advice-add 'org-roam-buffer-toggle :around #'obp/force-roam-tabspace)
   (advice-add 'project-switch-project :around #'obp/force-tabspaces-on-project-switch))
 
 
