@@ -136,13 +136,6 @@
   :config
   (setq which-key-idle-delay 1))
 
-(use-package project
-  :ensure nil
-  :bind-keymap ("C-c p" . project-prefix-map))
-
-;; drop the prompt menu, go straight into find-file
-(setq project-switch-commands #'magit-project-status)
-
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
 
@@ -164,6 +157,17 @@
 (setq-default fill-column 80)
 
 (use-package hydra)
+
+
+;; ---------------------------------------------------------------------
+;; Project
+;; ---------------------------------------------------------------------
+(use-package project
+  :ensure nil
+  :bind-keymap ("C-c p" . project-prefix-map))
+
+;; drop the prompt menu, go straight into find-file
+(setq project-switch-commands #'magit-project-status)
 
 ;; ---------------------------------------------------------------------
 ;; Dired
@@ -642,15 +646,11 @@
 (set-face-attribute 'org-modern-label nil :height 0.9)
 
 (setq org-modern-todo-faces
-      '(;; Active Attention Grabbers (Red)
-        ("TODO"      . (:background "firebrick" :foreground "whitesmoke" :weight bold))
+      '(("TODO"      . (:background "firebrick" :foreground "whitesmoke" :weight bold))
         ("STARTED"   . (:background "firebrick" :foreground "whitesmoke" :weight bold))
-
-        ;; Parked / On-Hold States (Yellow)
-        ("BLOCKED"   . (:background "dark goldenrod" :foreground "whitesmoke" :weight bold))
-        ("SOMEDAY"   . (:background "dark goldenrod" :foreground "whitesmoke" :weight bold))
-
-        ;; Completed / Inactive States (Green)
+        ("PARKED"   . (:background "dark goldenrod" :foreground "whitesmoke" :weight bold))
+        ("BACKLOG"   . (:background "dark goldenrod" :foreground "whitesmoke" :weight bold))
+        ("SOMEDAY"   . (:background "purple4" :foreground "whitesmoke" :weight bold))
         ("CLOSED"    . (:background "forest green" :foreground "whitesmoke" :weight bold))
         ("CANCELLED" . (:background "forest green" :foreground "whitesmoke" :weight bold))))
 
@@ -740,6 +740,30 @@
   :after org)
 
 ;; ---------------------------------------------------------------------
+;; Tabspaces
+;; ---------------------------------------------------------------------
+(use-package tabspaces
+  :ensure t
+  :hook (after-init . tabspaces-mode)
+  :custom
+  (tabspaces-use-filtered-buffers-as-default t)
+  (tabspaces-default-tab "Default")
+  (tabspaces-remove-to-default t)
+  (tabspaces-include-buffers '("*scratch*" "*Messages*"))
+  :config
+  (defun obp/force-tabspaces-on-project-switch (orig-fun dir &rest args)
+    (let* ((proj (project-current nil dir))
+           (name (project-name proj))
+           (tab-exists (seq-find (lambda (tab) (equal name (alist-get 'name tab)))
+                                 (tab-bar-tabs))))
+      (tabspaces-switch-or-create-workspace name)
+      (unless tab-exists
+        (apply orig-fun dir args))))
+
+  (advice-add 'project-switch-project :around #'obp/force-tabspaces-on-project-switch))
+
+
+;; ---------------------------------------------------------------------
 ;; Org Agenda
 ;; ---------------------------------------------------------------------
 (setq org-default-agenda-file (concat (file-truename "~/notes/work") "/inbox.org"))
@@ -788,7 +812,7 @@
 
 (setq org-todo-keywords
       '((sequence "TODO(t)" "STARTED(s)" "|" "CLOSED(c)")
-        (sequence "BLOCKED(b@)" "SOMEDAY(f)" "|" "CANCELLED(x@)")))
+        (sequence "PARKED(p@)" "BACKLOG(b)" "SOMEDAY(f)" "|" "CANCELLED(x@)")))
 
 (use-package agenda-prs
   :straight nil
@@ -812,24 +836,66 @@
 (setq org-archive-location "~/notes/work/archive.org_archive::* Archive")
 
 (advice-add 'org-refile :after 'org-save-all-org-buffers)
+(advice-add 'org-agenda-todo :after 'org-save-all-org-buffers)
+(advice-add 'org-agenda-deadline :after 'org-save-all-org-buffers)
+(advice-add 'org-agenda-schedule :after 'org-save-all-org-buffers)
+(advice-add 'org-agenda-priority :after 'org-save-all-org-buffers)
+(advice-add 'org-agenda-set-tags :after 'org-save-all-org-buffers)
+(advice-add 'org-agenda-add-note :after 'org-save-all-org-buffers)
+(advice-add 'org-agenda-archive :after 'org-save-all-org-buffers)
+
+(defun obp/org-agenda-skip-unmapped-and-someday ()
+  "Skip entries that are scheduled, have a deadline, or are marked as SOMEDAY."
+  (or (org-agenda-skip-entry-if 'scheduled 'deadline)
+      (when (string= (org-get-todo-state) "SOMEDAY")
+        (save-excursion (or (outline-next-heading) (point-max))))))
+
+(defvar obp/org-agenda-block-inbox
+  '(alltodo "" ((org-agenda-overriding-header "📥 Inbox (Unprocessed Captures)")
+                (org-agenda-files '("~/notes/work/inbox.org"))))
+  "Inbox block for unprocessed items.")
+
+(defvar obp/org-agenda-block-agenda
+  '(agenda "" ((org-agenda-start-day "+0d")
+               (org-agenda-span 18)
+               (org-agenda-start-on-weekday nil)
+               (org-super-agenda-groups
+                '((:auto-category t)))))
+  "Standard 18-day schedule/deadline agenda block.")
+
+(defvar obp/org-agenda-block-prs
+  '(alltodo "" ((org-agenda-overriding-header "🐙 Pull Requests Awaiting Review")
+                (org-agenda-files '("~/notes/work/data/reviews.org"))
+                (org-agenda-prefix-format '((todo . "  ")))))
+  "Block displaying pending pull requests.")
+
+(defvar obp/org-agenda-block-unmapped
+  '(alltodo "" ((org-agenda-overriding-header "Unmapped Tasks (No Schedule/Deadline)")
+                (org-agenda-skip-function 'obp/org-agenda-skip-unmapped-and-someday)))
+  "Block for tasks lacking dates, excluding SOMEDAY items.")
+
+(defvar obp/org-agenda-block-someday
+  '(todo "SOMEDAY" ((org-agenda-overriding-header "☁️ SOMEDAY")))
+  "Block for SOMEDAY tasks.")
+
+(defvar obp/org-agenda-block-backlog
+  '(todo "BACKLOG"
+         ((org-agenda-overriding-header "☁️ BACKLOG")
+          (org-super-agenda-groups
+           '((:auto-category t)))))
+  "Block for BACKLOG tasks, automatically grouped by category.")
+
+;; --- Main Custom Commands ---
 
 (setq org-agenda-custom-commands
-  '(("d" "Dashboard"
-     ((alltodo "" ((org-agenda-overriding-header "📥 Inbox (Unprocessed Captures)")
-                   (org-agenda-files '("~/notes/work/inbox.org"))))
+      `(("d" "Dashboard"
+         (,obp/org-agenda-block-inbox
+          ,obp/org-agenda-block-agenda
+          ,obp/org-agenda-block-prs
+          ,obp/org-agenda-block-unmapped))
 
-      (agenda "" ((org-agenda-start-day "+0d")
-                  (org-agenda-span 18)
-                  (org-agenda-start-on-weekday nil)
-                  (org-super-agenda-groups
-                   '((:auto-category t)))))
-
-      (alltodo "" ((org-agenda-overriding-header "🐙 Pull Requests Awaiting Review")
-                   (org-agenda-files '("~/notes/work/data/reviews.org"))
-                   (org-agenda-prefix-format '((todo . "  ")))))
-
-      (alltodo "" ((org-agenda-overriding-header "Unmapped Tasks (No Schedule/Deadline)")
-                   (org-agenda-skip-function '(org-agenda-skip-entry-if 'scheduled 'deadline))))))))
+        ("f" "☁️ Someday" (,obp/org-agenda-block-someday))
+        ("b" "Backlog" (,obp/org-agenda-block-backlog))))
 
 (setq org-capture-templates
       '(("a" "Agenda - task" entry
