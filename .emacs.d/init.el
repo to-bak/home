@@ -34,6 +34,8 @@
 (setq custom-file "~/.emacs.d/custom.el")
 (load custom-file)
 
+(use-package olivetti)
+
 ;; get rid of emacs logo
 ;; (setq inhibit-startup-message t)
 
@@ -87,9 +89,15 @@
 (setq warning-minimum-level :error)
 
 ;; line numbers
-(column-number-mode)
-(global-display-line-numbers-mode t)
-(setq display-line-numbers 'relative)
+(column-number-mode 1)
+
+;; Set both the type and the default buffer-local variable
+(setq display-line-numbers-type 'relative)
+(setq-default display-line-numbers 'relative)
+
+;; Toggle the global mode off, then back on to force a refresh on active buffers
+(global-display-line-numbers-mode -1)
+(global-display-line-numbers-mode 1)
 
 ;; Disable line numbers for some modes
 (dolist (mode '(term-mode-hook
@@ -522,6 +530,7 @@
   :config
   (add-hook 'xref-backend-functions #'dumb-jump-xref-activate))
 
+(setq dumb-jump-rg-search-args "--pcre2 --no-ignore -g '!_build/'")
 
 ;; ---------------------------------------------------------------------
 ;; Org
@@ -540,16 +549,16 @@
   (setq org-fold-core-style 'overlays)
   :hook (org-mode . dw/org-mode-setup)
   :config
-  (setq org-ellipsis " ▾"
-        org-hide-emphasis-markers t
-        org-src-fontify-natively t
-        org-fontify-quote-and-verse-blocks t
-        org-src-tab-acts-natively t
-        org-edit-src-content-indentation 2
-        org-hide-block-startup nil
-        org-src-preserve-indentation nil
-        org-startup-folded 'content
-        org-cycle-separator-lines 2)
+  ;;(setq org-ellipsis " ▾"
+  ;;    org-hide-emphasis-markers t
+  ;;    org-src-fontify-natively t
+  ;;    org-fontify-quote-and-verse-blocks t
+  ;;    org-src-tab-acts-natively t
+  ;;    org-edit-src-content-indentation 2
+  ;;    org-hide-block-startup nil
+  ;;    org-src-preserve-indentation nil
+  ;;    org-startup-folded 'content
+  ;;    org-cycle-separator-lines 2)
 
   (setq org-modules
         '(org-crypt
@@ -558,8 +567,8 @@
           org-eshell
           org-irc))
 
-  (setq org-refile-targets '((nil :maxlevel . 1)
-                             (org-agenda-files :maxlevel . 1)))
+  (setq org-refile-targets '((nil :maxlevel . 2)
+                             (org-agenda-files :maxlevel . 2)))
 
   (setq org-outline-path-complete-in-steps nil)
   (setq org-refile-use-outline-path t)
@@ -575,17 +584,19 @@
 
 ;; these following commands sets font:sizing across various levels
 ;; of org mode text
-(with-eval-after-load 'org-faces (set-face-attribute 'org-document-title nil :font "JetBrainsMono Nerd Font" :weight 'bold :height 1.3))
+(with-eval-after-load 'org-faces
+  (set-face-attribute 'org-document-title nil :font "JetBrainsMono Nerd Font" :weight 'bold :height 1.3))
+
 (with-eval-after-load 'org-faces
   (dolist
       (face '((org-level-1 . 1.2)
               (org-level-2 . 1.1)
               (org-level-3 . 1.05)
               (org-level-4 . 1.0)
-              (org-level-5 . 1.1)
-              (org-level-6 . 1.1)
-              (org-level-7 . 1.1)
-              (org-level-8 . 1.1)))
+              (org-level-5 . 1.0)
+              (org-level-6 . 1.0)
+              (org-level-7 . 1.0)
+              (org-level-8 . 1.0)))
     (set-face-attribute (car face) nil :font "JetBrainsMono Nerd Font" :weight 'medium :height (cdr face))))
 
 (use-package evil-org
@@ -604,16 +615,54 @@
   (org-appear-autosubmarkers t)
   (org-appear-trigger 'always))
 
-(use-package org-superstar
-  :after org
-  :hook (org-mode . org-superstar-mode)
-  :custom
-  (org-superstar-remove-leading-stars t)
-  (org-superstar-headline-bullets-list '("◉" "○" "●" "○" "●" "○" "●")))
-
 (use-package org-autolist
   :hook (org-mode . org-autolist-mode))
 (add-hook 'org-mode-hook (lambda () (org-autolist-mode)))
+
+
+(use-package org-modern)
+
+(setq
+ ;; Edit settings
+ org-auto-align-tags nil
+ org-tags-column 0
+ org-catch-invisible-edits 'show-and-error
+ org-special-ctrl-a/e t
+ org-insert-heading-respect-content t
+
+ ;; Org styling, hide markup etc.
+ org-hide-emphasis-markers t
+ org-pretty-entities t
+ org-agenda-tags-column 0
+ org-modern-star nil
+ org-modern-hide-stars nil
+ org-ellipsis "…")
+
+(set-face-attribute 'org-modern-symbol nil :height 1.1)
+(set-face-attribute 'org-modern-label nil :height 0.9)
+
+(setq org-modern-todo-faces
+      '(;; Active Attention Grabbers (Red)
+        ("TODO"      . (:background "firebrick" :foreground "whitesmoke" :weight bold))
+        ("STARTED"   . (:background "firebrick" :foreground "whitesmoke" :weight bold))
+
+        ;; Parked / On-Hold States (Yellow)
+        ("BLOCKED"   . (:background "dark goldenrod" :foreground "whitesmoke" :weight bold))
+        ("SOMEDAY"   . (:background "dark goldenrod" :foreground "whitesmoke" :weight bold))
+
+        ;; Completed / Inactive States (Green)
+        ("CLOSED"    . (:background "forest green" :foreground "whitesmoke" :weight bold))
+        ("CANCELLED" . (:background "forest green" :foreground "whitesmoke" :weight bold))))
+
+(global-org-modern-mode)
+
+(use-package org-superstar
+:after org
+:hook (org-mode . org-superstar-mode)
+:custom
+(org-superstar-remove-leading-stars t)
+(org-superstar-headline-bullets-list '("◉" "○" "●" "○" "●" "○" "●")))
+
 
 (use-package org-download
   :after org)
@@ -633,6 +682,7 @@
          ("C-c n j" . org-roam-dailies-capture-today))
   :config
   (setq org-roam-node-display-template (concat "${title:*} " (propertize "${tags:10}" 'face 'org-tag)))
+
   (setq org-roam-capture-templates
         '(("d" "default" plain "%?"
            :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
@@ -694,29 +744,101 @@
 ;; ---------------------------------------------------------------------
 (setq org-default-agenda-file (concat (file-truename "~/notes/work") "/inbox.org"))
 
+(use-package org-super-agenda
+  :ensure t
+  :config
+  ;; Prevent super-agenda from overriding evil hjkl on group headers
+  (setq org-super-agenda-header-map (make-sparse-keymap))
+  (org-super-agenda-mode t))
+
+(add-hook 'org-agenda-mode-hook
+          (lambda ()
+            (setq-local olivetti-body-width 100)
+            (olivetti-mode 1)))
+
+
 (setq org-tag-alist
       '(("@work" . ?w)
         ("@planning" . ?p)
         ("@coding" . ?c)
         ("@meeting" . ?m)))
 
-(setq org-agenda-start-with-log-mode t)
+(setq org-agenda-prefix-format
+      '((agenda . " %?-12t %-10s ") ;; Removed the %c
+        (todo   . " ")               ;; Completely clean for standard TODO lists
+        (tags   . " ")
+        (search . " ")))
+
+(setq org-agenda-window-setup 'only-window)
+
+(setq org-agenda-scheduled-leaders '("📅        " "📅 %2dx:  ")
+      org-agenda-deadline-leaders  '("🚨        " "🚨 %3dd:  " "🚨 -%2dd: "))
+
+(setq org-agenda-skip-timestamp-if-done t
+      org-agenda-skip-deadline-if-done t
+      org-agenda-skip-scheduled-if-done t
+      org-agenda-skip-scheduled-if-deadline-is-shown t
+      org-agenda-skip-timestamp-if-deadline-is-shown t
+      org-agenda-start-with-log-mode nil)
+
 (setq org-log-done 'time)
 (setq org-log-into-drawer t)
+
 (setq org-agenda-files (file-expand-wildcards "~/notes/work/*.org"))
+
 (setq org-todo-keywords
-      '((sequence "TODO" "NEXT" "STARTED" "WAITING" "FUTURE" "|" "DONE" "CANCELLED")))
-(setq org-archive-location "~/notes/work/archive.org::* Archive")
+      '((sequence "TODO(t)" "STARTED(s)" "|" "CLOSED(c)")
+        (sequence "BLOCKED(b@)" "SOMEDAY(f)" "|" "CANCELLED(x@)")))
+
+(use-package agenda-prs
+  :straight nil
+  :ensure nil
+  :load-path "~/.emacs.d/plugins"
+  :config)
+
+(defun obp/agenda-refresh-and-redraw ()
+  "Fetch fresh data and instantly update the active agenda buffer view."
+  (interactive)
+  (obp/refresh-prs-agenda)
+  (org-agenda-redo)
+  (message "Dashboard updated with fresh data!"))
+
+(defun obp/org-agenda-in-tab ()
+  "Switch to (or create) a tab named 'agenda' and open Org Agenda."
+  (interactive)
+  (tab-switch "agenda")
+  (org-agenda)) ;; Automatically opens your "d" dashboard command
+
+(setq org-archive-location "~/notes/work/archive.org_archive::* Archive")
+
 (advice-add 'org-refile :after 'org-save-all-org-buffers)
 
-(setq org-agenda-span 18
-      org-agenda-start-on-weekday nil
-      org-agenda-start-day "-7d")
+(setq org-agenda-custom-commands
+  '(("d" "Dashboard"
+     ((alltodo "" ((org-agenda-overriding-header "📥 Inbox (Unprocessed Captures)")
+                   (org-agenda-files '("~/notes/work/inbox.org"))))
+
+      (agenda "" ((org-agenda-start-day "+0d")
+                  (org-agenda-span 18)
+                  (org-agenda-start-on-weekday nil)
+                  (org-super-agenda-groups
+                   '((:auto-category t)))))
+
+      (alltodo "" ((org-agenda-overriding-header "🐙 Pull Requests Awaiting Review")
+                   (org-agenda-files '("~/notes/work/data/reviews.org"))
+                   (org-agenda-prefix-format '((todo . "  ")))))
+
+      (alltodo "" ((org-agenda-overriding-header "Unmapped Tasks (No Schedule/Deadline)")
+                   (org-agenda-skip-function '(org-agenda-skip-entry-if 'scheduled 'deadline))))))))
 
 (setq org-capture-templates
       '(("a" "Agenda - task" entry
          (file+headline org-default-agenda-file "Inbox")
          "* TODO %?\nSCHEDULED: <%(org-read-date nil nil \"+1d\")>\n%a")))
+
+(use-package org-ql
+  :ensure t
+  :bind (("C-c q" . org-ql-search))) ;; Bind to whatever key you prefer
 
 (use-package org-fancy-priorities
   :ensure t
@@ -728,11 +850,10 @@
 ;; C-c o prefix for org commands
 (define-prefix-command 'obp/org-prefix-map)
 (global-set-key (kbd "C-c o") 'obp/org-prefix-map)
+(global-set-key (kbd "C-c a") 'obp/org-agenda-in-tab)
+(global-set-key (kbd "C-c c") 'org-capture)
 
 ;; Global org keybindings (work everywhere)
-(define-key obp/org-prefix-map (kbd "a") (lambda () (interactive) (org-agenda nil "n")))
-(define-key obp/org-prefix-map (kbd "A") 'org-agenda)
-(define-key obp/org-prefix-map (kbd "c") 'org-capture)
 (define-key obp/org-prefix-map (kbd "l") 'org-store-link)
 (define-key obp/org-prefix-map (kbd "q") 'org-ql-search)
 
@@ -756,7 +877,10 @@
   (define-key org-agenda-mode-map (kbd "C-c o t") 'org-agenda-set-tags)
   (define-key org-agenda-mode-map (kbd "C-c o n") 'org-agenda-add-note)
   (define-key org-agenda-mode-map (kbd "C-c o r") 'org-agenda-refile)
-  (define-key org-agenda-mode-map (kbd "C-c o x") 'org-agenda-archive))
+  (define-key org-agenda-mode-map (kbd "C-c o x") 'org-agenda-archive)
+  (define-key org-agenda-mode-map (kbd "C-c o o") 'org-agenda-open-link)
+  (define-key org-agenda-mode-map (kbd "C-c C-c") 'obp/agenda-refresh-and-redraw)
+  )
 
 
 ;; ---------------------------------------------------------------------

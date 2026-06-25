@@ -27,6 +27,8 @@ in
     zathura
     jq
     yq-go
+    go-jsonnet
+    jsonnet-bundler
     gh
     delta
     websocat
