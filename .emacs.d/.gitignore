@@ -4,5 +4,4 @@
 !init.el
 !plugins/
 !plugins/*.el
-!custom.el
 !/straight/versions/default.el

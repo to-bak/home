@@ -816,7 +816,9 @@
 (setq org-log-done 'time)
 (setq org-log-into-drawer t)
 
-(setq org-agenda-files (file-expand-wildcards "~/notes/work/*.org"))
+(setq org-agenda-files '("~/notes/work" "~/notes/work/tickets"))
+
+(setq org-use-property-inheritance '("CATEGORY" "COLUMNS" "ARCHIVE" "LOGGING" "TICKET"))
 
 (setq org-todo-keywords
       '((sequence "TODO(t)" "STARTED(s)" "|" "CLOSED(c)")
@@ -827,6 +829,20 @@
   :ensure nil
   :load-path "~/.emacs.d/plugins"
   :config)
+
+(defvar obp/current-jira-ticket ""
+  "Temporarily stores the Jira ticket number during org-capture.")
+
+(defun obp/get-current-ticket ()
+  "Return the current Jira ticket number for org-capture."
+  obp/current-jira-ticket)
+
+(defun obp/get-ticket-file-path ()
+  "Prompt for a Jira ticket number and return the file path for the tickets directory."
+  (setq obp/current-jira-ticket (read-string "Jira Ticket (e.g., TICKET-123): "))
+  (unless (file-exists-p "~/notes/work/tickets")
+    (make-directory "~/notes/work/tickets" t))
+  (expand-file-name (format "%s.org" obp/current-jira-ticket) "~/notes/work/tickets/"))
 
 (defun obp/agenda-refresh-and-redraw ()
   "Fetch fresh data and instantly update the active agenda buffer view."
@@ -843,14 +859,19 @@
 
 (setq org-archive-location "~/notes/work/archive.org_archive::* Archive")
 
-(advice-add 'org-refile :after 'org-save-all-org-buffers)
-(advice-add 'org-agenda-todo :after 'org-save-all-org-buffers)
-(advice-add 'org-agenda-deadline :after 'org-save-all-org-buffers)
-(advice-add 'org-agenda-schedule :after 'org-save-all-org-buffers)
-(advice-add 'org-agenda-priority :after 'org-save-all-org-buffers)
-(advice-add 'org-agenda-set-tags :after 'org-save-all-org-buffers)
-(advice-add 'org-agenda-add-note :after 'org-save-all-org-buffers)
-(advice-add 'org-agenda-archive :after 'org-save-all-org-buffers)
+(defun obp/org-save-all-org-buffers (&rest _)
+  "Save all org buffers, ignoring any arguments passed by the advised function."
+  (org-save-all-org-buffers))
+
+(advice-add 'org-refile :after 'obp/org-save-all-org-buffers)
+(advice-add 'org-agenda-refile :after 'obp/org-save-all-org-buffers)
+(advice-add 'org-agenda-todo :after 'obp/save-org-buffers-after-actionuffers)
+(advice-add 'org-agenda-deadline :after 'obp/org-save-all-org-buffers)
+(advice-add 'org-agenda-schedule :after 'obp/org-save-all-org-buffers)
+(advice-add 'org-agenda-priority :after 'obp/org-save-all-org-buffers)
+(advice-add 'org-agenda-set-tags :after 'obp/org-save-all-org-buffers)
+(advice-add 'org-agenda-add-note :after 'obp/org-save-all-org-buffers)
+(advice-add 'org-agenda-archive :after 'obp/org-save-all-org-buffers)
 
 (defun obp/org-agenda-skip-unmapped-and-someday ()
   "Skip entries that are scheduled, have a deadline, or are marked as SOMEDAY."
@@ -893,22 +914,72 @@
            '((:auto-category t)))))
   "Block for BACKLOG tasks, automatically grouped by category.")
 
+
+(defvar obp/org-agenda-block-ongoing-tickets
+  '(tags "TICKET+LEVEL=1"
+         ((org-agenda-overriding-header "⚡ Active Tickets Index")
+          (org-agenda-files '("~/notes/work/tickets"))
+          (org-agenda-prefix-format '((tags . "  ")))))
+  "A simple index of all top-level ticket files.")
+
+(defun obp/org-agenda-skip-ticket-noise ()
+  (let ((level (org-outline-level))
+        (todo (org-get-todo-state)))
+    (if (or (= level 1) todo)
+        nil
+      (save-excursion (or (outline-next-heading) (point-max))))))
+
+(defvar obp/org-agenda-block-ticket
+  '(tags "TICKET"
+         ((org-agenda-overriding-header "🤖 Active Tickets")
+          (org-agenda-files '("~/notes/work/tickets"))
+          (org-agenda-skip-function 'obp/org-agenda-skip-ticket-noise)
+          (org-agenda-prefix-format '((tags . "  ")))
+          (org-super-agenda-groups
+           '((:auto-property "TICKET")))))
+  "Block displaying active tickets and their actionable TODOs grouped by ticket property.")
+
 ;; --- Main Custom Commands ---
 
 (setq org-agenda-custom-commands
       `(("d" "Dashboard"
          (,obp/org-agenda-block-inbox
+          ,obp/org-agenda-block-ongoing-tickets
           ,obp/org-agenda-block-agenda
           ,obp/org-agenda-block-prs
           ,obp/org-agenda-block-unmapped))
 
         ("f" "☁️ Someday" (,obp/org-agenda-block-someday))
-        ("b" "Backlog" (,obp/org-agenda-block-backlog))))
+        ("b" "Backlog" (,obp/org-agenda-block-backlog))
+        ("p" "🤖 Tickets" (,obp/org-agenda-block-ticket))))
+
+(defvar obp/org-capture-template-agenda
+  '(entry
+    (file+headline org-default-agenda-file "Inbox")
+    "* TODO %?\nSCHEDULED: <%(org-read-date nil nil \"+1d\")>\n%a")
+  "Standard capture template for agenda tasks (type, target, template).")
+
+(defvar obp/org-capture-template-ticket
+  `(plain
+    (file obp/get-ticket-file-path)
+    ,(concat
+      "* %(obp/get-current-ticket) - %^{Ticket Title} :TICKET:\n"
+      ":PROPERTIES:\n"
+      ":TICKET: %(obp/get-current-ticket)\n"
+      ":CATEGORY: %^{Project Category}\n"
+      ":END:\n\n"
+      "** Context / Background\n"
+      "%?\n\n"
+      "** AI Guidelines\n"
+      "Please adhere to the high-level guidelines in my manifest: [[id:dfac4c1b-f48b-4f6b-b55e-cb98f43d4168][Smartconnect AI Manifest]]\n\n"
+      "** Action Items\n\n"
+      "** Constraints & Exclusions\n"
+      "- "))
+  "Capture template for dynamic Jira Tickets.")
 
 (setq org-capture-templates
-      '(("a" "Agenda - task" entry
-         (file+headline org-default-agenda-file "Inbox")
-         "* TODO %?\nSCHEDULED: <%(org-read-date nil nil \"+1d\")>\n%a")))
+      `(("a" "Agenda - task"      ,@obp/org-capture-template-agenda)
+        ("p" "AI Prompt / Ticket" ,@obp/org-capture-template-ticket)))
 
 (use-package org-ql
   :ensure t
