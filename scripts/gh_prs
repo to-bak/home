@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+set -eu
+
+if [[ $# -eq 0 ]]; then
+  echo "Usage: gh_prs <label>" >&2
+  exit 1
+fi
+
+search_prs() {
+  gh api graphql -f query='
+    query($q: String!) {
+      search(query: $q, type: ISSUE, first: 30) {
+        nodes {
+          ... on PullRequest {
+            title
+            url
+            isDraft
+            author { login }
+            repository { name }
+            reviews(first: 1, states: APPROVED, author: "'"$GH_USER"'") {
+              totalCount
+            }
+          }
+        }
+      }
+    }' -f q="is:pr is:open label:$1" \
+    --jq '.data.search.nodes[] | select(.isDraft == false or .author.login == "'"$GH_USER"'") | [
+      .reviews.totalCount, (.isDraft | tostring), .title, .author.login, .repository.name, .url
+    ] | @tsv'
+}
+
+format_prs() {
+  while IFS=$'\t' read -r approved draft title author repo url; do
+    if [[ "$author" == "$GH_USER" && "$draft" == "true" ]]; then
+      emoji="📝"
+    elif [[ "$author" == "$GH_USER" ]]; then
+      emoji="🧑"
+    elif [[ "$approved" -gt 0 ]]; then
+      emoji="✅"
+    else
+      emoji="🚫"
+    fi
+    printf '%s\t%s\t%s\t%s\t%s\n' "$emoji" "$title" "$author" "$repo" "$url"
+  done
+}
+
+sort_prs() {
+  sort -t$'\t' -k2,2f -k3,3f
+}
+
+GH_USER=$(gh api user --jq '.login')
+
+search_prs "$1" |
+  format_prs |
+  sort_prs

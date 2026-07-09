@@ -1,0 +1,206 @@
+#!/usr/bin/env bash
+# sessionizer — tmux session picker
+#
+# Usage:
+#   sessionizer list         Print session candidates
+#   sessionizer attach       Read a "list" line from stdin and switch to/create session
+#   sessionizer agents       List all panes running AI agents
+#   sessionizer attach-pane  Read an "agents" line from stdin and switch to that pane
+#
+# Dirs are configured in ~/.config/sessionizer/config (managed by nix).
+
+# ── Load config ───────────────────────────────────────────────────────────────
+DIRS_SHALLOW=()
+DIRS_DEEP=()
+AGENT_COMMANDS=()
+
+CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/sessionizer/config"
+# shellcheck source=/dev/null
+[[ -f "$CONFIG" ]] && source "$CONFIG"
+# ─────────────────────────────────────────────────────────────────────────────
+
+cmd_list() {
+    declare -A seen
+
+    local DIM='\e[2m'
+    local GREEN='\e[32m'
+    local RESET='\e[0m'
+    local DOT_NEW="${DIM}○${RESET}"
+    local DOT_RUN="${GREEN}●${RESET}"
+
+    # Pre-compute open sessions so we can suppress their dir entries
+    declare -A open_sessions
+    while IFS= read -r name; do
+        [[ -n "$name" ]] && open_sessions["$name"]=1
+    done < <(tmux list-sessions -F "#{session_name}" 2>/dev/null)
+
+    # Deep dirs — same: skip if already open
+    for dir in "${DIRS_DEEP[@]}"; do
+        [[ -d "$dir" ]] || continue
+        name="$(basename "$dir")"
+        if [[ -z "${open_sessions[$name]}" && -z "${seen[$name]}" ]]; then
+            seen["$name"]=1
+            printf "${DOT_NEW} %s\t%s\n" "$name" "$dir"
+        fi
+        while IFS= read -r subdir; do
+            child="$(basename "$subdir")"
+            [[ -n "${seen[$child]}" ]] && continue
+            [[ -n "${open_sessions[$child]}" ]] && continue
+            seen["$child"]=1
+            printf "${DOT_NEW} %s\t%s\n" "$child" "$subdir"
+        done < <(find "$dir" -mindepth 1 -maxdepth 1 -type d ! -name '.*' 2>/dev/null | sort)
+    done
+
+    # Shallow dirs — skip if session is already open (it will appear at the bottom)
+    for dir in "${DIRS_SHALLOW[@]}"; do
+        [[ -d "$dir" ]] || continue
+        name="$(basename "$dir")"
+        [[ -n "${open_sessions[$name]}" ]] && continue
+        seen["$name"]=1
+        printf "${DOT_NEW} %s\t%s\n" "$name" "$dir"
+    done
+
+    # All existing tmux sessions at the bottom, sorted by last attached (oldest first)
+    while IFS= read -r name; do
+        [[ -n "$name" ]] || continue
+        printf "${DOT_RUN} %s\n" "$name"
+    done < <(tmux list-sessions -F "#{session_last_attached} #{session_name}" 2>/dev/null | sort -n | awk '{print $2}')
+}
+
+cmd_attach() {
+    IFS=$'\t' read -r name path || exit 0
+    [[ -z "$name" ]] && exit 0
+
+    if tmux has-session -t "=$name" 2>/dev/null; then
+        tmux switch-client -t "=$name"
+    elif [[ -n "$path" ]]; then
+        tmux new-session -d -s "$name" -c "$path"
+        tmux switch-client -t "=$name"
+    else
+        tmux new-session -d -s "$name"
+        tmux switch-client -t "=$name"
+    fi
+}
+
+cmd_agents() {
+    while IFS='|' read -r session window_idx window_name pane_idx cmd; do
+        for agent in "${AGENT_COMMANDS[@]}"; do
+            if [[ "$cmd" == "$agent" ]]; then
+                display="${session}:${window_name} (${cmd})"
+                target="${session}:${window_idx}.${pane_idx}"
+                printf '%s\t%s\n' "$display" "$target"
+                break
+            fi
+        done
+    done < <(tmux list-panes -a -F "#{session_name}|#{window_index}|#{window_name}|#{pane_index}|#{pane_current_command}" 2>/dev/null)
+}
+
+cmd_panes() {
+    tmux list-panes -a -F "#{session_name}|#{window_index}|#{window_name}|#{pane_index}|#{pane_current_command}" 2>/dev/null \
+    | while IFS='|' read -r session window_idx window_name pane_idx cmd; do
+        display="${session}:${window_name} — ${cmd}"
+        target="${session}:${window_idx}.${pane_idx}"
+        printf '%s\t%s\n' "$display" "$target"
+    done
+}
+
+cmd_attach_pane() {
+    IFS=$'\t' read -r display target || exit 0
+    [[ -z "$target" ]] && exit 0
+    local session="${target%%:*}"
+    local window="${target#*:}"; window="${window%%.*}"
+    tmux switch-client -t "=$session"
+    tmux select-window -t "=${session}:${window}"
+    tmux select-pane -t "=${target}"
+}
+
+cmd_preview() {
+    local display="$1"
+    local path="$2"
+    # Strip leading indicator (e.g. "○ " or "● ")
+    local name="${display#* }"
+
+    if [[ "$path" == /* ]]; then
+        # Dir entry — show directory listing
+        ls -lah --color=always "$path" 2>/dev/null
+    elif [[ "$path" == *:*.* ]]; then
+        # Agent entry — capture specific pane, tail to show most recent output
+        tmux capture-pane -t "$path" -p -e 2>/dev/null | tail -40
+    else
+        # Bare session name — capture its active pane, tail to show most recent output
+        tmux capture-pane -t "$name" -p -e 2>/dev/null | tail -40
+    fi
+}
+
+# Unified attach: handles dir entries, bare sessions, and pane targets
+cmd_attach_smart() {
+    IFS=$'\t' read -r display path || exit 0
+    [[ -z "$display" ]] && exit 0
+    # Strip leading indicator (e.g. "○ " or "● ")
+    local name="${display#* }"
+
+    if [[ "$path" == *:*.* ]]; then
+        # Agent pane target (session:window.pane)
+        local session="${path%%:*}"
+        local window="${path#*:}"; window="${window%%.*}"
+        tmux switch-client -t "=$session"
+        tmux select-window -t "${session}:${window}"
+        tmux select-pane -t "$path"
+    elif [[ "$path" == /* ]]; then
+        # Dir entry — create or switch to session
+        if tmux has-session -t "=$name" 2>/dev/null; then
+            tmux switch-client -t "=$name"
+        else
+            tmux new-session -d -s "$name" -c "$path"
+            tmux switch-client -t "=$name"
+        fi
+    else
+        # Bare session name
+        if tmux has-session -t "=$name" 2>/dev/null; then
+            tmux switch-client -t "=$name"
+        else
+            tmux new-session -d -s "$name"
+            tmux switch-client -t "=$name"
+        fi
+    fi
+}
+
+_TAB_CMDS=("list" "agents" "panes")
+_TAB_HEADERS=(
+    "[ Sessions ]   Agents    Panes"
+    "  Sessions   [ Agents ]   Panes"
+    "  Sessions     Agents   [ Panes ]"
+)
+
+# tab-go next|prev STATE_FILE — outputs an fzf action string to reload the adjacent tab
+cmd_tab_go() {
+    local direction="$1"
+    local state_file="$2"
+    local self; self="$(realpath "${BASH_SOURCE[0]}")"
+
+    local idx; idx=$(cat "$state_file" 2>/dev/null); [[ "$idx" =~ ^[0-9]+$ ]] || idx=0
+
+    local next
+    if [[ "$direction" == "next" ]]; then
+        next=$(( idx + 1 ))
+        [[ $next -ge ${#_TAB_CMDS[@]} ]] && return 0
+    else
+        next=$(( idx - 1 ))
+        [[ $next -lt 0 ]] && return 0
+    fi
+
+    echo "$next" > "$state_file"
+    echo "reload($self ${_TAB_CMDS[$next]})+change-header(${_TAB_HEADERS[$next]})"
+}
+
+case "${1:-}" in
+    list)          cmd_list ;;
+    attach)        cmd_attach ;;
+    agents)        cmd_agents ;;
+    panes)         cmd_panes ;;
+    attach-pane)   cmd_attach_pane ;;
+    attach-smart)  cmd_attach_smart ;;
+    preview)       cmd_preview "$2" "$3" ;;
+    tab-go)        cmd_tab_go "$2" "$3" ;;
+    *)             printf 'Usage: %s {list|attach|agents|panes|attach-pane|attach-smart|preview|tab-go}\n' "$(basename "$0")" >&2; exit 1 ;;
+esac

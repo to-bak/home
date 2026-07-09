@@ -1,0 +1,7 @@
+*
+!.gitignore
+!config.org
+!init.el
+!plugins/
+!plugins/*.el
+!/straight/versions/default.el
