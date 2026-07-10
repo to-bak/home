@@ -851,7 +851,6 @@
 ;; ---------------------------------------------------------------------
 ;; Tabspaces
 ;; ---------------------------------------------------------------------
-;; --- 1. The Command ---
 (defun my/consult-project-files-and-buffers ()
   "Find files and buffers strictly within the current project."
   (interactive)
@@ -866,21 +865,25 @@
     (user-error "Not in a project!")))
 
 
-;; --- 2. The Sources ---
 (with-eval-after-load 'consult
-  ;; Source 1: Open Buffers in the CURRENT project only
   (defvar my/consult-source-project-open-buffers
     `(:name     "Project Buffers"
       :narrow   ?b
       :category buffer
       :face     consult-buffer
-      :sort     nil  ;; Prevent alphabetical scrambling
+      :sort     nil
       :action   ,#'switch-to-buffer
       :items    ,(lambda ()
-                   (when-let ((pr (project-current nil)))
-                     (mapcar #'buffer-name (project-buffers pr))))))
+                   (when-let* ((pr (project-current nil))
+                               (root (project-root pr)))
+                     (mapcar (lambda (b)
+                               (let ((file (buffer-file-name b))
+                                     (name (buffer-name b)))
+                                 (if file
+                                     (propertize (file-relative-name file root) 'consult--candidate b)
+                                   (propertize name 'consult--candidate b))))
+                             (project-buffers pr))))))
 
-;; Source 2: Unopened Files in the CURRENT project only
   (defvar my/consult-source-project-unopened-files
     `(:name     "Unopened Project Files"
       :narrow   ?f
@@ -908,8 +911,6 @@
   (interactive)
   (require 'consult)
 
-  ;; Temporarily disable global sorting algorithms (like Vertico's)
-  ;; so they don't mix candidates across our defined sources.
   (let ((vertico-sort-function nil)
         (ivy-sort-functions-alist nil))
 
@@ -931,9 +932,6 @@
       :narrow   ?p
       :category project
       :face     consult-file
-      ;; We rely entirely on your advice! Consult hands the directory to
-      ;; project-switch-project, your advice intercepts it, creates the tab,
-      ;; and then continues with the default project behavior.
       :action   ,#'project-switch-project
       :items    ,#'project-known-project-roots)))
 
@@ -946,7 +944,6 @@
   (tabspaces-remove-to-default t)
   (tabspaces-include-buffers '("*scratch*" "*Messages*"))
 
-  ;; Bind our new unified command directly to 'p'
   :bind (:map project-prefix-map
               ("p" . my/consult-tabspaces-and-projects)
               ("f" . my/consult-project-files-and-buffers))
