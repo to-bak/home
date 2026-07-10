@@ -66,6 +66,16 @@
 (add-to-list 'backup-directory-alist
              (cons ".*" "~/backup"))
 
+(use-package exec-path-from-shell
+  :ensure t
+  :config
+  ;; Only run this on macOS or Linux GUI sessions,
+  ;; as terminal Emacs already has the environment.
+  (when (memq window-system '(mac ns x pgtk))
+    (exec-path-from-shell-initialize)))
+
+(setenv "BOX_TESTS_PATH" "../box_tests")
+
 ;; Replace yes/no prompt with y/n
 (defalias 'yes-or-no-p 'y-or-n-p)
 (scroll-bar-mode -1)        ; Disable visible scrollbar
@@ -102,6 +112,7 @@
 ;; Disable line numbers for some modes
 (dolist (mode '(term-mode-hook
                 shell-mode-hook
+                vterm-mode-hook
                 treemacs-mode-hook
                 eshell-mode-hook))
   (add-hook mode (lambda () (display-line-numbers-mode 0))))
@@ -112,6 +123,21 @@
 
 (global-hl-line-mode 1) ; Highlight current line
 
+(use-package vterm
+  :straight nil
+  :commands vterm
+  :config
+  (setq vterm-max-scrollback 10000
+        vterm-kill-buffer-on-exit t))
+
+(use-package multi-vterm
+  :bind (("C-c t" . multi-vterm-project)))
+
+(with-eval-after-load 'vterm
+  (setq vterm-shell (concat (executable-find "fish") " --login")))
+
+(with-eval-after-load 'evil
+  (evil-set-initial-state 'vterm-mode 'emacs))
 
 ;; which-key
 (use-package which-key
@@ -153,11 +179,12 @@
   (eshell-load . eat-eshell-mode)
   (eshell-load . eat-eshell-visual-command-mode)
   :config
-  (setq eat-kill-buffer-on-exit t))
+  (setq eat-kill-buffer-on-exit t)
+  (setq eat-term-name "xterm-256color"))
+
 
 (use-package eshell
   :ensure nil ; Built-in
-  :bind (("C-c t" . project-eshell)) ; Replaces multi-vterm-project
   :config
   ;; Keep eshell buffer behavior clean and terminal-like
   (setq eshell-scroll-to-bottom-on-input 'all
@@ -177,16 +204,6 @@
     (evil-set-initial-state 'eshell-mode 'emacs)
     (evil-set-initial-state 'eat-mode 'emacs)))
 
-
-;; ---------------------------------------------------------------------
-;; Project
-;; ---------------------------------------------------------------------
-(use-package project
-  :ensure nil
-  :bind-keymap ("C-c p" . project-prefix-map))
-
-;; drop the prompt menu, go straight into find-file
-(setq project-switch-commands #'magit-project-status)
 
 ;; ---------------------------------------------------------------------
 ;; Project
@@ -826,6 +843,40 @@
 ;; ---------------------------------------------------------------------
 ;; Tabspaces
 ;; ---------------------------------------------------------------------
+(defun my/consult-tabspaces-and-projects ()
+  "Unified Consult interface for Tabspaces and Projects."
+  (interactive)
+  (require 'consult)
+
+  ;; Temporarily disable global sorting algorithms (like Vertico's)
+  ;; so they don't mix candidates across our defined sources.
+  (let ((vertico-sort-function nil)
+        (ivy-sort-functions-alist nil))
+
+    (consult--multi '(my/consult-source-tabspaces my/consult-source-projects)
+                    :prompt "Workspace/Project: ")))
+
+(with-eval-after-load 'consult
+  (defvar my/consult-source-tabspaces
+    `(:name     "Active Workspaces"
+      :narrow   ?w
+      :category tab
+      :face     font-lock-keyword-face
+      :sort     nil
+      :action   ,#'tabspaces-switch-or-create-workspace
+      :items    ,#'tabspaces--list-tabspaces))
+
+  (defvar my/consult-source-projects
+    `(:name     "Projects"
+      :narrow   ?p
+      :category project
+      :face     consult-file
+      ;; We rely entirely on your advice! Consult hands the directory to
+      ;; project-switch-project, your advice intercepts it, creates the tab,
+      ;; and then continues with the default project behavior.
+      :action   ,#'project-switch-project
+      :items    ,#'project-known-project-roots)))
+
 (use-package tabspaces
   :ensure t
   :hook (after-init . tabspaces-mode)
@@ -834,6 +885,11 @@
   (tabspaces-default-tab "Default")
   (tabspaces-remove-to-default t)
   (tabspaces-include-buffers '("*scratch*" "*Messages*"))
+
+  ;; Bind our new unified command directly to 'p'
+  :bind (:map project-prefix-map
+              ("p" . my/consult-tabspaces-and-projects))
+
   :config
 
   (defun obp/force-tabspaces-on-project-switch (orig-fun dir &rest args)
@@ -849,6 +905,10 @@
   (advice-add 'org-roam-node-insert :around #'obp/force-roam-tabspace)
   (advice-add 'org-roam-buffer-toggle :around #'obp/force-roam-tabspace)
   (advice-add 'project-switch-project :around #'obp/force-tabspaces-on-project-switch))
+
+(setq tab-bar-show nil)
+(add-hook 'after-init-hook #'tab-bar-mode)
+
 
 
 ;; ---------------------------------------------------------------------
@@ -1146,11 +1206,3 @@ _q_uit        _C--_
   ("q" nil))
 
 (global-set-key (kbd "C-c w") 'hydra-window/body)
-
-;; ---------------------------------------------------------------------
-;; Tab Bar
-;; ---------------------------------------------------------------------
-(setq tab-bar-show nil)
-(add-hook 'after-init-hook #'tab-bar-mode)
-(global-set-key (kbd "C-c f") 'tab-switch)
-(global-set-key (kbd "C-c F") 'tab-close)
