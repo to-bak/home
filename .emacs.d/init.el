@@ -102,8 +102,11 @@
 (column-number-mode 1)
 
 ;; Set both the type and the default buffer-local variable
-(setq display-line-numbers-type 'relative)
-(setq-default display-line-numbers 'relative)
+;; (setq display-line-numbers-type 'relative)
+;; (setq-default display-line-numbers 'relative)
+(setq display-line-numbers-type 'visual)
+(setq-default display-line-numbers 'visual)
+(setq evil-respect-visual-line-mode t)
 
 ;; Toggle the global mode off, then back on to force a refresh on active buffers
 (global-display-line-numbers-mode -1)
@@ -276,7 +279,6 @@
                                 (agenda    . "nf-oct-calendar")
                                 (projects  . "nf-oct-rocket")))
 (setq dashboard-agenda-sort-strategy '(priority-up))
-
 
 ;; ---------------------------------------------------------------------
 ;; Completion
@@ -872,7 +874,11 @@
       :category buffer
       :face     consult-buffer
       :sort     nil
-      :action   ,#'switch-to-buffer
+      ;; NEW: Intercept the string, extract the hidden buffer object, and switch to it.
+      :action   ,(lambda (cand)
+                   (let ((actual-buffer (get-text-property 0 'consult--candidate cand)))
+                     ;; Switch to the hidden buffer object (or fallback to the string name)
+                     (switch-to-buffer (or actual-buffer cand))))
       :items    ,(lambda ()
                    (when-let* ((pr (project-current nil))
                                (root (project-root pr)))
@@ -923,7 +929,6 @@
       :narrow   ?t
       :category tab
       :face     font-lock-keyword-face
-      :sort     nil
       :action   ,#'tabspaces-switch-or-create-workspace
       :items    ,#'tabspaces--list-tabspaces))
 
@@ -1058,6 +1063,7 @@
   "Switch to (or create) a tab named 'agenda' and open Org Agenda."
   (interactive)
   (tab-switch "agenda")
+  (cd "~/notes/work/")
   (org-agenda))
 
 (setq org-archive-location "~/notes/work/archive.org_archive::* Archive")
