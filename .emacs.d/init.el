@@ -321,9 +321,10 @@
   :bind (:map vertico-map
               ("C-j" . vertico-next)
               ("C-k" . vertico-previous)
-              ("C-f" . vertico-exit)
+              ("C-f" . vertico-scroll-up)
+              ("C-b" . vertico-scroll-down)
               :map minibuffer-local-map
-              ("M-h" . backward-kill-word))
+              ("<C-backspace>" . backward-kill-word))
   :custom
   (vertico-cycle t)
   :init
@@ -425,6 +426,13 @@
   (marginalia-annotators '(marginalia-annotators-heavy marginalia-annotators-light nil))
   :init
   (marginalia-mode))
+
+(use-package nerd-icons-completion
+  :after marginalia
+  :config
+  (nerd-icons-completion-mode)
+  ;; Hooks it into Marginalia so icons align perfectly
+  (add-hook 'marginalia-mode-hook #'nerd-icons-completion-marginalia-setup))
 
 ;; since embark-export buffers is read-only by default
 ;; remove read-only before deleting line
@@ -843,6 +851,58 @@
 ;; ---------------------------------------------------------------------
 ;; Tabspaces
 ;; ---------------------------------------------------------------------
+;; --- 1. The Command ---
+(defun my/consult-project-files-and-buffers ()
+  "Find files and buffers strictly within the current project."
+  (interactive)
+  (require 'consult)
+  (if (project-current nil)
+      ;; Disable global sorting so Open Buffers stay permanently on top
+      (let ((vertico-sort-function nil)
+            (ivy-sort-functions-alist nil))
+        (consult--multi '(my/consult-source-project-open-buffers
+                          my/consult-source-project-unopened-files)
+                        :prompt "Project File/Buffer: "))
+    (user-error "Not in a project!")))
+
+
+;; --- 2. The Sources ---
+(with-eval-after-load 'consult
+  ;; Source 1: Open Buffers in the CURRENT project only
+  (defvar my/consult-source-project-open-buffers
+    `(:name     "Project Buffers"
+      :narrow   ?b
+      :category buffer
+      :face     consult-buffer
+      :sort     nil  ;; Prevent alphabetical scrambling
+      :action   ,#'switch-to-buffer
+      :items    ,(lambda ()
+                   (when-let ((pr (project-current nil)))
+                     (mapcar #'buffer-name (project-buffers pr))))))
+
+;; Source 2: Unopened Files in the CURRENT project only
+  (defvar my/consult-source-project-unopened-files
+    `(:name     "Unopened Project Files"
+      :narrow   ?f
+      :category file
+      :face     consult-file
+      :action   ,(lambda (f)
+                   ;; Re-attach the project root path before opening
+                   (when-let ((pr (project-current nil)))
+                     (find-file (expand-file-name f (project-root pr)))))
+      :items    ,(lambda ()
+                   (when-let* ((pr (project-current nil))
+                               (root (project-root pr)))
+                     (let ((all-files (project-files pr))
+                           ;; Get absolute paths of open files to filter them out
+                           (open-files (delq nil (mapcar #'buffer-file-name (project-buffers pr)))))
+                       (delq nil
+                             (mapcar (lambda (f)
+                                       (unless (member f open-files)
+                                         ;; Display clean relative paths in the UI
+                                         (file-relative-name f root)))
+                                     all-files))))))))
+
 (defun my/consult-tabspaces-and-projects ()
   "Unified Consult interface for Tabspaces and Projects."
   (interactive)
@@ -859,7 +919,7 @@
 (with-eval-after-load 'consult
   (defvar my/consult-source-tabspaces
     `(:name     "Active Workspaces"
-      :narrow   ?w
+      :narrow   ?t
       :category tab
       :face     font-lock-keyword-face
       :sort     nil
@@ -888,7 +948,8 @@
 
   ;; Bind our new unified command directly to 'p'
   :bind (:map project-prefix-map
-              ("p" . my/consult-tabspaces-and-projects))
+              ("p" . my/consult-tabspaces-and-projects)
+              ("f" . my/consult-project-files-and-buffers))
 
   :config
 
