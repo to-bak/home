@@ -881,14 +881,18 @@
                      (switch-to-buffer (or actual-buffer cand))))
       :items    ,(lambda ()
                    (when-let* ((pr (project-current nil))
-                               (root (project-root pr)))
+                               (root (project-root pr))
+                               (proj-bufs (project-buffers pr)))
                      (mapcar (lambda (b)
                                (let ((file (buffer-file-name b))
                                      (name (buffer-name b)))
                                  (if file
                                      (propertize (file-relative-name file root) 'consult--candidate b)
                                    (propertize name 'consult--candidate b))))
-                             (project-buffers pr))))))
+                             (consult--buffer-sort-visibility
+                              (seq-filter (lambda (b)
+                                            (not (string-prefix-p " " (buffer-name b))))
+                                          (project-buffers pr))))))))
 
   (defvar my/consult-source-project-unopened-files
     `(:name     "Unopened Project Files"
@@ -930,7 +934,9 @@
       :category tab
       :face     font-lock-keyword-face
       :action   ,#'tabspaces-switch-or-create-workspace
-      :items    ,#'tabspaces--list-tabspaces))
+      :items    ,(lambda ()
+                   (mapcar (lambda (tab) (alist-get 'name tab))
+                           (tab-bar--tabs-recent)))))
 
   (defvar my/consult-source-projects
     `(:name     "Projects"
