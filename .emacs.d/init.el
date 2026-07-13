@@ -1089,9 +1089,9 @@
 (advice-add 'org-agenda-archive :after 'obp/org-save-all-org-buffers)
 
 (defun obp/org-agenda-skip-unmapped-and-someday ()
-  "Skip entries that are scheduled, have a deadline, or are marked as SOMEDAY."
+  "Skip entries that have dates, or belong to deferred/closed states."
   (or (org-agenda-skip-entry-if 'scheduled 'deadline)
-      (when (string= (org-get-todo-state) "SOMEDAY")
+      (when (member (org-get-todo-state) '("SOMEDAY" "PARKED" "BACKLOG" "CLOSED" "CANCELLED"))
         (save-excursion (or (outline-next-heading) (point-max))))))
 
 (defvar obp/org-agenda-block-inbox
@@ -1134,6 +1134,18 @@
            '((:auto-category t)))))
   "Block for BACKLOG tasks, automatically grouped by category.")
 
+(defvar obp/org-agenda-block-parked
+  '(todo "PARKED"
+         ((org-agenda-overriding-header "🚧 Parked")
+          (org-super-agenda-groups
+           '((:auto-category t))))))
+
+(defvar obp/org-agenda-block-closed
+  '(todo "CLOSED|CANCELLED"
+         ((org-agenda-overriding-header "✅ Closed & Cancelled Items")
+          (org-super-agenda-groups
+           '((:auto-category t))))))
+
 (defvar obp/org-agenda-block-ongoing-tickets
   '(tags "TICKET+LEVEL=1"
          ((org-agenda-overriding-header "⚡ Active Tickets Index")
@@ -1155,8 +1167,14 @@
          (,obp/org-agenda-block-inbox
           ,obp/org-agenda-block-ongoing-tickets
           ,obp/org-agenda-block-agenda
-          ,obp/org-agenda-block-prs
-          ,obp/org-agenda-block-unmapped))
+          ,obp/org-agenda-block-prs))
+
+        ("w" "Weekly Review"
+         (,obp/org-agenda-block-unmapped
+          ,obp/org-agenda-block-parked
+          ,obp/org-agenda-block-backlog
+          ,obp/org-agenda-block-someday
+          ,obp/org-agenda-block-closed))
 
         ("f" "☁️ Someday" (,obp/org-agenda-block-someday))
         ("b" "Backlog" (,obp/org-agenda-block-backlog))
