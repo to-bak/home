@@ -680,7 +680,16 @@
 (add-hook 'org-mode-hook (lambda () (org-autolist-mode)))
 
 
-(use-package org-modern)
+(use-package org-modern
+  :ensure t
+  :custom
+  (org-modern-fold-stars
+   '(("◉" . "◯")
+     ("│" . "└")
+     (" │" . " └")
+     (" │" . " └")))
+  :init
+  (setq org-modern-hide-stars " "))
 
 (setq
  ;; Edit settings
@@ -694,8 +703,8 @@
  org-hide-emphasis-markers t
  org-pretty-entities t
  org-agenda-tags-column 0
- org-modern-star nil
- org-modern-hide-stars nil
+ ;;org-modern-star nil
+ ;;org-modern-hide-stars nil
  org-ellipsis "…")
 
 (set-face-attribute 'org-modern-symbol nil :height 1.1)
@@ -712,12 +721,12 @@
 
 (global-org-modern-mode)
 
-(use-package org-superstar
-:after org
-:hook (org-mode . org-superstar-mode)
-:custom
-(org-superstar-remove-leading-stars t)
-(org-superstar-headline-bullets-list '("◉" "○" "●" "○" "●" "○" "●")))
+;;(use-package org-superstar
+;;:after org
+;;:hook (org-mode . org-superstar-mode)
+;;:custom
+;;(org-superstar-remove-leading-stars t)
+;;(org-superstar-headline-bullets-list '("◉" "○" "●" "○" "●" "○" "●")))
 
 
 (use-package org-download
@@ -1003,9 +1012,10 @@
         ("@coding" . ?c)
         ("@meeting" . ?m)))
 
+;; this doesn't work with regex
 (setq org-tag-faces
-      '(("TICKET" . (:foreground "#808080"))                           ;; Strict Hex for Gray
-        ("[A-Za-z]+_[0-9]+" . (:foreground "#1e90ff" :weight bold))))  ;; Strict Hex for Dodger Blue
+      '(("TICKET"           . (:foreground "#808080" :background "black"))                            ;; Gray text
+        ("[A-Za-z]+_[0-9]+" . (:background "salmon" :foreground "black" :weight bold)))) ;; Salmon pill
 
 (setq org-agenda-prefix-format
       '((agenda . " %i %?-12t %-10s ") ;; Cleaned! Indent, Time, Schedule. No %c.
@@ -1069,8 +1079,8 @@
   "Switch to (or create) a tab named 'agenda' and open Org Agenda."
   (interactive)
   (tab-switch "agenda")
-  (cd "~/notes/work/")
-  (org-agenda))
+  (let ((default-directory (file-name-as-directory (expand-file-name "~/notes/work/"))))
+    (org-agenda)))
 
 (setq org-archive-location "~/notes/work/archive.org_archive::* Archive")
 
@@ -1080,7 +1090,7 @@
 
 (advice-add 'org-refile :after 'obp/org-save-all-org-buffers)
 (advice-add 'org-agenda-refile :after 'obp/org-save-all-org-buffers)
-(advice-add 'org-agenda-todo :after 'obp/org-save-all-org-buffers) ;; Fixed typo from save-org-buffers-after-actionuffers
+(advice-add 'org-agenda-todo :after 'obp/org-save-all-org-buffers)
 (advice-add 'org-agenda-deadline :after 'obp/org-save-all-org-buffers)
 (advice-add 'org-agenda-schedule :after 'obp/org-save-all-org-buffers)
 (advice-add 'org-agenda-priority :after 'obp/org-save-all-org-buffers)
