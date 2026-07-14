@@ -26,6 +26,29 @@
 ;; without having to specify `:straight t`
 (setq straight-use-package-by-default t)
 
+;; ---------------------------------------------------------------------
+;; host.el
+;; ---------------------------------------------------------------------
+(defvar host/org-agenda-path "~/org"
+  "Default path for Org agenda. Overridden by host.el if present.")
+
+(defvar host/org-roam-path "~/org/roam"
+  "Default path for Org agenda. Overridden by host.el if present.")
+
+(defun host/setup-hyperbole-links ()
+  "Initialize machine-specific Hyperbole links."
+  nil)
+
+(load (expand-file-name "host.el" user-emacs-directory) t)
+
+(defvar host/org-agenda-ticket-path (concat host/org-agenda-path "/tickets")
+  "Default path for Org agenda. Overridden by host.el if present.")
+
+(defvar host/org-agenda-inbox-path (concat host/org-agenda-path "/inbox.org")
+  "Default path for Org agenda. Overridden by host.el if present.")
+
+(defvar host/org-agenda-reviews-path (concat host/org-agenda-path "/data/reviews.org")
+  "Default path for Org agenda. Overridden by host.el if present.")
 
 ;; ---------------------------------------------------------------------
 ;; Misc
@@ -73,8 +96,6 @@
   ;; as terminal Emacs already has the environment.
   (when (memq window-system '(mac ns x pgtk))
     (exec-path-from-shell-initialize)))
-
-(setenv "BOX_TESTS_PATH" "../box_tests")
 
 ;; Replace yes/no prompt with y/n
 (defalias 'yes-or-no-p 'y-or-n-p)
@@ -125,6 +146,28 @@
 (setq-default display-line-numbers-width 3)
 
 (global-hl-line-mode 1) ; Highlight current line
+
+;;(use-package ghostel
+;;  :straight t
+;;  :commands (ghostel ghostel-project)
+;;  ;; Replaces `multi-vterm-project` directly
+;;  :bind (("C-c t" . ghostel-project))
+;;  :config
+;;  ;; Ghostel natively respects Emacs's default shell variables.
+;;  ;; You don't need to pass "--login", Ghostel's shell integration handles it.
+;;  (setq explicit-shell-file-name (executable-find "fish"))
+;;
+;;  ;; Ghostel comes with built-in Evil integration that maps everything correctly
+;;  (with-eval-after-load 'evil
+;;    (require 'ghostel-evil nil t)))
+
+(use-package hyperbole
+  :ensure t
+  :config
+  (hyperbole-mode 1)
+  (global-set-key (kbd "C-c h") #'action-key)
+
+  (host/setup-hyperbole-links))
 
 (use-package vterm
   :straight nil
@@ -627,6 +670,9 @@
           org-eshell
           org-irc))
 
+  (setq org-use-sub-superscripts '{}
+        org-export-with-sub-superscripts '{})
+
   (setq org-refile-targets '((nil :maxlevel . 2)
                              (org-agenda-files :maxlevel . 2)))
 
@@ -790,7 +836,7 @@
 (use-package org-roam
   :ensure t
   :custom
-  (org-roam-directory (file-truename "~/notes/work/roam"))
+  (org-roam-directory (file-truename host/org-roam-path))
   (org-roam-dailies-directory "daily/")
   :bind (("C-c n f" . org-roam-node-find)
          ("C-c n i" . org-roam-node-insert)
@@ -987,12 +1033,20 @@
 (setq tab-bar-show nil)
 (add-hook 'after-init-hook #'tab-bar-mode)
 
+(defun obp/global-switch-buffer ()
+  "Switch to any buffer globally, bypassing Tabspaces."
+  (interactive)
+  ;; Setting this to nil stops Tabspaces from intercepting the prompt
+  (let ((read-buffer-function nil))
+    (call-interactively #'switch-to-buffer)))
+
+(global-set-key (kbd "C-x b") #'obp/global-switch-buffer)
 
 
 ;; ---------------------------------------------------------------------
 ;; Org Agenda
 ;; ---------------------------------------------------------------------
-(setq org-default-agenda-file (concat (file-truename "~/notes/work") "/inbox.org"))
+(setq org-default-agenda-file (file-truename host/org-agenda-inbox-path))
 
 (use-package org-super-agenda
   :ensure t
@@ -1038,7 +1092,8 @@
 (setq org-log-done 'time)
 (setq org-log-into-drawer t)
 
-(setq org-agenda-files '("~/notes/work" "~/notes/work/tickets"))
+(setq org-agenda-files
+      (list host/org-agenda-path host/org-agenda-ticket-path))
 
 (setq org-todo-keywords
       '((sequence "TODO(t)" "STARTED(s)" "|" "CLOSED(c)")
@@ -1064,9 +1119,9 @@
 (defun obp/get-ticket-file-path ()
   "Prompt for a Jira ticket number and return the file path for the tickets directory."
   (setq obp/current-jira-ticket (read-string "Jira Ticket (e.g., TICKET-123): "))
-  (unless (file-exists-p "~/notes/work/tickets")
-    (make-directory "~/notes/work/tickets" t))
-  (expand-file-name (format "%s.org" obp/current-jira-ticket) "~/notes/work/tickets/"))
+  (unless (file-exists-p host/org-agenda-ticket-path)
+    (make-directory host/org-agenda-ticket-path t))
+  (expand-file-name (format "%s.org" obp/current-jira-ticket) host/org-agenda-ticket-path))
 
 (defun obp/agenda-refresh-and-redraw ()
   "Fetch fresh data and instantly update the active agenda buffer view."
@@ -1079,10 +1134,11 @@
   "Switch to (or create) a tab named 'agenda' and open Org Agenda."
   (interactive)
   (tab-switch "agenda")
-  (let ((default-directory (file-name-as-directory (expand-file-name "~/notes/work/"))))
+  (let ((default-directory (file-name-as-directory (expand-file-name host/org-agenda-path))))
     (org-agenda)))
 
-(setq org-archive-location "~/notes/work/archive.org_archive::* Archive")
+(setq org-archive-location
+      (concat host/org-agenda-path "/archive.org_archive::* Archive"))
 
 (defun obp/org-save-all-org-buffers (&rest _)
   "Save all org buffers, ignoring any arguments passed by the advised function."
@@ -1105,8 +1161,8 @@
         (save-excursion (or (outline-next-heading) (point-max))))))
 
 (defvar obp/org-agenda-block-inbox
-  '(alltodo "" ((org-agenda-overriding-header "📥 Inbox (Unprocessed Captures)")
-                (org-agenda-files '("~/notes/work/inbox.org"))))
+  `(alltodo "" ((org-agenda-overriding-header "📥 Inbox (Unprocessed Captures)")
+                (org-agenda-files (list ,host/org-agenda-inbox-path))))
   "Inbox block for unprocessed items.")
 
 (defvar obp/org-agenda-block-agenda
@@ -1118,8 +1174,8 @@
   "Standard 18-day schedule/deadline agenda block.")
 
 (defvar obp/org-agenda-block-prs
-  '(alltodo "" ((org-agenda-overriding-header "🐙 Pull Requests Awaiting Review")
-                (org-agenda-files '("~/notes/work/data/reviews.org"))
+  `(alltodo "" ((org-agenda-overriding-header "🐙 Pull Requests Awaiting Review")
+                (org-agenda-files (list ,host/org-agenda-reviews-path))
                 (org-agenda-prefix-format '((todo . " %i ")))))
   "Block displaying pending pull requests.")
 
@@ -1157,15 +1213,15 @@
            '((:auto-category t))))))
 
 (defvar obp/org-agenda-block-ongoing-tickets
-  '(tags "TICKET+LEVEL=1"
+  `(tags "TICKET+LEVEL=1"
          ((org-agenda-overriding-header "⚡ Active Tickets Index")
-          (org-agenda-files '("~/notes/work/tickets"))))
+           (org-agenda-files (list ,host/org-agenda-ticket-path))))
   "A simple index of all top-level ticket files.")
 
 (defvar obp/org-agenda-block-ticket
-  '(tags-todo "TICKET"
+  `(tags-todo "TICKET"
          ((org-agenda-overriding-header "🤖 Active Tickets")
-          (org-agenda-files '("~/notes/work/tickets"))
+          (org-agenda-files (list ,host/org-agenda-ticket-path))
           (org-super-agenda-groups
            '((:auto-category t)))))
   "Block displaying active tickets and only their actionable TODOs.")
