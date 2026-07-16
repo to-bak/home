@@ -63,12 +63,17 @@
 ;; (setq inhibit-startup-message t)
 
 ;; goto themes: gruvbox, twilight, doom-badger
-(use-package doom-themes)
+(use-package doom-themes
+  :ensure t
+  :init
+  (setq doom-gruvbox-dark-variant "hard")
+  :config
 ;; (load-theme 'doom-sourcerer t)
 ;; (load-theme 'doom-tomorrow-night t)
-(load-theme 'doom-badger t)
 ;; (load-theme 'doom-snazzy)
 ;; (load-theme 'plan9 t)
+  (load-theme 'doom-gruvbox t)
+  (doom-themes-visual-bell-config))
 
 ;; Required by `doom-modeline` to display icons.
 ;; Run `M-x nerd-icons-install-fonts` to install the necessary fonts.
@@ -763,7 +768,13 @@
         ("BACKLOG"   . (:background "dark goldenrod" :foreground "whitesmoke" :weight bold))
         ("SOMEDAY"   . (:background "purple4" :foreground "whitesmoke" :weight bold))
         ("CLOSED"    . (:background "forest green" :foreground "whitesmoke" :weight bold))
-        ("CANCELLED" . (:background "forest green" :foreground "whitesmoke" :weight bold))))
+        ("CANCELLED" . (:background "forest green" :foreground "whitesmoke" :weight bold))
+        ("REVIEW"   . (:background "firebrick" :foreground "whitesmoke" :weight bold))
+        ("AWAITING"   . (:background "cadetblue" :foreground "whitesmoke" :weight bold))
+        ("DRAFT"   . (:background "dark goldenrod" :foreground "whitesmoke" :weight bold))
+        ("MERGED"   . (:background "forest green" :foreground "whitesmoke" :weight bold))
+        ("APPROVED"   . (:background "forest green" :foreground "whitesmoke" :weight bold))
+        ("IDC"   . (:background "forest green" :foreground "whitesmoke" :weight bold))))
 
 (global-org-modern-mode)
 
@@ -1174,9 +1185,10 @@
   "Standard 18-day schedule/deadline agenda block.")
 
 (defvar obp/org-agenda-block-prs
-  `(alltodo "" ((org-agenda-overriding-header "🐙 Pull Requests Awaiting Review")
-                (org-agenda-files (list ,host/org-agenda-reviews-path))
-                (org-agenda-prefix-format '((todo . " %i ")))))
+  `(todo "REVIEW|DRAFT|AWAITING|APPROVED"
+         ((org-agenda-overriding-header "Pull Requests Awaiting Review")
+          (org-agenda-files (list ,host/org-agenda-reviews-path))
+          (org-agenda-prefix-format '((todo . " %i ")))))
   "Block displaying pending pull requests.")
 
 (defvar obp/org-agenda-block-unmapped

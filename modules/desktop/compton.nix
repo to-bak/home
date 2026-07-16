@@ -1,7 +1,7 @@
 { config, pkgs, extendedLib, ... }:
 
 with extendedLib;
-let 
+let
    cfg = config.modules.desktop.compton;
 in
 {
@@ -16,6 +16,7 @@ in
       activeOpacity = 0.96;
       inactiveOpacity = 0.86;
       opacityRules = [
+        "99:class_g = 'emacs'"
         "100:class_g = 'Chromium-browser'"
         "100:class_g = 'Google-chrome'"
         "100:class_g = 'Spotify'"

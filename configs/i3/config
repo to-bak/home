@@ -59,49 +59,49 @@ bindsym Mod4+Shift+r restart
 bindsym Mod4+Shift+space floating toggle
 bindsym Mod4+Shift+x exec i3lock -c 000000
 
-bindsym Mod4+Up focus up 
-bindsym Mod4+a focus parent 
-bindsym Mod4+ae split h 
-bindsym Mod4+d exec rofi -show drun -theme ~/.config/home-manager/configs/rofi/themes/theme1/launcher.sh 
-bindsym Mod4+e layout toggle split 
-bindsym Mod4+f fullscreen toggle 
-bindsym Mod4+h focus left 
-bindsym Mod4+j focus down 
-bindsym Mod4+k focus up 
-bindsym Mod4+l focus right 
-bindsym Mod4+minus scratchpad show 
-bindsym Mod4+r mode resize 
-bindsym Mod4+s layout stacking 
-bindsym Mod4+space focus mode_toggle 
-bindsym Mod4+v split v 
-bindsym Mod4+w layout tabbed 
-bindsym XF86AudioLowerVolume exec amixer -D pulse sset Master 4%- 
-bindsym XF86AudioMute exec amixer -D pulse sset Master toggle 
-bindsym XF86AudioRaiseVolume exec amixer -D pulse sset Master 4%+ 
-bindsym XF86MonBrightnessDown exec brightnessctl set 4%- 
-bindsym XF86MonBrightnessUp exec brightnessctl set 4%+ 
+bindsym Mod4+Up focus up
+bindsym Mod4+a focus parent
+bindsym Mod4+ae split h
+bindsym Mod4+d exec rofi -show drun -theme ~/.config/home-manager/configs/rofi/themes/theme1/launcher.sh
+bindsym Mod4+e layout toggle split
+bindsym Mod4+f fullscreen toggle
+bindsym Mod4+h focus left
+bindsym Mod4+j focus down
+bindsym Mod4+k focus up
+bindsym Mod4+l focus right
+bindsym Mod4+minus scratchpad show
+bindsym Mod4+r mode resize
+bindsym Mod4+s layout stacking
+bindsym Mod4+space focus mode_toggle
+bindsym Mod4+v split v
+bindsym Mod4+w layout tabbed
+bindsym XF86AudioLowerVolume exec amixer -D pulse sset Master 4%-
+bindsym XF86AudioMute exec amixer -D pulse sset Master toggle
+bindsym XF86AudioRaiseVolume exec amixer -D pulse sset Master 4%+
+bindsym XF86MonBrightnessDown exec brightnessctl set 4%-
+bindsym XF86MonBrightnessUp exec brightnessctl set 4%+
 
 mode "resize" {
-  bindsym Down resize grow height 10 px or 10 ppt 
-  bindsym Escape mode default 
-  bindsym Left resize shrink width 10 px or 10 ppt 
-  bindsym Return mode default 
-  bindsym Right resize grow width 10 px or 10 ppt 
-  bindsym Up resize shrink height 10 px or 10 ppt 
-  bindsym h resize grow width 10 px or 10 ppt 
-  bindsym j resize grow height 10 px or 10 ppt 
-  bindsym k resize shrink height 10 px or 10 ppt 
-  bindsym l resize shrink width 10 px or 10 ppt 
+  bindsym Down resize grow height 10 px or 10 ppt
+  bindsym Escape mode default
+  bindsym Left resize shrink width 10 px or 10 ppt
+  bindsym Return mode default
+  bindsym Right resize grow width 10 px or 10 ppt
+  bindsym Up resize shrink height 10 px or 10 ppt
+  bindsym h resize grow width 10 px or 10 ppt
+  bindsym j resize grow height 10 px or 10 ppt
+  bindsym k resize shrink height 10 px or 10 ppt
+  bindsym l resize shrink width 10 px or 10 ppt
 }
 
 gaps inner 5
 gaps outer 5
 smart_gaps on
 
-exec_always --no-startup-id i3-msg workspace 1 
-exec_always --no-startup-id systemctl --user restart polybar.service 
-exec_always --no-startup-id feh --bg-scale $HOME/.config/home-manager/wallpapers/misty-forest.jpg 
-exec_always --no-startup-id picom --transparent-clipping -b 
+exec_always --no-startup-id i3-msg workspace 1
+exec_always --no-startup-id systemctl --user restart polybar.service
+exec_always --no-startup-id feh --bg-scale $HOME/.config/home-manager/wallpapers/nord_dark_city.png
+exec_always --no-startup-id picom --transparent-clipping -b
 exec --no-startup-id autorandr -c
 exec --no-startup-id nm-applet --sm-disable
 exec --no-startup-id flameshot

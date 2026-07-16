@@ -1,4 +1,3 @@
-# https://github.com/NixOS/nixpkgs/pull/277180
 {
   description = "Elixir development flake";
 
@@ -11,11 +10,16 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs { inherit system; };
-        elixir = pkgs.beam.packages.erlang_26.elixir_1_17;
-        beamPkg = pkgs.beam.packagesWith pkgs.erlang_26;
-        elixir-ls = (beamPkg.elixir-ls.override {
-          mixRelease = beamPkg.mixRelease.override { elixir = elixir; };
-        });
+
+        beam = pkgs.beam.packagesWith pkgs.beam.interpreters.erlang_28;
+
+        erlang = beam.erlang;
+        elixir = beam.elixir_1_18;
+
+        elixir-ls = beam.elixir-ls.override {
+          inherit elixir;
+        };
+
       in {
 
         devShells.default = pkgs.mkShell {
@@ -28,14 +32,14 @@
             pkgs.libxml2
             pkgs.curl
             pkgs.libiconv
-            elixir
-            elixir-ls
-            pkgs.rebar3
             pkgs.glibcLocales
             pkgs.postgresql
             pkgs.ctags
             pkgs.protobuf
-            pkgs.erlang
+            erlang
+            elixir
+            elixir-ls
+            pkgs.rebar3
           ];
         };
 
