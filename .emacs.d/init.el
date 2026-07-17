@@ -986,135 +986,37 @@
 ;; ---------------------------------------------------------------------
 ;; Tabspaces
 ;; ---------------------------------------------------------------------
-(defun my/consult-project-files-and-buffers ()
-  "Find files and buffers strictly within the current project."
-  (interactive)
-  (require 'consult)
-  (if (project-current nil)
-      ;; Disable global sorting so Open Buffers stay permanently on top
-      (let ((vertico-sort-function nil)
-            (ivy-sort-functions-alist nil))
-        (consult--multi '(my/consult-source-project-open-buffers
-                          my/consult-source-project-unopened-files)
-                        :prompt "Project File/Buffer: "))
-    (user-error "Not in a project!")))
-
-
-(with-eval-after-load 'consult
-  (defvar my/consult-source-project-open-buffers
-    `(:name     "Project Buffers"
-      :narrow   ?b
-      :category buffer
-      :face     consult-buffer
-      :sort     nil
-      ;; NEW: Intercept the string, extract the hidden buffer object, and switch to it.
-      :action   ,(lambda (cand)
-                   (let ((actual-buffer (get-text-property 0 'consult--candidate cand)))
-                     ;; Switch to the hidden buffer object (or fallback to the string name)
-                     (switch-to-buffer (or actual-buffer cand))))
-      :items    ,(lambda ()
-                   (when-let* ((pr (project-current nil))
-                               (root (project-root pr))
-                               (proj-bufs (project-buffers pr)))
-                     (mapcar (lambda (b)
-                               (let ((file (buffer-file-name b))
-                                     (name (buffer-name b)))
-                                 (if file
-                                     (propertize (file-relative-name file root) 'consult--candidate b)
-                                   (propertize name 'consult--candidate b))))
-                             (consult--buffer-sort-visibility
-                              (seq-filter (lambda (b)
-                                            (not (string-prefix-p " " (buffer-name b))))
-                                          (project-buffers pr))))))))
-
-  (defvar my/consult-source-project-unopened-files
-    `(:name     "Unopened Project Files"
-      :narrow   ?f
-      :category file
-      :face     consult-file
-      :action   ,(lambda (f)
-                   ;; Re-attach the project root path before opening
-                   (when-let ((pr (project-current nil)))
-                     (find-file (expand-file-name f (project-root pr)))))
-      :items    ,(lambda ()
-                   (when-let* ((pr (project-current nil))
-                               (root (project-root pr)))
-                     (let ((all-files (project-files pr))
-                           ;; Get absolute paths of open files to filter them out
-                           (open-files (delq nil (mapcar #'buffer-file-name (project-buffers pr)))))
-                       (delq nil
-                             (mapcar (lambda (f)
-                                       (unless (member f open-files)
-                                         ;; Display clean relative paths in the UI
-                                         (file-relative-name f root)))
-                                     all-files))))))))
-
-(defun my/consult-tabspaces-and-projects ()
-  "Unified Consult interface for Tabspaces and Projects."
-  (interactive)
-  (require 'consult)
-
-  (let ((vertico-sort-function nil)
-        (ivy-sort-functions-alist nil))
-
-    (consult--multi '(my/consult-source-tabspaces my/consult-source-projects)
-                    :prompt "Workspace/Project: ")))
-
-(with-eval-after-load 'consult
-  (defvar my/consult-source-tabspaces
-    `(:name     "Active Workspaces"
-      :narrow   ?t
-      :category tab
-      :face     font-lock-keyword-face
-      :action   ,#'tabspaces-switch-or-create-workspace
-      :items    ,(lambda ()
-                   (mapcar (lambda (tab) (alist-get 'name tab))
-                           (tab-bar--tabs-recent)))))
-
-  (defvar my/consult-source-projects
-    `(:name     "Projects"
-      :narrow   ?p
-      :category project
-      :face     consult-file
-      :action   ,#'project-switch-project
-      :items    ,#'project-known-project-roots)))
+(setq tab-bar-show nil)
+(tab-bar-mode 1)
 
 (use-package tabspaces
   :ensure t
-  :hook (after-init . tabspaces-mode)
   :custom
   (tabspaces-use-filtered-buffers-as-default t)
-  (tabspaces-default-tab "Default")
+  (tabspaces-default-tab "default")
   (tabspaces-remove-to-default t)
-  (tabspaces-include-buffers '("*scratch*" "*Messages*"))
+  (tabspaces-include-buffers '("*Messages*"))
 
   :bind (:map project-prefix-map
-              ("p" . my/consult-tabspaces-and-projects)
-              ("f" . my/consult-project-files-and-buffers))
+              ("p" . project-tabspaces-consult-tabspaces-and-projects)
+              ("f" . project-tabspaces-consult-project-files-and-buffers))
 
   :config
+  (tabspaces-mode 1))
 
-  (defun obp/force-tabspaces-on-project-switch (orig-fun dir &rest args)
-    (let* ((proj (project-current nil dir))
-           (name (project-name proj))
-           (tab-exists (seq-find (lambda (tab) (equal name (alist-get 'name tab)))
-                                 (tab-bar-tabs))))
-      (tabspaces-switch-or-create-workspace name)
-      (unless tab-exists
-        (apply orig-fun dir args))))
 
-  (advice-add 'org-roam-node-find :around #'obp/force-roam-tabspace)
-  (advice-add 'org-roam-node-insert :around #'obp/force-roam-tabspace)
-  (advice-add 'org-roam-buffer-toggle :around #'obp/force-roam-tabspace)
-  (advice-add 'project-switch-project :around #'obp/force-tabspaces-on-project-switch))
+(use-package project-tabspaces
+  :straight nil
+  :ensure nil
+  :load-path "~/.emacs.d/plugins"
+  :after tabspaces
+  :config
+  (project-tabspaces-mode 1))
 
-(setq tab-bar-show nil)
-(add-hook 'after-init-hook #'tab-bar-mode)
-
+;; Global escape hatch to switch buffers without triggering project isolation
 (defun obp/global-switch-buffer ()
   "Switch to any buffer globally, bypassing Tabspaces."
   (interactive)
-  ;; Setting this to nil stops Tabspaces from intercepting the prompt
   (let ((read-buffer-function nil))
     (call-interactively #'switch-to-buffer)))
 
@@ -1211,7 +1113,6 @@
 (defun obp/org-agenda-in-tab ()
   "Switch to (or create) a tab named 'agenda' and open Org Agenda."
   (interactive)
-  (tab-switch "agenda")
   (let ((default-directory (file-name-as-directory (expand-file-name host/org-agenda-path))))
     (org-agenda)))
 
