@@ -1013,7 +1013,6 @@
   :config
   (project-tabspaces-mode 1))
 
-;; Global escape hatch to switch buffers without triggering project isolation
 (defun obp/global-switch-buffer ()
   "Switch to any buffer globally, bypassing Tabspaces."
   (interactive)
