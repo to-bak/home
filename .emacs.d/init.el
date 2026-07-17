@@ -467,7 +467,30 @@
   (setq consult-narrow-key "<")) ;; "C-+")
 
 (define-key project-prefix-map (kbd "r") 'consult-ripgrep)
+
 (use-package consult-project-extra)
+
+(use-package consult-gh
+  :after consult
+  :custom
+  (consult-gh-prioritize-local-folder t)
+  :init
+  (define-prefix-command 'consult-gh-map)
+  :bind
+  (("C-c g" . consult-gh-map)
+   :map consult-gh-map
+   ("r" . consult-gh-workflow-run)
+   ("l" . consult-gh-run-list)
+   ("e" . consult-gh-run-rerun)
+   ("c" . consult-gh-workflow-create)))
+
+(use-package agent-shell
+  :ensure t
+  :custom
+  (agent-shell-github-acp-command '("copilot" "--acp"))
+  (agent-shell-github-default-model-id "gpt-4o"))
+
+;; (require 'agent-shell-manager)
 
 (use-package marginalia
   :after vertico
