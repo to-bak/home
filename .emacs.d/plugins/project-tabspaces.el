@@ -13,7 +13,7 @@
   "Integration between project.el and tabspaces."
   :group 'tabspaces)
 
-(defcustom project-tabspaces-wildcard-exemptions '("*Org Agenda*")
+(defcustom project-tabspaces-wildcard-exemptions '("*Org Agenda*" "*scratch*" "*Warnings*")
   "List of buffers starting with '*' that SHOULD trigger tabspace routing.
 Normally, temporary buffers (starting with * or space) are ignored by the router
 so they don't force workspace switches. Add buffers here to bypass that rule."
@@ -25,7 +25,7 @@ so they don't force workspace switches. Add buffers here to bypass that rule."
 (defun project-tabspaces-consult-project-files-and-buffers ()
   "Find files and buffers strictly within the current project."
   (interactive)
-  (require 'consult) ;; <-- ADDED HERE
+  (require 'consult)
   (if (project-current nil)
       (let ((vertico-sort-function nil)
             (ivy-sort-functions-alist nil))
@@ -107,20 +107,16 @@ so they don't force workspace switches. Add buffers here to bypass that rule."
 
 ;; --- The Router Engine ---
 
-;; --- The Router Engine ---
-
 (defvar project-tabspaces--inhibited nil
   "Internal flag to prevent infinite loops during workspace switching.")
 
 (defun project-tabspaces-auto-router (orig-fun buffer-or-name &rest args)
   "Proactively switch to the correct project tabspace BEFORE displaying a buffer."
-  ;; 1. Bail out immediately if we are already switching tabs or if tab-bar isn't ready
   (if (or project-tabspaces--inhibited
           (not tabspaces-mode)
           (not (bound-and-true-p tab-bar-mode)))
       (apply orig-fun buffer-or-name args)
 
-    ;; 2. Otherwise, check the buffer
     (let* ((buffer (get-buffer-create buffer-or-name))
            (buf-name (buffer-name buffer)))
 
@@ -133,12 +129,10 @@ so they don't force workspace switches. Add buffers here to bypass that rule."
                (target-tab (if proj (project-name proj) tabspaces-default-tab))
                (current-tab (alist-get 'name (tab-bar--current-tab))))
 
-          ;; 3. Switch tab spaces using the INHIBIT flag to prevent loops
           (when (and target-tab current-tab (not (equal current-tab target-tab)))
             (let ((project-tabspaces--inhibited t))
               (tabspaces-switch-or-create-workspace target-tab))))))
 
-    ;; 4. Pass control back to Emacs
     (apply orig-fun buffer-or-name args)))
 
 (defun project-tabspaces-force-tab-on-switch (orig-fun dir &rest args)
@@ -148,7 +142,6 @@ so they don't force workspace switches. Add buffers here to bypass that rule."
          (tab-exists (seq-find (lambda (tab) (equal name (alist-get 'name tab)))
                                (tab-bar-tabs))))
 
-    ;; Use the INHIBIT flag here too
     (let ((project-tabspaces--inhibited t))
       (tabspaces-switch-or-create-workspace name))
 
