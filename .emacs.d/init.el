@@ -529,7 +529,8 @@
   :ensure t
   :custom
   (agent-shell-github-acp-command '("copilot" "--acp"))
-  (agent-shell-github-default-model-id "gpt-4o"))
+  (agent-shell-github-default-model-id "gpt-4o")
+  (agent-shell-opencode-default-model-id "ollama/qwen2.5-coder:14b"))
 
 ;; (require 'agent-shell-manager)
 
