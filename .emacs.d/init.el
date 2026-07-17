@@ -583,7 +583,8 @@
 ;;(setq org-latex-listings t)
 
 (use-package openwith
-:init (openwith-mode))
+  :init (openwith-mode))
+
 (setq openwith-associations '(("\\.pdf\\'" "zathura" (file))))
 
 ;; org-babel
