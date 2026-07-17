@@ -241,7 +241,8 @@
 (use-package ghostel
   :straight t
   :commands (ghostel ghostel-project)
-  :bind (("C-c t" . ghostel-project-toggle))
+  :bind (("C-c t" . ghostel-project-toggle)
+         ("C-c T" . ghostel))
   :init
   (setq ghostel-shell (executable-find "fish")))
 
