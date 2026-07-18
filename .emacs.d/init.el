@@ -1112,6 +1112,7 @@
 (defun obp/org-agenda-in-tab ()
   "Switch to (or create) a tab named 'agenda' and open Org Agenda."
   (interactive)
+  (tab-switch "agenda")
   (let ((default-directory (file-name-as-directory (expand-file-name host/org-agenda-path))))
     (org-agenda)))
 
