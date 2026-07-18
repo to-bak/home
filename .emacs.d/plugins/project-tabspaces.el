@@ -1,31 +1,21 @@
 ;;; project-tabspaces.el --- Tabspaces and project.el integration -*- lexical-binding: t; -*-
 
 ;; Author: You
-;; Description: Seamlessly route buffers to project-specific Tabspaces.
+;; Description: Seamlessly integrate project.el commands with tabspaces.
 
 (require 'project)
 (require 'consult)
 (require 'tabspaces)
 
-;; --- Customization Variables ---
-
 (defgroup project-tabspaces nil
   "Integration between project.el and tabspaces."
   :group 'tabspaces)
-
-(defcustom project-tabspaces-wildcard-exemptions '("*Org Agenda*" "*scratch*" "*Warnings*")
-  "List of buffers starting with '*' that SHOULD trigger tabspace routing.
-Normally, temporary buffers (starting with * or space) are ignored by the router
-so they don't force workspace switches. Add buffers here to bypass that rule."
-  :type '(repeat string)
-  :group 'project-tabspaces)
 
 ;; --- Consult Integration ---
 
 (defun project-tabspaces-consult-project-files-and-buffers ()
   "Find files and buffers strictly within the current project."
   (interactive)
-  (require 'consult)
   (if (project-current nil)
       (let ((vertico-sort-function nil)
             (ivy-sort-functions-alist nil))
@@ -37,7 +27,6 @@ so they don't force workspace switches. Add buffers here to bypass that rule."
 (defun project-tabspaces-consult-tabspaces-and-projects ()
   "Unified Consult interface for Tabspaces and Projects."
   (interactive)
-  (require 'consult) ;; <-- ADDED HERE
   (let ((vertico-sort-function nil)
         (ivy-sort-functions-alist nil))
     (consult--multi '(project-tabspaces--source-tabspaces
@@ -85,7 +74,7 @@ so they don't force workspace switches. Add buffers here to bypass that rule."
                              (mapcar (lambda (f)
                                        (unless (member f open-files)
                                          (file-relative-name f root)))
-                                     all-files))))))) ;; <--- FIXED: Removed the stray 8th parenthesis here
+                                     all-files)))))))
 
   (defvar project-tabspaces--source-tabspaces
     `(:name     "Active Workspaces"
@@ -105,63 +94,50 @@ so they don't force workspace switches. Add buffers here to bypass that rule."
       :action   ,#'project-switch-project
       :items    ,#'project-known-project-roots)))
 
-;; --- The Router Engine ---
 
-(defvar project-tabspaces--inhibited nil
-  "Internal flag to prevent infinite loops during workspace switching.")
-
-(defun project-tabspaces-auto-router (orig-fun buffer-or-name &rest args)
-  "Proactively switch to the correct project tabspace BEFORE displaying a buffer."
-  (if (or project-tabspaces--inhibited
-          (not tabspaces-mode)
-          (not (bound-and-true-p tab-bar-mode)))
-      (apply orig-fun buffer-or-name args)
-
-    (let* ((buffer (get-buffer-create buffer-or-name))
-           (buf-name (buffer-name buffer)))
-
-      (unless (or (string-prefix-p " " buf-name)
-                  (member buf-name tabspaces-include-buffers)
-                  (and (string-prefix-p "*" buf-name)
-                       (not (member buf-name project-tabspaces-wildcard-exemptions))))
-
-        (let* ((proj (with-current-buffer buffer (project-current)))
-               (target-tab (if proj (project-name proj) tabspaces-default-tab))
-               (current-tab (alist-get 'name (tab-bar--current-tab))))
-
-          (when (and target-tab current-tab (not (equal current-tab target-tab)))
-            (let ((project-tabspaces--inhibited t))
-              (tabspaces-switch-or-create-workspace target-tab))))))
-
-    (apply orig-fun buffer-or-name args)))
+;; --- The Integration Engine ---
 
 (defun project-tabspaces-force-tab-on-switch (orig-fun dir &rest args)
-  "Generic advice: Create/switch to tabspace BEFORE running `project-switch-project'."
+  "Create/switch to tabspace BEFORE running `project-switch-project'."
   (let* ((proj (project-current nil dir))
          (name (if proj (project-name proj) tabspaces-default-tab))
          (tab-exists (seq-find (lambda (tab) (equal name (alist-get 'name tab)))
                                (tab-bar-tabs))))
-
-    (let ((project-tabspaces--inhibited t))
-      (tabspaces-switch-or-create-workspace name))
-
+    (tabspaces-switch-or-create-workspace name)
     (unless tab-exists
       (apply orig-fun dir args))))
+
+(defvar project-tabspaces--finding-fallback nil
+  "Prevent infinite recursion in `project-tabspaces-fallback-project'.")
+
+(defun project-tabspaces-fallback-project (_dir)
+  "Fallback to current tabspace's project if the buffer has no project.
+Appended to `project-find-functions'."
+  (unless project-tabspaces--finding-fallback
+    (let ((project-tabspaces--finding-fallback t))
+      (when (and (bound-and-true-p tabspaces-mode)
+                 (bound-and-true-p tab-bar-mode))
+        (when-let ((tab-name (alist-get 'name (tab-bar--current-tab))))
+          (catch 'found
+            (dolist (root (project-known-project-roots))
+              ;; Find the project root whose name matches our current tab name
+              (when-let ((proj (project-current nil root)))
+                (when (equal (project-name proj) tab-name)
+                  (throw 'found proj))))))))))
+
 
 ;; --- Minor Mode Definition ---
 
 ;;;###autoload
 (define-minor-mode project-tabspaces-mode
-  "Minor mode to seamlessly route buffers to project-specific Tabspaces."
+  "Minor mode to integrate project.el contexts with Tabspaces."
   :global t
   (if project-tabspaces-mode
       (progn
-        (advice-add 'switch-to-buffer :around #'project-tabspaces-auto-router)
-        (advice-add 'display-buffer :around #'project-tabspaces-auto-router)
-        (advice-add 'project-switch-project :around #'project-tabspaces-force-tab-on-switch))
-    (advice-remove 'switch-to-buffer #'project-tabspaces-auto-router)
-    (advice-remove 'display-buffer #'project-tabspaces-auto-router)
-    (advice-remove 'project-switch-project #'project-tabspaces-force-tab-on-switch)))
+        (advice-add 'project-switch-project :around #'project-tabspaces-force-tab-on-switch)
+        (add-hook 'project-find-functions #'project-tabspaces-fallback-project t))
+    (advice-remove 'project-switch-project #'project-tabspaces-force-tab-on-switch)
+    (remove-hook 'project-find-functions #'project-tabspaces-fallback-project)))
 
 (provide 'project-tabspaces)
 ;;; project-tabspaces.el ends here
