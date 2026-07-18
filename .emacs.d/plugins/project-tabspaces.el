@@ -95,8 +95,6 @@
       :items    ,#'project-known-project-roots)))
 
 
-;; --- The Integration Engine ---
-
 (defun project-tabspaces-force-tab-on-switch (orig-fun dir &rest args)
   "Create/switch to tabspace BEFORE running `project-switch-project'."
   (let* ((proj (project-current nil dir))
