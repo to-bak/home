@@ -980,6 +980,10 @@
   (tabspaces-switch-or-create-workspace "roam")
   (apply orig-fun args))
 
+(advice-add 'org-roam-node-find :around #'obp/force-roam-tabspace)
+(advice-add 'org-roam-node-insert :around #'obp/force-roam-tabspace)
+(advice-add 'org-roam-buffer-toggle :around #'obp/force-roam-tabspace)
+
 (use-package org-ql
   :after org)
 
