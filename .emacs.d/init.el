@@ -221,14 +221,9 @@
   (let ((ghostel-win (cl-find-if (lambda (w)
                                    (buffer-local-value 'ghostel-popup-p (window-buffer w)))
                                  (window-list))))
-    (cond
-     ((eq (selected-window) ghostel-win)
-      (popper-toggle))
+    (if ghostel-win
+        (delete-window ghostel-win)
 
-     (ghostel-win
-      (select-window ghostel-win))
-
-     (t
       (let ((buf (save-window-excursion
                    (ghostel-project)
                    (current-buffer))))
@@ -236,13 +231,13 @@
           (with-current-buffer buf
             (setq-local ghostel-popup-p t)
             (setq-local popper-popup-status 'popup))
-          (pop-to-buffer buf '(display-buffer-at-bottom (window-height . 0.3)))))))))
+          (pop-to-buffer buf '(display-buffer-at-bottom (window-height . 0.5))))))))
 
 (use-package ghostel
   :straight t
   :commands (ghostel ghostel-project)
-  :bind (("C-c t" . ghostel-project-toggle)
-         ("C-c T" . ghostel))
+  :bind (("C-c v" . ghostel-project-toggle)
+         ("C-c V" . ghostel))
   :init
   (setq ghostel-shell (executable-find "fish")))
 
@@ -1003,7 +998,8 @@
 
   :bind (:map project-prefix-map
               ("p" . project-tabspaces-consult-tabspaces-and-projects)
-              ("f" . project-tabspaces-consult-project-files-and-buffers))
+              ("f" . project-tabspaces-consult-project-files-and-buffers)
+              ("k" . project-tabspaces-close-workspace))
 
   :config
   (tabspaces-mode 1))
