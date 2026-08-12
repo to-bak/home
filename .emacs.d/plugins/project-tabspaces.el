@@ -14,32 +14,6 @@
 
 ;; --- Consult Integration ---
 
-(defun project-tabspaces--switch-existing-workspace (name)
-  "Switch to the existing workspace NAME without creating a new one."
-  (when (and (stringp name)
-             (seq-find (lambda (tab)
-                         (equal name (alist-get 'name tab)))
-                       (tab-bar-tabs))
-             (not (equal name
-                         (alist-get 'name (tab-bar--current-tab)))))
-    (tabspaces-switch-or-create-workspace name)))
-
-(defun project-tabspaces--tab-state ()
-  "Return a Consult state function that previews existing workspaces."
-  (let ((start-tab (alist-get 'name (tab-bar--current-tab))))
-    (lambda (action cand)
-      (pcase action
-        ('preview
-         (if (and (stringp cand)
-                  (seq-find (lambda (tab)
-                              (equal cand (alist-get 'name tab)))
-                            (tab-bar-tabs)))
-             (project-tabspaces--switch-existing-workspace cand)
-           (project-tabspaces--switch-existing-workspace start-tab)))
-        ((or 'return 'exit)
-         ;; Let the source action perform the final switch from a clean context.
-         (project-tabspaces--switch-existing-workspace start-tab))))))
-
 (defun project-tabspaces-consult-project-files-and-buffers ()
   "Find files and buffers strictly within the current project."
   (interactive)
@@ -144,7 +118,6 @@
       :narrow   ?t
       :category tab
       :face     font-lock-keyword-face
-      :state    ,#'project-tabspaces--tab-state
       :action   ,#'tabspaces-switch-or-create-workspace
       :items    ,(lambda ()
                    (mapcar (lambda (tab) (alist-get 'name tab))
