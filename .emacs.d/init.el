@@ -39,6 +39,16 @@
   "Initialize machine-specific Hyperbole links."
   nil)
 
+(defvar host/gptel-config nil
+  "Function that configures gptel for the current host.
+It is called after gptel has loaded.  Define it in host.el when this machine
+has gptel backends or settings of its own.")
+
+(defvar host/agent-shell-config nil
+  "Function that configures agent-shell for the current host.
+It is called after agent-shell has loaded.  Define it in host.el when this
+machine has agent-specific commands, models, or other settings.")
+
 (load (expand-file-name "host.el" user-emacs-directory) t)
 
 (defvar host/org-agenda-ticket-path (concat host/org-agenda-path "/tickets")
@@ -59,6 +69,9 @@
 
 (use-package olivetti)
 
+(defvar obp/focused-body-width 100
+  "Text body width shared by focused dashboard views.")
+
 ;; get rid of emacs logo
 ;; (setq inhibit-startup-message t)
 
@@ -68,10 +81,10 @@
   :init
   (setq doom-gruvbox-dark-variant "hard")
   :config
-;; (load-theme 'doom-sourcerer t)
-;; (load-theme 'doom-tomorrow-night t)
-;; (load-theme 'doom-snazzy)
-;; (load-theme 'plan9 t)
+  ;; (load-theme 'doom-sourcerer t)
+  ;; (load-theme 'doom-tomorrow-night t)
+  ;; (load-theme 'doom-snazzy)
+  ;; (load-theme 'plan9 t)
   (load-theme 'doom-gruvbox t)
   (doom-themes-visual-bell-config))
 
@@ -381,6 +394,7 @@
   :config
   (setq corfu-cycle nil)                  ;; Disable cycling for `corfu-next/previous'
   (setq corfu-auto t)                     ;; Enable auto completion
+  (setq corfu-preselect 'first)           ;; Make TAB accept the first candidate
   (setq corfu-scroll-margin 2)            ;; Use scroll margin
   (setq corfu-min-width 60)
   (setq corfu-max-width corfu-min-width)  ;; Always have the same width
@@ -402,6 +416,19 @@
   (setq corfu-auto-prefix 3)
   (setq corfu-popupinfo-delay 0))
 ;; (set-face-attribute 'corfu-current nil :inherit 'highlight :background nil :foreground nil))
+
+(defun obp/corfu-accept-preselected ()
+  "Accept Corfu's highlighted candidate, including the preselected first one."
+  (interactive)
+  ;; Corfu visually preselects candidate zero while `corfu--index' remains -1.
+  ;; Promote that candidate to an explicit selection before completing it.
+  (when (< corfu--index 0)
+    (corfu-next))
+  (corfu-complete))
+
+(with-eval-after-load 'corfu
+  (keymap-set corfu-map "TAB" #'obp/corfu-accept-preselected)
+  (keymap-set corfu-map "<tab>" #'obp/corfu-accept-preselected))
 
 (use-package vertico
   :ensure t
@@ -463,7 +490,7 @@
   :config
 
   :bind (:map project-prefix-map
-         ("b" . consult-project-buffer))
+              ("b" . consult-project-buffer))
 
   ;; Enable automatic preview at point in the *Completions* buffer. This is
   ;; relevant when you use the default completion UI.
@@ -520,15 +547,6 @@
    ("l" . consult-gh-run-list)
    ("e" . consult-gh-run-rerun)
    ("c" . consult-gh-workflow-create)))
-
-(use-package agent-shell
-  :ensure t
-  :custom
-  (agent-shell-github-acp-command '("copilot" "--acp"))
-  (agent-shell-github-default-model-id "gpt-4o")
-  (agent-shell-opencode-default-model-id "ollama/qwen2.5-coder:14b"))
-
-;; (require 'agent-shell-manager)
 
 (use-package marginalia
   :after vertico
@@ -854,10 +872,10 @@
 
 (defvar obp/org-roam-template-default
   `(plain "%?"
-    :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
-                       ,(concat
-                         "#+title: ${title}\n"))
-    :unnarrowed t)
+          :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
+                             ,(concat
+                               "#+title: ${title}\n"))
+          :unnarrowed t)
   "Default org-roam capture template body.")
 
 (defvar obp/org-roam-template-contact
@@ -946,30 +964,30 @@
         org-roam-ui-open-on-start t))
 
 (use-package consult-org-roam
-   :ensure t
-   :after org-roam
-   :custom
-   ;; Use `ripgrep' for searching with `consult-org-roam-search'
-   (consult-org-roam-grep-func #'consult-ripgrep)
-   ;; Configure a custom narrow key for `consult-buffer'
-   (consult-org-roam-buffer-narrow-key ?r)
-   ;; Display org-roam buffers right after non-org-roam buffers
-   ;; in consult-buffer (and not down at the bottom)
-   (consult-org-roam-buffer-after-buffers t)
-   :config
-   ;; Activate the minor mode
-   (consult-org-roam-mode 1)
-   ;; Eventually suppress previewing for certain functions
-   (consult-customize
-    consult-org-roam-forward-links
-    :preview-key "M-.")
-   :bind
-   ;; Define some convenient keybindings as an addition
-   ("C-c n e" . consult-org-roam-file-find)
-   ("C-c n b" . consult-org-roam-backlinks)
-   ("C-c n B" . consult-org-roam-backlinks-recursive)
-   ("C-c n l" . consult-org-roam-forward-links)
-   ("C-c n r" . consult-org-roam-search))
+  :ensure t
+  :after org-roam
+  :custom
+  ;; Use `ripgrep' for searching with `consult-org-roam-search'
+  (consult-org-roam-grep-func #'consult-ripgrep)
+  ;; Configure a custom narrow key for `consult-buffer'
+  (consult-org-roam-buffer-narrow-key ?r)
+  ;; Display org-roam buffers right after non-org-roam buffers
+  ;; in consult-buffer (and not down at the bottom)
+  (consult-org-roam-buffer-after-buffers t)
+  :config
+  ;; Activate the minor mode
+  (consult-org-roam-mode 1)
+  ;; Eventually suppress previewing for certain functions
+  (consult-customize
+   consult-org-roam-forward-links
+   :preview-key "M-.")
+  :bind
+  ;; Define some convenient keybindings as an addition
+  ("C-c n e" . consult-org-roam-file-find)
+  ("C-c n b" . consult-org-roam-backlinks)
+  ("C-c n B" . consult-org-roam-backlinks-recursive)
+  ("C-c n l" . consult-org-roam-forward-links)
+  ("C-c n r" . consult-org-roam-search))
 
 (defun obp/force-roam-tabspace (orig-fun &rest args)
   (tabspaces-switch-or-create-workspace "roam")
@@ -991,6 +1009,8 @@
 (use-package tabspaces
   :ensure t
   :custom
+  ;; Do not write project/session files on Emacs exit.
+  (tabspaces-session nil)
   (tabspaces-use-filtered-buffers-as-default t)
   (tabspaces-default-tab "default")
   (tabspaces-remove-to-default t)
@@ -1036,7 +1056,7 @@
 
 (add-hook 'org-agenda-mode-hook
           (lambda ()
-            (setq-local olivetti-body-width 100)
+            (setq-local olivetti-body-width obp/focused-body-width)
             (olivetti-mode 1)))
 
 (setq org-tag-alist
@@ -1195,15 +1215,15 @@
 (defvar obp/org-agenda-block-ongoing-tickets
   `(tags "TICKET+LEVEL=1"
          ((org-agenda-overriding-header "⚡ Active Tickets Index")
-           (org-agenda-files (list ,host/org-agenda-ticket-path))))
+          (org-agenda-files (list ,host/org-agenda-ticket-path))))
   "A simple index of all top-level ticket files.")
 
 (defvar obp/org-agenda-block-ticket
   `(tags-todo "TICKET"
-         ((org-agenda-overriding-header "🤖 Active Tickets")
-          (org-agenda-files (list ,host/org-agenda-ticket-path))
-          (org-super-agenda-groups
-           '((:auto-category t)))))
+              ((org-agenda-overriding-header "🤖 Active Tickets")
+               (org-agenda-files (list ,host/org-agenda-ticket-path))
+               (org-super-agenda-groups
+                '((:auto-category t)))))
   "Block displaying active tickets and only their actionable TODOs.")
 
 ;; --- Main Custom Commands ---
@@ -1340,3 +1360,110 @@ _q_uit        _C--_
   ("q" nil))
 
 (global-set-key (kbd "C-c w") 'hydra-window/body)
+
+
+;; ---------------------------------------------------------------------
+;; AI tooling
+;; ---------------------------------------------------------------------
+(use-package gptel
+  :ensure t
+  :config
+  (when host/gptel-config
+    (funcall host/gptel-config)))
+
+(use-package agent-shell
+  :ensure t
+  :config
+  ;; `agent-shell' starts completion from `post-self-insert-hook'.  Force the
+  ;; newly inserted / or @ to be displayed before Corfu asks Emacs for its
+  ;; screen position; without this, `posn-at-point' can transiently return nil.
+  ;; (defun my-agent-shell-redisplay-before-triggering-completion (&rest _)
+  ;;   "Redisplay input before `agent-shell' starts prefix completion."
+  ;;   (redisplay t))
+  ;; (advice-add 'agent-shell--trigger-completion-at-point :before
+  ;;             #'my-agent-shell-redisplay-before-triggering-completion)
+
+  (when host/agent-shell-config
+    (funcall host/agent-shell-config))
+
+  (evil-define-key 'insert agent-shell-mode-map (kbd "RET") #'newline)
+  (evil-define-key 'normal agent-shell-mode-map (kbd "RET") #'comint-send-input))
+
+(defun obp/agent-shell-file-completion-table (string predicate action)
+  "Complete STRING as a filename for agent-shell.
+PREDICATE and ACTION follow the completion table protocol.  In viewport or
+minibuffer input, resolve paths relative to the associated shell buffer."
+  (let ((source (agent-shell-completion--source-buffer)))
+    (when (buffer-live-p source)
+      (with-current-buffer source
+        (completion-file-name-table string predicate action)))))
+
+(defun obp/agent-shell-file-completion-exit (candidate status)
+  "Add a space after completed file CANDIDATE, but not a directory.
+STATUS is the completion exit status."
+  (when (eq status 'finished)
+    (let ((source (agent-shell-completion--source-buffer)))
+      (unless (and (buffer-live-p source)
+                   (with-current-buffer source
+                     (file-directory-p
+                      (substitute-in-file-name candidate))))
+        (insert " ")))))
+
+(defun obp/agent-shell-file-completion-at-point ()
+  "Complete ordinary filesystem paths after @ in every agent shell.
+Unlike agent-shell's project-file list, this supports directory-by-directory
+navigation such as @~, @.., @../.., absolute paths, and non-project buffers."
+  (when-let* ((bounds (agent-shell--completion-bounds "^ \t\n@" ?@)))
+    (list (map-elt bounds :start)
+          (map-elt bounds :end)
+          #'obp/agent-shell-file-completion-table
+          :exclusive 'no
+          :category 'file
+          :company-kind (lambda (candidate)
+                          (if (string-suffix-p "/" candidate)
+                              'folder
+                            'file))
+          :exit-function #'obp/agent-shell-file-completion-exit)))
+
+(with-eval-after-load 'agent-shell-completion
+  (advice-add 'agent-shell--file-completion-at-point :override
+              #'obp/agent-shell-file-completion-at-point))
+
+(with-eval-after-load 'evil-collection
+  (evil-define-key 'normal agent-shell-mode-map (kbd "TAB") #'agent-shell-ui-toggle-fragment)
+  (evil-define-key 'insert agent-shell-mode-map (kbd "TAB") #'agent-shell-ui-toggle-fragment))
+
+(defun obp/agent-shell-cockpit-in-tab ()
+  "Open a full-window agent cockpit in the `cockpit' tabspace."
+  (interactive)
+  (require 'agent-shell-cockpit)
+  (tab-switch "cockpit")
+  (delete-other-windows)
+  (agent-shell-cockpit))
+
+(use-package agent-shell-cockpit
+  :straight nil
+  :ensure nil
+  :load-path "~/.emacs.d/plugins"
+  :after agent-shell
+  :bind (("C-c m" . obp/agent-shell-cockpit-in-tab))
+  :config
+  (add-hook 'agent-shell-cockpit-mode-hook
+            (lambda ()
+              (setq-local olivetti-body-width obp/focused-body-width)
+              (olivetti-mode 1)))
+
+  (with-eval-after-load 'evil
+    (evil-set-initial-state 'agent-shell-cockpit-mode 'normal)
+    (evil-define-key* 'normal agent-shell-cockpit-mode-map
+      (kbd "TAB") #'agent-shell-cockpit-open
+      (kbd "RET") #'agent-shell-cockpit-open
+      (kbd "C-j") #'agent-shell-cockpit-preview-next
+      (kbd "C-k") #'agent-shell-cockpit-preview-previous
+      "r" #'agent-shell-cockpit-refresh
+      "c" #'agent-shell-cockpit-create
+      "C" #'agent-shell-cockpit-create-new
+      "x" #'agent-shell-cockpit-kill
+      "n" #'agent-shell-cockpit-next
+      "p" #'agent-shell-cockpit-previous
+      "q" #'quit-window)))

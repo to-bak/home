@@ -47,6 +47,7 @@ with extendedLib;
   modules.services.dunst.enable = true;
 
   modules.misc = {
+    home_tooling.enable = true;
     direnv.enable = true;
     fzf.enable = true;
     kubernetes.enable = true;

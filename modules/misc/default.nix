@@ -11,5 +11,6 @@
     ./direnv.nix
     ./ripgrep.nix
     ./kubernetes.nix
+    ./home_tooling.nix
   ];
 }
