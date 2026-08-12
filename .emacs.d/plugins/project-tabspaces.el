@@ -12,14 +12,68 @@
   "Integration between project.el and tabspaces."
   :group 'tabspaces)
 
+(defconst project-tabspaces--root-parameter 'project-tabspaces-root
+  "Tab parameter used to store the exact project root.")
+
+(defvar project-tabspaces--consult-project nil
+  "Project captured for the duration of a Consult command.")
+
+;; Optional completion frontends; declaring them preserves dynamic binding
+;; when this file is byte-compiled without loading those packages first.
+(defvar vertico-sort-function)
+(defvar ivy-sort-functions-alist)
+
+(defun project-tabspaces--normalize-root (root)
+  "Return a canonical directory name for project ROOT."
+  (file-name-as-directory (expand-file-name root)))
+
+(defun project-tabspaces--tab-root (&optional tab)
+  "Return the project root recorded on TAB, or the current tab."
+  (let* ((tab (or tab (tab-bar--current-tab-find)))
+         (name (alist-get 'name tab)))
+    (when-let ((root (or (alist-get project-tabspaces--root-parameter tab)
+                         (car (rassoc name tabspaces-project-tab-map)))))
+      (project-tabspaces--normalize-root root))))
+
+(defun project-tabspaces--set-current-tab-root (root)
+  "Record project ROOT on the current tab."
+  (let* ((tab (tab-bar--current-tab-find))
+         (name (alist-get 'name tab))
+         (root (project-tabspaces--normalize-root root)))
+    (setf (alist-get project-tabspaces--root-parameter (cdr tab)) root)
+    ;; Tabspaces writes this map to its session file.
+    (setq tabspaces-project-tab-map
+          (cons (cons root name)
+                (seq-remove (lambda (entry)
+                              (or (equal (car entry) root)
+                                  (equal (cdr entry) name)))
+                            tabspaces-project-tab-map)))))
+
+(defun project-tabspaces--project-for-root (root)
+  "Return the project whose exact root is ROOT, if it still exists."
+  (when-let* ((root (project-tabspaces--normalize-root root))
+              (project (project-current nil root))
+              (actual-root (project-tabspaces--normalize-root
+                            (project-root project)))
+              ((equal root actual-root)))
+    project))
+
+(defun project-tabspaces-current-project ()
+  "Return the project associated with the current workspace.
+Prefer the tab's recorded root over the current buffer's directory."
+  (if-let ((root (project-tabspaces--tab-root)))
+      (project-tabspaces--project-for-root root)
+    (project-current nil)))
+
 ;; --- Consult Integration ---
 
 (defun project-tabspaces-consult-project-files-and-buffers ()
   "Find files and buffers strictly within the current project."
   (interactive)
-  (if-let* ((pr (project-current nil))
+  (if-let* ((pr (project-tabspaces-current-project))
             (root (project-root pr)))
-      (let ((vertico-sort-function nil)
+      (let ((project-tabspaces--consult-project pr)
+            (vertico-sort-function nil)
             (ivy-sort-functions-alist nil)
             (default-directory root))
         (consult--multi '(project-tabspaces--source-project-open-buffers
@@ -37,14 +91,13 @@
                     :prompt "Workspace/Project: ")))
 
 (defun project-tabspaces-close-workspace ()
-  "Kill all buffers in the current project and close the active Tabspace."
+  "Kill local buffers and close the active Tabspace."
   (interactive)
-  (let* ((proj (project-current))
-         ;; Try getting project buffers, fallback to tabspaces local buffers if no project
-         (bufs (if proj
-                   (project-buffers proj)
-                 (when (bound-and-true-p tabspaces--local-tab-buffers)
-                   tabspaces--local-tab-buffers)))
+  (let* ((bufs (seq-remove
+                (lambda (buffer)
+                  (or (member (buffer-name buffer) tabspaces-include-buffers)
+                      (member (buffer-name buffer) tabspaces-exclude-buffers)))
+                (tabspaces--buffer-list)))
          (tab-name (alist-get 'name (tab-bar--current-tab))))
 
     (if bufs
@@ -71,7 +124,7 @@
       :state    ,#'consult--buffer-state
       :default  t
       :items    ,(lambda ()
-                   (when-let* ((pr (project-current nil))
+                   (when-let* ((pr project-tabspaces--consult-project)
                                (pr-buffers (project-buffers pr)))
                      (consult--buffer-query
                       :predicate (lambda (buf) (memq buf pr-buffers))
@@ -94,23 +147,21 @@
                            nil ;; Do nothing if we are previewing an image file
                          (funcall fs action cand)))))
       :action   ,(lambda (f)
-                   (when-let ((pr (project-current nil)))
+                   (when-let ((pr project-tabspaces--consult-project))
                      (find-file (expand-file-name f (project-root pr)))))
       :items    ,(lambda ()
-                   (when-let* ((pr (project-current nil))
+                   (when-let* ((pr project-tabspaces--consult-project)
                                (root (project-root pr)))
                      (let ((all-files (project-files pr))
-                           (root-len (length root))
                            (open-files (make-hash-table :test 'equal)))
                        (dolist (b (project-buffers pr))
                          (when-let ((f (buffer-file-name b)))
-                           (puthash f t open-files)))
+                           (puthash (expand-file-name f) t open-files)))
                        (delq nil
                              (mapcar (lambda (f)
-                                       (unless (gethash f open-files)
-                                         (if (string-prefix-p root f)
-                                             (substring f root-len)
-                                           (file-relative-name f root))))
+                                       (let ((absolute (expand-file-name f root)))
+                                         (unless (gethash absolute open-files)
+                                           (file-relative-name absolute root))))
                                      all-files)))))))
 
   (defvar project-tabspaces--source-tabspaces
@@ -134,33 +185,70 @@
 
 ;; --- Tabspaces Core Integration ---
 
+(defun project-tabspaces--tab-for-root (root)
+  "Return the tab associated with ROOT."
+  (let ((root (project-tabspaces--normalize-root root)))
+    (seq-find (lambda (tab)
+                (equal root (project-tabspaces--tab-root tab)))
+              (tab-bar-tabs))))
+
+(defun project-tabspaces--inferred-tab-roots (tab)
+  "Return the distinct project roots inferred from TAB's buffers."
+  (let ((index (seq-position (tab-bar-tabs) tab #'eq))
+        roots)
+    (when index
+      (dolist (buffer (tabspaces--buffer-list nil index))
+        (when-let* ((dir (buffer-local-value 'default-directory buffer))
+                    (project (project-current nil dir)))
+          (push (project-tabspaces--normalize-root (project-root project))
+                roots))))
+    (delete-dups roots)))
+
+(defun project-tabspaces--legacy-tab-for-project (project)
+  "Find an unassociated pre-upgrade tab that clearly belongs to PROJECT."
+  (let ((root (project-tabspaces--normalize-root (project-root project)))
+        (name (project-name project)))
+    (seq-find
+     (lambda (tab)
+       (and (equal name (alist-get 'name tab))
+            (not (project-tabspaces--tab-root tab))
+            (equal (project-tabspaces--inferred-tab-roots tab) (list root))))
+     (tab-bar-tabs))))
+
+(defun project-tabspaces--unique-tab-name (project)
+  "Return an unused, descriptive tab name for PROJECT."
+  (let* ((root (project-tabspaces--normalize-root (project-root project)))
+         (base (project-name project))
+         (parent (file-name-nondirectory
+                  (directory-file-name
+                   (file-name-directory (directory-file-name root)))))
+         (names (mapcar (lambda (tab) (alist-get 'name tab))
+                        (tab-bar-tabs)))
+         (candidate base)
+         (counter 2))
+    (when (member candidate names)
+      (setq candidate (format "%s (%s)" base parent)))
+    (while (member candidate names)
+      (setq candidate (format "%s (%s)<%d>" base parent counter)
+            counter (1+ counter)))
+    candidate))
+
 (defun project-tabspaces-force-tab-on-switch (orig-fun dir &rest args)
-  "Create/switch to tabspace BEFORE running `project-switch-project'."
-  (let* ((proj (project-current nil dir))
-         (name (if proj (project-name proj) tabspaces-default-tab))
-         (tab-exists (seq-find (lambda (tab) (equal name (alist-get 'name tab)))
-                               (tab-bar-tabs))))
-    (tabspaces-switch-or-create-workspace name)
-    (unless tab-exists
-      (apply orig-fun dir args))))
-
-(defvar project-tabspaces--finding-fallback nil
-  "Prevent infinite recursion in `project-tabspaces-fallback-project'.")
-
-(defun project-tabspaces-fallback-project (_dir)
-  "Fallback to current tabspace's project if the buffer has no project.
-Appended to `project-find-functions'."
-  (unless project-tabspaces--finding-fallback
-    (let ((project-tabspaces--finding-fallback t))
-      (when (and (bound-and-true-p tabspaces-mode)
-                 (bound-and-true-p tab-bar-mode))
-        (when-let ((tab-name (alist-get 'name (tab-bar--current-tab))))
-          (catch 'found
-            (dolist (root (project-known-project-roots))
-              ;; Find the project root whose name matches our current tab name
-              (when-let ((proj (project-current nil root)))
-                (when (equal (project-name proj) tab-name)
-                  (throw 'found proj))))))))))
+  "Select DIR's project tab before running `project-switch-project'."
+  (if-let* ((project (project-current nil dir))
+            (root (project-root project)))
+      (let* ((tab (or (project-tabspaces--tab-for-root root)
+                      (project-tabspaces--legacy-tab-for-project project)))
+             (name (if tab
+                       (alist-get 'name tab)
+                     (project-tabspaces--unique-tab-name project)))
+             ;; A new tab should not inherit the old tab's selected buffer.
+             (tab-bar-new-tab-choice
+              (lambda () (get-buffer-create "*scratch*"))))
+        (tabspaces-switch-or-create-workspace name)
+        (project-tabspaces--set-current-tab-root root)
+        (apply orig-fun dir args))
+    (apply orig-fun dir args)))
 
 
 ;; --- Minor Mode Definition ---
@@ -172,9 +260,10 @@ Appended to `project-find-functions'."
   (if project-tabspaces-mode
       (progn
         (advice-add 'project-switch-project :around #'project-tabspaces-force-tab-on-switch)
-        (add-hook 'project-find-functions #'project-tabspaces-fallback-project t))
+        ;; Remove the old, unsafe implementation when upgrading in a live Emacs.
+        (remove-hook 'project-find-functions 'project-tabspaces-fallback-project))
     (advice-remove 'project-switch-project #'project-tabspaces-force-tab-on-switch)
-    (remove-hook 'project-find-functions #'project-tabspaces-fallback-project)))
+    (remove-hook 'project-find-functions 'project-tabspaces-fallback-project)))
 
 (provide 'project-tabspaces)
 ;;; project-tabspaces.el ends here

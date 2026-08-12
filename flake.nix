@@ -13,6 +13,7 @@
   # nvim-orgmode 0.7.2+ has cross-file headline link completion and other fixes.
   # release-25.11 only ships 0.7.1, so we pull orgmode from unstable.
   inputs.nixpkgs-orgmode.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+  inputs.nixpkgs-unstable.url = "github:nixos/nixpkgs/nixpkgs-unstable";
   inputs.nixGL.url = "github:nix-community/nixGL";
   inputs.flake-utils.url = "github:numtide/flake-utils";
 
@@ -24,6 +25,7 @@
       nixpkgs-emacs,
       nixpkgs-kubelogin,
       nixpkgs-orgmode,
+      nixpkgs-unstable,
       home-manager,
       flake-utils,
       ...
@@ -50,6 +52,10 @@
         inherit system;
       };
 
+      pkgs-unstable = import nixpkgs-unstable {
+        inherit system;
+      };
+
       args = { inherit self; inherit (nixpkgs) lib; inherit pkgs; };
 
       extendedLib = import ./lib args;
@@ -61,7 +67,7 @@
             inherit pkgs;
             modules = [ (./hosts + "/${filename}") ];
             extraSpecialArgs = {
-              inherit pkgs-emacs pkgs-kubelogin pkgs-orgmode extendedLib nixGL;
+              inherit pkgs-emacs pkgs-kubelogin pkgs-orgmode pkgs-unstable extendedLib nixGL;
             };
           };
         })
