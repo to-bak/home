@@ -484,7 +484,7 @@ machine has agent-specific commands, models, or other settings.")
   (setq consult-ripgrep-args
         "rg --null --line-buffered --color=never --max-columns=1000 --path-separator /   --smart-case --no-heading --with-filename --line-number --search-zip --hidden --glob=!.git/"))
 
-;; consult
+
 (use-package consult
   ;; Replace bindings. Lazily loaded due by `use-package'.
   :config
@@ -532,7 +532,43 @@ machine has agent-specific commands, models, or other settings.")
 
 (define-key project-prefix-map (kbd "r") 'consult-ripgrep)
 
-(use-package consult-project-extra)
+(use-package consult-project-extra
+  :after consult
+  :custom
+  (consult-project-function #'consult-project-extra-project-fn))
+
+(defun obp/consult-project-file-preview-state (state action candidate)
+  "Forward ACTION and CANDIDATE to Consult STATE, except for image previews."
+  (unless (and (eq action 'preview)
+               (stringp candidate)
+               (let ((case-fold-search t))
+                 (string-match-p
+                  "\\.\\(png\\|jpe?g\\|gif\\|svg\\|webp\\|tiff?\\|bmp\\|ico\\)\\'"
+                  candidate)))
+    (funcall state action candidate)))
+
+(defun obp/consult-project-file-preview ()
+  "Return a Consult file preview state which skips image previews."
+  ;; init.el uses dynamic binding, so carry STATE explicitly instead of
+  ;; returning a lambda that attempts to close over a local variable.
+  (apply-partially #'obp/consult-project-file-preview-state
+                   (consult--file-state)))
+
+(defun obp/consult-project-files-and-buffers ()
+  "Find an open buffer or any file in the selected buffer's project."
+  (interactive)
+  (require 'consult-project-extra)
+  (let ((file-source
+         (copy-sequence consult-project-extra--source-file)))
+    (setf (plist-get file-source :state)
+          #'obp/consult-project-file-preview)
+    (let ((consult-project-extra-sources
+           (list 'consult-project-extra--source-buffer file-source)))
+      (consult-project-extra-find))))
+
+(define-key project-prefix-map (kbd "f")
+            #'obp/consult-project-files-and-buffers)
+(define-key project-prefix-map (kbd "p") #'project-switch-project)
 
 (use-package consult-gh
   :after consult
@@ -989,57 +1025,113 @@ machine has agent-specific commands, models, or other settings.")
   ("C-c n l" . consult-org-roam-forward-links)
   ("C-c n r" . consult-org-roam-search))
 
-(defun obp/force-roam-tabspace (orig-fun &rest args)
-  (tabspaces-switch-or-create-workspace "roam")
-  (apply orig-fun args))
-
-(advice-add 'org-roam-node-find :around #'obp/force-roam-tabspace)
-(advice-add 'org-roam-node-insert :around #'obp/force-roam-tabspace)
-(advice-add 'org-roam-buffer-toggle :around #'obp/force-roam-tabspace)
-
 (use-package org-ql
   :after org)
 
 ;; ---------------------------------------------------------------------
-;; Tabspaces
+;; Bazooka
 ;; ---------------------------------------------------------------------
-(setq tab-bar-show nil)
-(tab-bar-mode 1)
-
-(use-package tabspaces
-  :ensure t
+(use-package bazooka
+  :straight (:type git
+             :host github
+             :repo "to-bak/bazooka.el"
+             :branch "main")
+  :demand t
   :custom
-  ;; Do not write project/session files on Emacs exit.
-  (tabspaces-session nil)
-  (tabspaces-use-filtered-buffers-as-default t)
-  (tabspaces-default-tab "default")
-  (tabspaces-remove-to-default t)
-  (tabspaces-include-buffers '("*Messages*"))
+  (bazooka-capacity 4))
 
-  :bind (:map project-prefix-map
-              ("p" . project-tabspaces-consult-tabspaces-and-projects)
-              ("f" . project-tabspaces-consult-project-files-and-buffers)
-              ("k" . project-tabspaces-close-workspace))
+(defhydra obp/hydra-bazooka (:color blue :hint nil)
+  "
+Bazooka: _r_emember  _b_rowse  _f_lip  _x_ clear
+"
+  ("r" bazooka-remember)
+  ("b" bazooka-consult)
+  ("f" bazooka-toggle)
+  ("x" bazooka-clear))
 
-  :config
-  (tabspaces-mode 1))
-
-
-(use-package project-tabspaces
-  :straight nil
-  :ensure nil
-  :load-path "~/.emacs.d/plugins"
-  :after tabspaces
-  :config
-  (project-tabspaces-mode 1))
-
-(defun obp/global-switch-buffer ()
-  "Switch to any buffer globally, bypassing Tabspaces."
-  (interactive)
-  (let ((read-buffer-function nil))
-    (call-interactively #'switch-to-buffer)))
-
-(global-set-key (kbd "C-x b") #'obp/global-switch-buffer)
+;; ---------------------------------------------------------------------
+;; Project Tabspaces (disabled)
+;; ---------------------------------------------------------------------
+;; The plugin remains in plugins/project-tabspaces.el for reference.
+;;
+;; (defun obp/force-roam-tabspace (orig-fun &rest args)
+;;   (tabspaces-switch-or-create-workspace "roam")
+;;   (apply orig-fun args))
+;;
+;; (advice-add 'org-roam-node-find :around #'obp/force-roam-tabspace)
+;; (advice-add 'org-roam-node-insert :around #'obp/force-roam-tabspace)
+;; (advice-add 'org-roam-buffer-toggle :around #'obp/force-roam-tabspace)
+;;
+;; (setq tab-bar-show nil)
+;; (tab-bar-mode 1)
+;;
+;; (use-package tabspaces
+;;   :ensure t
+;;   :custom
+;;   (tabspaces-session nil)
+;;   (tabspaces-use-filtered-buffers-as-default t)
+;;   (tabspaces-default-tab "default")
+;;   (tabspaces-remove-to-default t)
+;;   (tabspaces-include-buffers '("*Messages*"))
+;;   :bind (:map project-prefix-map
+;;               ("p" . project-tabspaces-consult-tabspaces-and-projects)
+;;               ("f" . project-tabspaces-consult-project-files-and-buffers)
+;;               ("k" . project-tabspaces-close-workspace))
+;;   :config
+;;   (tabspaces-mode 1))
+;;
+;; (use-package project-tabspaces
+;;   :straight nil
+;;   :ensure nil
+;;   :load-path "~/.emacs.d/plugins"
+;;   :after tabspaces
+;;   :config
+;;   (project-tabspaces-mode 1))
+;;
+;; (defun obp/open-app-workspace (workspace mode command &optional directory)
+;;   "Open WORKSPACE and ensure an app using MODE is visible there.
+;; Preserve the workspace's window layout when one of its windows already shows
+;; MODE.  Otherwise run COMMAND in the selected window, with DIRECTORY as its
+;; `default-directory' when non-nil."
+;;   (let ((tab-bar-new-tab-choice
+;;          (lambda () (get-buffer-create "*scratch*"))))
+;;     (tabspaces-switch-or-create-workspace workspace))
+;;   (unless (seq-some
+;;            (lambda (window)
+;;              (with-current-buffer (window-buffer window)
+;;                (derived-mode-p mode)))
+;;            (window-list))
+;;     (let ((default-directory
+;;            (if directory
+;;                (file-name-as-directory (expand-file-name directory))
+;;              default-directory)))
+;;       (funcall command))))
+;;
+;; (defun obp/global-switch-buffer ()
+;;   "Switch to any buffer globally, bypassing Tabspaces."
+;;   (interactive)
+;;   (let ((read-buffer-function nil))
+;;     (call-interactively #'switch-to-buffer)))
+;;
+;; (global-set-key (kbd "C-x b") #'obp/global-switch-buffer)
+;;
+;; (defun obp/org-agenda-in-tab ()
+;;   "Open the `agenda' workspace, starting Org Agenda when needed."
+;;   (interactive)
+;;   (obp/open-app-workspace
+;;    "agenda"
+;;    'org-agenda-mode
+;;    (lambda ()
+;;      (let ((org-agenda-window-setup 'current-window))
+;;        (org-agenda)))
+;;    host/org-agenda-path))
+;;
+;; (defun obp/agent-shell-cockpit-in-tab ()
+;;   "Open the `cockpit' workspace, starting its cockpit when needed."
+;;   (interactive)
+;;   (require 'agent-shell-cockpit)
+;;   (obp/open-app-workspace
+;;    "cockpit" 'agent-shell-cockpit-mode #'agent-shell-cockpit))
 
 
 ;; ---------------------------------------------------------------------
@@ -1129,11 +1221,14 @@ machine has agent-specific commands, models, or other settings.")
   (org-agenda-redo)
   (message "Dashboard updated with fresh data!"))
 
-(defun obp/org-agenda-in-tab ()
-  "Switch to (or create) a tab named 'agenda' and open Org Agenda."
+(defun obp/org-agenda-fullscreen ()
+  "Remember the current view, then open Org Agenda full-screen."
   (interactive)
-  (tab-switch "agenda")
-  (let ((default-directory (file-name-as-directory (expand-file-name host/org-agenda-path))))
+  (bazooka-remember)
+  (delete-other-windows)
+  (let ((default-directory
+         (file-name-as-directory (expand-file-name host/org-agenda-path)))
+        (org-agenda-window-setup 'current-window))
     (org-agenda)))
 
 (setq org-archive-location
@@ -1288,7 +1383,7 @@ machine has agent-specific commands, models, or other settings.")
 ;; C-c o prefix for org commands
 (define-prefix-command 'obp/org-prefix-map)
 (global-set-key (kbd "C-c o") 'obp/org-prefix-map)
-(global-set-key (kbd "C-c a") 'obp/org-agenda-in-tab)
+(global-set-key (kbd "C-c a") #'obp/org-agenda-fullscreen)
 (global-set-key (kbd "C-c c") 'org-capture)
 
 ;; Global org keybindings (work everywhere)
@@ -1324,14 +1419,14 @@ machine has agent-specific commands, models, or other settings.")
 ;; ---------------------------------------------------------------------
 ;; Window Management
 ;; ---------------------------------------------------------------------
-(defhydra hydra-window ()
+(defhydra hydra-window (:inherit (obp/hydra-bazooka/heads))
   "
-Movement^^    ^Zoom^
------------------------
-_h_ ←         _+_
-_j_ ↓         _-_
-_k_ ↑         _0_ reset
-_l_ →         _C-+_
+Movement^^    ^Zoom^             ^Bazooka^
+---------------------------------------------
+_h_ ←         _+_                _r_emember
+_j_ ↓         _-_                _b_rowse
+_k_ ↑         _0_ reset          _f_lip
+_l_ →         _C-+_              _x_ clear
 _q_uit        _C--_
               _C-0_ global reset
 "
@@ -1433,37 +1528,78 @@ navigation such as @~, @.., @../.., absolute paths, and non-project buffers."
   (evil-define-key 'normal agent-shell-mode-map (kbd "TAB") #'agent-shell-ui-toggle-fragment)
   (evil-define-key 'insert agent-shell-mode-map (kbd "TAB") #'agent-shell-ui-toggle-fragment))
 
-(defun obp/agent-shell-cockpit-in-tab ()
-  "Open a full-window agent cockpit in the `cockpit' tabspace."
+(defun obp/agent-shell-cockpit-fullscreen ()
+  "Remember the current view, then open the agent cockpit full-screen."
   (interactive)
   (require 'agent-shell-cockpit)
-  (tab-switch "cockpit")
+  (bazooka-remember)
   (delete-other-windows)
   (agent-shell-cockpit))
 
-(use-package agent-shell-cockpit
-  :straight nil
-  :ensure nil
-  :load-path "~/.emacs.d/plugins"
-  :after agent-shell
-  :bind (("C-c m" . obp/agent-shell-cockpit-in-tab))
-  :config
-  (add-hook 'agent-shell-cockpit-mode-hook
-            (lambda ()
-              (setq-local olivetti-body-width obp/focused-body-width)
-              (olivetti-mode 1)))
-
-  (with-eval-after-load 'evil
-    (evil-set-initial-state 'agent-shell-cockpit-mode 'normal)
-    (evil-define-key* 'normal agent-shell-cockpit-mode-map
-      (kbd "TAB") #'agent-shell-cockpit-open
-      (kbd "RET") #'agent-shell-cockpit-open
-      (kbd "C-j") #'agent-shell-cockpit-preview-next
-      (kbd "C-k") #'agent-shell-cockpit-preview-previous
-      "r" #'agent-shell-cockpit-refresh
-      "c" #'agent-shell-cockpit-create
-      "C" #'agent-shell-cockpit-create-new
-      "x" #'agent-shell-cockpit-kill
-      "n" #'agent-shell-cockpit-next
-      "p" #'agent-shell-cockpit-previous
-      "q" #'quit-window)))
+;;(use-package agent-shell-cockpit
+;;  :straight nil
+;;  :ensure nil
+;;  :load-path "~/git/agent-shell-cockpit"
+;;  :after agent-shell
+;;  :bind (("C-c m" . obp/agent-shell-cockpit-fullscreen))
+;;  :custom
+;;  (agent-shell-cockpit-prompts-directory-name "prompts")
+;;  (agent-shell-cockpit-default-prompt-filename "prompt.org")
+;;  (agent-shell-cockpit-repositories-directory-name "repositories")
+;;  :config
+;;  (add-hook 'agent-shell-cockpit-mode-hook
+;;            (lambda ()
+;;              (setq-local olivetti-body-width obp/focused-body-width)
+;;              (olivetti-mode 1)))
+;;
+;;  (with-eval-after-load 'evil
+;;    ;; Follow evil-org-agenda's motion-state grammar: j/k and gj/gk move,
+;;    ;; TAB previews, RET opens, and g-prefixed commands refresh/navigate.
+;;    (evil-set-initial-state 'agent-shell-cockpit-mode 'motion)
+;;    (evil-set-initial-state 'agent-shell-cockpit-workspace-view-mode 'motion)
+;;    (evil-define-key* 'motion agent-shell-cockpit-mode-map
+;;      (kbd "TAB") #'agent-shell-cockpit-open
+;;      (kbd "RET") #'agent-shell-cockpit-open
+;;      "j" #'agent-shell-cockpit-next
+;;      "k" #'agent-shell-cockpit-previous
+;;      "gj" #'agent-shell-cockpit-next
+;;      "gk" #'agent-shell-cockpit-previous
+;;      (kbd "C-j") #'agent-shell-cockpit-preview-next
+;;      (kbd "C-k") #'agent-shell-cockpit-preview-previous
+;;      "gg" #'agent-shell-cockpit-first
+;;      "G" #'agent-shell-cockpit-last
+;;      "gr" #'agent-shell-cockpit-refresh
+;;      "cw" #'agent-shell-cockpit-create-workspace
+;;      "ca" #'agent-shell-cockpit-start-agent
+;;      "cA" #'agent-shell-cockpit-start-agent-select
+;;      "ce" #'agent-shell-cockpit-edit-prompt
+;;      "?" #'agent-shell-cockpit-help
+;;      "aa" #'agent-shell-cockpit-attach-session
+;;      "da" #'agent-shell-cockpit-archive-workspace
+;;      "dd" #'agent-shell-cockpit-kill
+;;      "gA" #'agent-shell-cockpit-dashboard-toggle-archived
+;;      "gR" #'agent-shell-cockpit-repair-workspace
+;;      "q" #'quit-window)
+;;
+;;    (evil-define-key* 'motion agent-shell-cockpit-workspace-view-mode-map
+;;      (kbd "TAB") #'agent-shell-cockpit-preview
+;;      (kbd "RET") #'agent-shell-cockpit-open
+;;      "j" #'agent-shell-cockpit-next
+;;      "k" #'agent-shell-cockpit-previous
+;;      "gj" #'agent-shell-cockpit-next
+;;      "gk" #'agent-shell-cockpit-previous
+;;      (kbd "C-j") #'agent-shell-cockpit-preview-next
+;;      (kbd "C-k") #'agent-shell-cockpit-preview-previous
+;;      "gg" #'agent-shell-cockpit-first
+;;      "G" #'agent-shell-cockpit-last
+;;      "gr" #'agent-shell-cockpit-refresh
+;;      "ca" #'agent-shell-cockpit-workspace-view-start-agent
+;;      "cA" #'agent-shell-cockpit-workspace-view-start-agent-select
+;;      "ce" #'agent-shell-cockpit-workspace-view-edit-prompt
+;;      "?" #'agent-shell-cockpit-help
+;;      "cr" #'agent-shell-cockpit-add-worktree
+;;      "dr" #'agent-shell-cockpit-remove-worktree
+;;      "cs" #'agent-shell-cockpit-resume-session
+;;      "da" #'agent-shell-cockpit-workspace-view-archive
+;;      "dd" #'agent-shell-cockpit-workspace-view-kill-session
+;;      "q" #'agent-shell-cockpit-workspace-view-back)))
