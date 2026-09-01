@@ -1,7 +1,9 @@
 {
   description = "Home Manager configuration";
 
-  inputs.nixpkgs-emacs.url = "github:nixos/nixpkgs/release-25.11";
+  # Keep Emacs on unstable so new major releases can move independently of the
+  # rest of the Home Manager package set.
+  inputs.nixpkgs-emacs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
   inputs.nixpkgs.url = "github:nixos/nixpkgs/release-25.11";
   inputs.home-manager = {
     url = "github:nix-community/home-manager/release-25.11";

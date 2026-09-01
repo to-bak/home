@@ -1,7 +1,17 @@
+;;; init.el --- Personal Emacs configuration -*- lexical-binding: nil; -*-
+
 ;; ---------------------------------------------------------------------
 ;; Package managment
 ;; ---------------------------------------------------------------------
 (setq package-enable-at-startup nil)
+
+;; Straight packages can be noisy under a new Emacs compiler.  Suppress both
+;; native- and byte-compiler warning logs while leaving other warning classes
+;; visible at `warning-minimum-level'.
+(require 'warnings)
+(dolist (type '((native-compiler) (bytecomp)))
+  (add-to-list 'warning-suppress-types type)
+  (add-to-list 'warning-suppress-log-types type))
 
 (defvar bootstrap-version)
 (let ((bootstrap-file
@@ -86,6 +96,14 @@ machine has agent-specific commands, models, or other settings.")
   ;; (load-theme 'doom-snazzy)
   ;; (load-theme 'plan9 t)
   (load-theme 'doom-gruvbox t)
+  ;; Doom reverses Emacs 31's inheritance between these Gnus faces, creating a
+  ;; cycle when Gnus loads.  Keep the empty face visually aligned with Doom's
+  ;; empty mail face without inheriting from `gnus-group-news-low'.
+  (custom-theme-set-faces
+   'doom-gruvbox
+   '(gnus-group-news-low-empty
+     ((t (:inherit gnus-group-mail-1-empty :weight normal)))))
+  (require 'gnus)
   (doom-themes-visual-bell-config))
 
 ;; Required by `doom-modeline` to display icons.
@@ -132,8 +150,8 @@ machine has agent-specific commands, models, or other settings.")
 ;; https://www.reddit.com/r/emacs/comments/sn8pma/how_to_pasteyank_into_minibuffer_input_prompt/
 (define-key minibuffer-local-map (kbd "C-v") 'yank)
 
-;; set log-level for *Warning* buffer to :error
-(setq warning-minimum-level :error)
+;; Keep actionable package and compatibility warnings visible.
+(setq warning-minimum-level :warning)
 
 ;; line numbers
 (column-number-mode 1)
@@ -521,8 +539,8 @@ machine has agent-specific commands, models, or other settings.")
    consult-theme :preview-key '(:debounce 0.2 any)
    consult-ripgrep consult-git-grep consult-grep
    consult-bookmark consult-recent-file consult-xref
-   consult--source-bookmark consult--source-file-register
-   consult--source-recent-file consult--source-project-recent-file
+   consult-source-bookmark consult-source-file-register
+   consult-source-recent-file consult-source-project-recent-file
    ;; :preview-key "M-."
    :preview-key '(:debounce 0.4 any))
 
@@ -731,7 +749,10 @@ machine has agent-specific commands, models, or other settings.")
 ;; ---------------------------------------------------------------------
 ;; Languages
 ;; ---------------------------------------------------------------------
-(use-package elixir-mode)
+(use-package elixir-ts-mode
+  :straight (:type built-in))
+(use-package heex-ts-mode
+  :straight (:type built-in))
 (use-package haskell-mode)
 (use-package cc-mode)
 (use-package rust-mode)
@@ -743,6 +764,22 @@ machine has agent-specific commands, models, or other settings.")
 (use-package dockerfile-mode)
 (use-package docker)
 (use-package k8s-mode)
+
+;; Emacs 31 can opt into tree-sitter modes centrally.  Grammars are provided
+;; declaratively by Home Manager, so never download or compile them at runtime.
+(use-package treesit
+  :straight (:type built-in)
+  :custom
+  (treesit-auto-install-grammar nil)
+  (treesit-enabled-modes
+   '(bash-ts-mode
+     c-ts-mode
+     c++-ts-mode
+     elixir-ts-mode
+     heex-ts-mode
+     json-ts-mode
+     rust-ts-mode
+     yaml-ts-mode)))
 
 
 ;; ---------------------------------------------------------------------
@@ -1468,6 +1505,8 @@ _q_uit        _C--_
 
 (use-package agent-shell
   :ensure t
+  :custom
+  (agent-shell-session-restore-verbosity 'full)
   :config
   ;; `agent-shell' starts completion from `post-self-insert-hook'.  Force the
   ;; newly inserted / or @ to be displayed before Corfu asks Emacs for its
@@ -1536,70 +1575,12 @@ navigation such as @~, @.., @../.., absolute paths, and non-project buffers."
   (delete-other-windows)
   (agent-shell-cockpit))
 
-;;(use-package agent-shell-cockpit
-;;  :straight nil
-;;  :ensure nil
-;;  :load-path "~/git/agent-shell-cockpit"
-;;  :after agent-shell
-;;  :bind (("C-c m" . obp/agent-shell-cockpit-fullscreen))
-;;  :custom
-;;  (agent-shell-cockpit-prompts-directory-name "prompts")
-;;  (agent-shell-cockpit-default-prompt-filename "prompt.org")
-;;  (agent-shell-cockpit-repositories-directory-name "repositories")
-;;  :config
-;;  (add-hook 'agent-shell-cockpit-mode-hook
-;;            (lambda ()
-;;              (setq-local olivetti-body-width obp/focused-body-width)
-;;              (olivetti-mode 1)))
-;;
-;;  (with-eval-after-load 'evil
-;;    ;; Follow evil-org-agenda's motion-state grammar: j/k and gj/gk move,
-;;    ;; TAB previews, RET opens, and g-prefixed commands refresh/navigate.
-;;    (evil-set-initial-state 'agent-shell-cockpit-mode 'motion)
-;;    (evil-set-initial-state 'agent-shell-cockpit-workspace-view-mode 'motion)
-;;    (evil-define-key* 'motion agent-shell-cockpit-mode-map
-;;      (kbd "TAB") #'agent-shell-cockpit-open
-;;      (kbd "RET") #'agent-shell-cockpit-open
-;;      "j" #'agent-shell-cockpit-next
-;;      "k" #'agent-shell-cockpit-previous
-;;      "gj" #'agent-shell-cockpit-next
-;;      "gk" #'agent-shell-cockpit-previous
-;;      (kbd "C-j") #'agent-shell-cockpit-preview-next
-;;      (kbd "C-k") #'agent-shell-cockpit-preview-previous
-;;      "gg" #'agent-shell-cockpit-first
-;;      "G" #'agent-shell-cockpit-last
-;;      "gr" #'agent-shell-cockpit-refresh
-;;      "cw" #'agent-shell-cockpit-create-workspace
-;;      "ca" #'agent-shell-cockpit-start-agent
-;;      "cA" #'agent-shell-cockpit-start-agent-select
-;;      "ce" #'agent-shell-cockpit-edit-prompt
-;;      "?" #'agent-shell-cockpit-help
-;;      "aa" #'agent-shell-cockpit-attach-session
-;;      "da" #'agent-shell-cockpit-archive-workspace
-;;      "dd" #'agent-shell-cockpit-kill
-;;      "gA" #'agent-shell-cockpit-dashboard-toggle-archived
-;;      "gR" #'agent-shell-cockpit-repair-workspace
-;;      "q" #'quit-window)
-;;
-;;    (evil-define-key* 'motion agent-shell-cockpit-workspace-view-mode-map
-;;      (kbd "TAB") #'agent-shell-cockpit-preview
-;;      (kbd "RET") #'agent-shell-cockpit-open
-;;      "j" #'agent-shell-cockpit-next
-;;      "k" #'agent-shell-cockpit-previous
-;;      "gj" #'agent-shell-cockpit-next
-;;      "gk" #'agent-shell-cockpit-previous
-;;      (kbd "C-j") #'agent-shell-cockpit-preview-next
-;;      (kbd "C-k") #'agent-shell-cockpit-preview-previous
-;;      "gg" #'agent-shell-cockpit-first
-;;      "G" #'agent-shell-cockpit-last
-;;      "gr" #'agent-shell-cockpit-refresh
-;;      "ca" #'agent-shell-cockpit-workspace-view-start-agent
-;;      "cA" #'agent-shell-cockpit-workspace-view-start-agent-select
-;;      "ce" #'agent-shell-cockpit-workspace-view-edit-prompt
-;;      "?" #'agent-shell-cockpit-help
-;;      "cr" #'agent-shell-cockpit-add-worktree
-;;      "dr" #'agent-shell-cockpit-remove-worktree
-;;      "cs" #'agent-shell-cockpit-resume-session
-;;      "da" #'agent-shell-cockpit-workspace-view-archive
-;;      "dd" #'agent-shell-cockpit-workspace-view-kill-session
-;;      "q" #'agent-shell-cockpit-workspace-view-back)))
+(use-package agent-shell-cockpit
+  :straight (:type git
+             :host github
+             :repo "to-bak/agent-shell-cockpit")
+  :after agent-shell
+  :bind (("C-c m" . obp/agent-shell-cockpit-fullscreen))
+  :custom
+  (agent-shell-cockpit-prompts-directory-name "prompts")
+  (agent-shell-cockpit-repositories-directory-name "repositories"))
