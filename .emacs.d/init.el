@@ -219,6 +219,34 @@ machine has agent-specific commands, models, or other settings.")
   (host/setup-hyperbole-links))
 
 ;; ---------------------------------------------------------------------
+;; Elfeed
+;; ---------------------------------------------------------------------
+(use-package elfeed
+  :ensure t
+  :bind ("C-c e" . elfeed)
+  :config
+  (setq elfeed-feeds
+        '(
+          ;; Danish News
+          ("https://www.version2.dk/rss" dk tech it version2)
+          ;; ("https://nyheder.tv2.dk/rss" dk news tv2)
+          ("https://www.dr.dk/nyheder/service/feeds/senestenyt" dk news)
+
+          ;; Hacker & Developer News
+          ;; ("https://news.ycombinator.com/rss" hacker tech)
+          ;;("http://feeds.arstechnica.com/arstechnica/index" tech longform)
+          ("https://elixirforum.com/rss" elixir dev forum)
+
+          ;; Mainstream Tech & Gadgets
+          ("https://techcrunch.com/feed" tech news)
+          ("https://www.theverge.com/rss/index.xml" tech news)
+
+          ;; Artificial Intelligence
+          ("https://huggingface.co/blog/feed.xml" ai dev)
+          ("https://www.technologyreview.com/topic/artificial-intelligence/feed/" ai news)
+          )))
+
+;; ---------------------------------------------------------------------
 ;; Popper
 ;; ---------------------------------------------------------------------
 (use-package popper
@@ -1582,5 +1610,10 @@ navigation such as @~, @.., @../.., absolute paths, and non-project buffers."
   :after agent-shell
   :bind (("C-c m" . obp/agent-shell-cockpit-fullscreen))
   :custom
-  (agent-shell-cockpit-prompts-directory-name "prompts")
-  (agent-shell-cockpit-repositories-directory-name "repositories"))
+  (agent-shell-cockpit-context-directory-name "context")
+  (agent-shell-cockpit-repositories-directory-name "repositories")
+  (agent-shell-cockpit-repository-open-function #'magit-status)
+  (agent-shell-cockpit-repository-source-function
+   #'project-prompt-project-dir)
+  :config
+  (load (expand-file-name "agent-shell-skills.el" user-emacs-directory) t))
