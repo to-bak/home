@@ -219,6 +219,15 @@ machine has agent-specific commands, models, or other settings.")
   (host/setup-hyperbole-links))
 
 ;; ---------------------------------------------------------------------
+;; Info+
+;; ---------------------------------------------------------------------
+(use-package info+
+  :straight nil
+  :ensure nil
+  :load-path "~/.emacs.d/plugins"
+  :after info)
+
+;; ---------------------------------------------------------------------
 ;; Elfeed
 ;; ---------------------------------------------------------------------
 (use-package elfeed
