@@ -1,7 +1,7 @@
 (("Emacs-wgrep" . "49f09ab9b706d2312cab1199e1eeb1bcd3f27f6f")
  ("acp.el" . "42f5c268537220b94cb1f17e29d3f1f89e6ff0a0")
  ("agent-shell" . "9ce3c06a26116878119d3baa0a93407f3955c806")
- ("agent-shell-cockpit" . "252b614eaac6ce6ee18607d94228d2e2b108dd90")
+ ("agent-shell-cockpit" . "8e53f2d4e05990c49186d565e70f6cfda54611be")
  ("avy" . "933d1f36cca0f71e4acb5fac707e9ae26c536264")
  ("bazooka.el" . "c0f38079616c110641fa6f480c08546ab27b76e2")
  ("bind-key" . "6ff8788e347ce31b5c3c4647c2e22e7ee2c5ab7c")
