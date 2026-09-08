@@ -756,10 +756,20 @@ machine has agent-specific commands, models, or other settings.")
 ;; Version control
 ;; ---------------------------------------------------------------------
 ;; https://www.reddit.com/r/emacs/comments/11auxod/magit_quits_after_a_commit_happen/
+(defun obp/magit-remember-worktree-project ()
+  "Remember the Git worktree opened in Magit as its own project."
+  (require 'project)
+  (when-let* ((root (magit-toplevel))
+              ((file-regular-p (expand-file-name ".git" root)))
+              (project (project-current nil root)))
+    (when (file-equal-p (project-root project) root)
+      (project-remember-project project nil t))))
+
 (use-package magit
   :ensure t
   :config
   (add-hook 'git-commit-post-finish-hook 'magit)
+  (add-hook 'magit-status-mode-hook #'obp/magit-remember-worktree-project)
   :custom
   (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
 
@@ -1615,14 +1625,23 @@ navigation such as @~, @.., @../.., absolute paths, and non-project buffers."
 (use-package agent-shell-cockpit
   :straight (:type git
              :host github
-             :repo "to-bak/agent-shell-cockpit")
+             :repo "to-bak/agent-shell-cockpit"
+             :branch "main")
   :after agent-shell
+  :demand t
   :bind (("C-c m" . obp/agent-shell-cockpit-fullscreen))
   :custom
+  (agent-shell-cockpit-enable-standalone-sessions t)
+  (agent-shell-cockpit-default-instructions '(cockpit))
+  (agent-shell-cockpit-agent-preview-behavior 'delayed)
   (agent-shell-cockpit-context-directory-name "context")
-  (agent-shell-cockpit-repositories-directory-name "repositories")
-  (agent-shell-cockpit-repository-open-function #'magit-status)
+  (agent-shell-cockpit-worktrees-directory-name "worktrees")
+  (agent-shell-cockpit-worktree-open-function #'magit-status)
   (agent-shell-cockpit-repository-source-function
    #'project-prompt-project-dir)
   :config
-  (load (expand-file-name "agent-shell-skills.el" user-emacs-directory) t))
+  (require 'agent-shell-cockpit-org-roam)
+  (setq agent-shell-cockpit-instructions
+        '((manifest
+           :title "AI Manifest"
+           :source (org-roam "a8a767a1-1644-4c4a-a05f-23f7b3eab5bf")))))
