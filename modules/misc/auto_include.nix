@@ -2,19 +2,17 @@
 let
   tex = pkgs.texlive.combine {
     inherit (pkgs.texlive)
-      scheme-medium               # Your base engine and standard tools
-      collection-latexextra       # Thousands of extra packages (includes wrapfig, rotating, capt-of, ulem)
+      scheme-medium # Your base engine and standard tools
+      collection-latexextra # Thousands of extra packages (includes wrapfig, rotating, capt-of, ulem)
       collection-fontsrecommended # Standard widely-used fonts
-      collection-mathscience;     # Everything you need for math, physics, and computer science
+      collection-mathscience; # Everything you need for math, physics, and computer science
   };
-in
-{
+in {
   home.packages = with pkgs; [
     # MISC
     tex
     cachix
     networkmanagerapplet
-    flameshot
     gnumake
     gdb
     nixfmt-classic
@@ -23,7 +21,6 @@ in
     awscli
     whois
     tcpdump
-    xclip
     zathura
     jq
     yq-go

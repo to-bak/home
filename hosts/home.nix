@@ -1,13 +1,6 @@
-{
-  config,
-  extendedLib,
-  pkgs,
-  nixGL,
-  ...
-}:
+{ config, extendedLib, pkgs, nixGL, ... }:
 
-with extendedLib;
-{
+with extendedLib; {
   imports = [
     ../modules/home.nix
     ../modules/desktop
@@ -18,28 +11,25 @@ with extendedLib;
 
   # Identity is read from the environment at build time (requires --impure).
   # This avoids hardcoding personal details in the repo.
-  home.username    = builtins.getEnv "USER";
+  home.username = builtins.getEnv "USER";
   home.homeDirectory = builtins.getEnv "HOME";
   home.stateVersion = "23.11";
 
-  home.packages = with pkgs; [
-    nixgl.nixGLIntel
-  ];
+  home.packages = with pkgs; [ nixgl.nixGLIntel ];
 
   targets.genericLinux.nixGL = {
     packages = nixGL.packages; # you must set this or everything will be a noop
     defaultWrapper = "mesa"; # choose from options
-    installScripts = ["mesa"];
+    installScripts = [ "mesa" ];
     vulkan.enable = false;
   };
+  targets.genericLinux.enable = true;
 
   nixpkgs.config.allowUnfreePredicate = _: true;
 
   modules.desktop = {
-    i3.enable = true;
-    rofi.enable = true;
-    polybar.enable = true;
-    compton.enable = true;
+    sway.enable = true;
+    waybar.enable = true;
   };
 
   modules.editors.neovim.enable = true;
@@ -58,12 +48,8 @@ with extendedLib;
     terminal.tmux = {
       enable = true;
       sessionizer = {
-        shallowDirs = [
-          "$HOME/notes/"
-        ];
-        deepDirs = [
-          "$HOME/git"
-        ];
+        shallowDirs = [ "$HOME/notes/" ];
+        deepDirs = [ "$HOME/git" ];
       };
     };
   };

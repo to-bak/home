@@ -3,17 +3,12 @@
 with extendedLib;
 let
   cfg = config.modules.editors.emacs;
-  emacsPackage = pkgs-emacs.emacs31.override { withNativeCompilation = true; };
-  treesitGrammars =
-    let
-      epkgs = pkgs-emacs.emacsPackagesFor emacsPackage;
-    in
-    epkgs.treesit-grammars.with-all-grammars;
-in
-{
-  options.modules.editors.emacs = {
-    enable = mkBoolOpt false;
-  };
+  emacsPackage =
+    pkgs-emacs.emacs31-pgtk.override { withNativeCompilation = true; };
+  treesitGrammars = let epkgs = pkgs-emacs.emacsPackagesFor emacsPackage;
+  in epkgs.treesit-grammars.with-all-grammars;
+in {
+  options.modules.editors.emacs = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {
     programs.emacs = {
@@ -32,14 +27,12 @@ in
       '';
     };
 
-    home.packages = with pkgs; [
-      cmake
-      libvterm
-    ];
+    home.packages = with pkgs; [ cmake libvterm ];
 
     home.file = {
       ".emacs.d" = {
-        source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/.config/home-manager/.emacs.d";
+        source = config.lib.file.mkOutOfStoreSymlink
+          "${config.home.homeDirectory}/.config/home-manager/.emacs.d";
       };
     };
   };
