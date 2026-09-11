@@ -3,17 +3,25 @@
 with extendedLib;
 let
   cfg = config.modules.editors.emacs;
-  emacsPackage = pkgs-emacs.emacs31.override { withNativeCompilation = true; };
-  treesitGrammars =
-    let
-      epkgs = pkgs-emacs.emacsPackagesFor emacsPackage;
-    in
-    epkgs.treesit-grammars.with-all-grammars;
-in
-{
-  options.modules.editors.emacs = {
-    enable = mkBoolOpt false;
-  };
+  emacsPackage =
+    pkgs-emacs.emacs31-pgtk.override { withNativeCompilation = true; };
+  emacsLauncher = pkgs.runCommand "emacs-launcher" {
+    nativeBuildInputs = [ pkgs.go ];
+  } ''
+    export HOME="$TMPDIR"
+    export GOCACHE="$TMPDIR/go-cache"
+
+    cp ${../../scripts/emacs-launcher.go} emacs-launcher.go
+    gofmt -w emacs-launcher.go
+    cmp ${../../scripts/emacs-launcher.go} emacs-launcher.go
+
+    mkdir -p "$out/bin"
+    go build -o "$out/bin/emacs-launcher" emacs-launcher.go
+  '';
+  treesitGrammars = let epkgs = pkgs-emacs.emacsPackagesFor emacsPackage;
+  in epkgs.treesit-grammars.with-all-grammars;
+in {
+  options.modules.editors.emacs = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {
     programs.emacs = {
@@ -32,14 +40,18 @@ in
       '';
     };
 
-    home.packages = with pkgs; [
-      cmake
-      libvterm
-    ];
+    services.emacs = {
+      enable = true;
+      client.enable = true;
+      startWithUserSession = "graphical";
+    };
+
+    home.packages = with pkgs; [ cmake libvterm emacsLauncher ];
 
     home.file = {
       ".emacs.d" = {
-        source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/.config/home-manager/.emacs.d";
+        source = config.lib.file.mkOutOfStoreSymlink
+          "${config.home.homeDirectory}/.config/home-manager/.emacs.d";
       };
     };
   };

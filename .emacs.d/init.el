@@ -228,6 +228,37 @@ machine has agent-specific commands, models, or other settings.")
   :after info)
 
 ;; ---------------------------------------------------------------------
+;; Universal Launcer
+;; ---------------------------------------------------------------------
+(use-package universal-launcher
+  :straight nil
+  :ensure nil
+  :load-path "~/.emacs.d/plugins")
+
+(use-package everywhere
+  :straight nil
+  :ensure nil
+  :load-path "~/.emacs.d/plugins"
+  :commands thanos/type)
+
+(use-package jb-clipboard-manager
+  :straight nil
+  :ensure nil
+  :load-path "~/.emacs.d/plugins"
+  :commands jb/clipboard-manager)
+
+(use-package sway-emacs-popups
+  :straight nil
+  :ensure nil
+  :load-path "~/.emacs.d/plugins"
+  :commands (obp/sway-universal-launcher
+             obp/sway-agenda
+             obp/sway-org-capture
+             obp/sway-roam-capture
+             obp/sway-clipboard-manager))
+
+
+;; ---------------------------------------------------------------------
 ;; Elfeed
 ;; ---------------------------------------------------------------------
 (use-package elfeed
@@ -308,6 +339,12 @@ machine has agent-specific commands, models, or other settings.")
          ("C-c V" . ghostel))
   :init
   (setq ghostel-shell (executable-find "fish")))
+
+(use-package ghostel-frame
+  :straight nil
+  :ensure nil
+  :load-path "~/.emacs.d/plugins"
+  :commands my/new-frame-with-ghostel)
 
 (use-package evil-ghostel
   :after (ghostel evil)

@@ -1,30 +1,53 @@
-{
-  config,
-  options,
-  lib,
-  pkgs,
-  nixpkgs,
-  specialArgs,
-  ...
-}:
+{ config, options, lib, pkgs, nixpkgs, specialArgs, ... }:
 with specialArgs.extendedLib;
-let
-  cfg = config.home;
-in
-{
+let cfg = config.home;
+in {
   options.home = with types; {
     # file = mkOpt' attrs { } "Files to place directly in $HOME";
-    configFile = mkOption { type = attrs; default = { }; description =  "Files to place in $XDG_CONFIG_HOME"; };
-    dataFile = mkOption { type = attrs; default = { }; description = "Files to place in $XDG_DATA_HOME"; };
-    fakeFile = mkOption { type = attrs; default = { }; description = "Files to place in $XDG_FAKE_HOME"; };
+    configFile = mkOption {
+      type = attrs;
+      default = { };
+      description = "Files to place in $XDG_CONFIG_HOME";
+    };
+    dataFile = mkOption {
+      type = attrs;
+      default = { };
+      description = "Files to place in $XDG_DATA_HOME";
+    };
+    fakeFile = mkOption {
+      type = attrs;
+      default = { };
+      description = "Files to place in $XDG_FAKE_HOME";
+    };
 
-    dir = mkOption { type = str; default = "${config.home.homeDirectory}"; };
-    binDir =    mkOption { type = str; default = "${cfg.dir}/.local/bin"; };
-    cacheDir =  mkOption { type = str; default = "${cfg.dir}/.cache"; };
-    configDir = mkOption { type = str; default = "${cfg.dir}/.config"; };
-    dataDir =   mkOption { type = str; default = "${cfg.dir}/.local/share"; };
-    stateDir =  mkOption { type = str; default = "${cfg.dir}/.local/state"; };
-    fakeDir =   mkOption { type = str; default = "${cfg.dir}/.local/user"; };
+    dir = mkOption {
+      type = str;
+      default = "${config.home.homeDirectory}";
+    };
+    binDir = mkOption {
+      type = str;
+      default = "${cfg.dir}/.local/bin";
+    };
+    cacheDir = mkOption {
+      type = str;
+      default = "${cfg.dir}/.cache";
+    };
+    configDir = mkOption {
+      type = str;
+      default = "${cfg.dir}/.config";
+    };
+    dataDir = mkOption {
+      type = str;
+      default = "${cfg.dir}/.local/share";
+    };
+    stateDir = mkOption {
+      type = str;
+      default = "${cfg.dir}/.local/state";
+    };
+    fakeDir = mkOption {
+      type = str;
+      default = "${cfg.dir}/.local/user";
+    };
   };
 
   config = {
@@ -52,12 +75,10 @@ in
       TERMINAL = "alacritty";
       EDITOR = "nvim";
       BOX_TESTS_PATH = "../box_tests";
+      SSH_AUTH_SOCK = "$XDG_RUNTIME_DIR/ssh-agent.socket";
     };
 
-    home.sessionPath = [
-       "$HOME/software/tooling"
-       "$HOME/.scripts"
-    ];
+    home.sessionPath = [ "$HOME/software/tooling" "$HOME/.scripts" ];
 
     home.file.".scripts" = {
       source = ../scripts;
@@ -67,14 +88,14 @@ in
     xdg = {
       # enable = true;
       configFile = mkAliasDefinitions options.home.configFile;
-      dataFile   = mkAliasDefinitions options.home.dataFile;
+      dataFile = mkAliasDefinitions options.home.dataFile;
 
       # Force these, since it'll be considered an abstraction leak to use
       # home-manager's API anywhere outside this module.
-      cacheHome  = mkForce cfg.cacheDir;
+      cacheHome = mkForce cfg.cacheDir;
       configHome = mkForce cfg.configDir;
-      dataHome   = mkForce cfg.dataDir;
-      stateHome  = mkForce cfg.stateDir;
+      dataHome = mkForce cfg.dataDir;
+      stateHome = mkForce cfg.stateDir;
     };
   };
 }
