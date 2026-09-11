@@ -59,8 +59,39 @@ in {
       Install.WantedBy = [ "sway-session.target" ];
     };
 
+    systemd.user.services.cliphist-text = {
+      Unit = {
+        Description = "Store Wayland text clipboard history";
+        PartOf = [ "sway-session.target" ];
+        After = [ "sway-session.target" ];
+        ConditionEnvironment = "WAYLAND_DISPLAY";
+      };
+      Service = {
+        ExecStart = "${pkgs.wl-clipboard}/bin/wl-paste --type text --watch ${pkgs.cliphist}/bin/cliphist store";
+        Restart = "on-failure";
+        RestartSec = 1;
+      };
+      Install.WantedBy = [ "sway-session.target" ];
+    };
+
+    systemd.user.services.cliphist-image = {
+      Unit = {
+        Description = "Store Wayland image clipboard history";
+        PartOf = [ "sway-session.target" ];
+        After = [ "sway-session.target" ];
+        ConditionEnvironment = "WAYLAND_DISPLAY";
+      };
+      Service = {
+        ExecStart = "${pkgs.wl-clipboard}/bin/wl-paste --type image --watch ${pkgs.cliphist}/bin/cliphist store";
+        Restart = "on-failure";
+        RestartSec = 1;
+      };
+      Install.WantedBy = [ "sway-session.target" ];
+    };
+
     home.packages = with pkgs; [
       brightnessctl
+      cliphist
       grim
       jq
       kanshi
@@ -68,7 +99,7 @@ in {
       slurp
       swappy
       wl-clipboard
-      wmenu
+      wtype
     ];
 
     home.configFile."xdg-desktop-portal/portals.conf".source =
