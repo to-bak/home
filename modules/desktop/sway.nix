@@ -8,19 +8,10 @@ in {
   config = mkIf cfg.enable {
     wayland.windowManager.sway = {
       enable = true;
-      package = config.lib.nixGL.wrap pkgs.sway;
+      package = null;
       config = null;
       xwayland = true;
       systemd.enable = true;
-      extraSessionCommands = ''
-        export MOZ_ENABLE_WAYLAND=1
-        export NIXOS_OZONE_WL=1
-        export QT_QPA_PLATFORM="wayland;xcb"
-        export SDL_VIDEODRIVER=wayland,x11
-        export XDG_CURRENT_DESKTOP=sway
-        export XDG_SESSION_DESKTOP=sway
-        export XDG_SESSION_TYPE=wayland
-      '';
       extraConfig = builtins.replaceStrings [ "@wallpaper@" ]
         [ "${../../wallpapers/nord_dark_city.png}" ]
         (builtins.readFile ../../configs/sway/config);
@@ -51,7 +42,7 @@ in {
       Service = {
         ExecStart = "${../../scripts/sway-opacity}";
         Environment = [
-          "PATH=${pkgs.lib.makeBinPath [ pkgs.sway pkgs.jq ]}"
+          "PATH=/usr/local/bin:${pkgs.lib.makeBinPath [ pkgs.jq ]}"
         ];
         Restart = "on-failure";
         RestartSec = 1;
