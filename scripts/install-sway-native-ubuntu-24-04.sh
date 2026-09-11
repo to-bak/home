@@ -1,6 +1,10 @@
 #!/bin/sh
 set -eu
 
+# Keep this Ubuntu-native build isolated from a Nix login environment.
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+export PATH
+
 sway_version=1.11
 wlroots_version=0.19.3
 package_version=1.11-1ubuntu24.04local3
@@ -60,7 +64,6 @@ sudo apt-get -o DPkg::Lock::Timeout="$apt_lock_timeout" install -y \
   libxkbcommon-dev \
   meson \
   ninja-build \
-  patch \
   pkg-config \
   scdoc \
   swaybg \
@@ -87,9 +90,9 @@ fetch_source() {
   tar -xf "$archive" -C "$source_dir"
 }
 
-fetch_source wayland.tar.xz \
-  https://gitlab.freedesktop.org/wayland/wayland/-/releases/1.23.1/downloads/wayland-1.23.1.tar.xz \
-  864fb2a8399e2d0ec39d56e9d9b753c093775beadc6022ce81f441929a81e5ed
+fetch_source wayland.tar.gz \
+  https://gitlab.freedesktop.org/wayland/wayland/-/archive/1.23.1/wayland-1.23.1.tar.gz \
+  158ec49af498f2558c7fbf7e8b070d010d4e270cc6076003a18a6c813f87e244
 fetch_source pixman.tar.gz \
   https://cairographics.org/releases/pixman-0.44.2.tar.gz \
   6349061ce1a338ab6952b92194d1b0377472244208d47ff25bef86fc71973466
@@ -149,23 +152,17 @@ build_meson_project libinput-1.26.2 \
 # Proprietary NVIDIA's implicit synchronization can expose unfinished GLES
 # rendering during wlroots' cross-GPU copy. Keep upstream behavior by default
 # and let the hybrid-GPU launcher opt into the stronger synchronization.
-patch -d "$source_dir/wlroots-$wlroots_version" -p1 <<'PATCH'
---- a/render/gles2/pass.c
-+++ b/render/gles2/pass.c
-@@ -57,7 +57,11 @@ static bool render_pass_submit(struct wlr_render_pass *wlr_pass) {
- 			goto out;
- 		}
- 	} else {
--		glFlush();
-+		if (getenv("WLR_NVIDIA_FORCE_GLES2_FINISH") != NULL) {
-+			glFinish();
-+		} else {
-+			glFlush();
-+		}
- 	}
- 
- 	ok = true;
-PATCH
+gles2_pass="$source_dir/wlroots-$wlroots_version/render/gles2/pass.c"
+if [ "$(grep -c '^[[:space:]]*glFlush();$' "$gles2_pass")" -ne 1 ]; then
+  printf '%s\n' "Unexpected wlroots GLES2 source; refusing to patch it." >&2
+  exit 1
+fi
+sed -i '/^[[:space:]]*glFlush();$/c\
+\t\tif (getenv("WLR_NVIDIA_FORCE_GLES2_FINISH") != NULL) {\
+\t\t\tglFinish();\
+\t\t} else {\
+\t\t\tglFlush();\
+\t\t}' "$gles2_pass"
 
 build_meson_project "wlroots-$wlroots_version" \
   -Dbackends=drm,libinput \
