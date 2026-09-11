@@ -227,36 +227,6 @@ machine has agent-specific commands, models, or other settings.")
   :load-path "~/.emacs.d/plugins"
   :after info)
 
-;; ---------------------------------------------------------------------
-;; Universal Launcer
-;; ---------------------------------------------------------------------
-(use-package universal-launcher
-  :straight nil
-  :ensure nil
-  :load-path "~/.emacs.d/plugins")
-
-(use-package everywhere
-  :straight nil
-  :ensure nil
-  :load-path "~/.emacs.d/plugins"
-  :commands thanos/type)
-
-(use-package jb-clipboard-manager
-  :straight nil
-  :ensure nil
-  :load-path "~/.emacs.d/plugins"
-  :commands jb/clipboard-manager)
-
-(use-package sway-emacs-popups
-  :straight nil
-  :ensure nil
-  :load-path "~/.emacs.d/plugins"
-  :commands (obp/sway-universal-launcher
-             obp/sway-agenda
-             obp/sway-org-capture
-             obp/sway-roam-capture
-             obp/sway-clipboard-manager))
-
 
 ;; ---------------------------------------------------------------------
 ;; Elfeed
@@ -1682,3 +1652,35 @@ navigation such as @~, @.., @../.., absolute paths, and non-project buffers."
         '((manifest
            :title "AI Manifest"
            :source (org-roam "a8a767a1-1644-4c4a-a05f-23f7b3eab5bf")))))
+
+
+;; ---------------------------------------------------------------------
+;; Universal Launcer
+;; ---------------------------------------------------------------------
+(use-package universal-launcher
+  :straight nil
+  :ensure nil
+  :load-path "~/.emacs.d/plugins"
+  :commands universal-launcher-popup)
+
+(use-package everywhere
+  :straight nil
+  :ensure nil
+  :load-path "~/.emacs.d/plugins"
+  :commands thanos/type)
+
+(use-package jb-clipboard-manager
+  :straight nil
+  :ensure nil
+  :load-path "~/.emacs.d/plugins"
+  :commands jb/clipboard-manager)
+
+(use-package sway-emacs-popups
+  :straight nil
+  :ensure nil
+  :load-path "~/.emacs.d/plugins"
+  :commands (obp/sway-universal-launcher
+             obp/sway-agenda
+             obp/sway-org-capture
+             obp/sway-roam-capture
+             obp/sway-clipboard-manager))
