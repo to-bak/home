@@ -18,23 +18,11 @@ trap 'rm -f "$launcher" "$session"' EXIT
 cat >"$launcher" <<'EOF'
 #!/bin/sh
 
-if [ -r /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]; then
-  . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
-elif [ -r /etc/profile.d/nix.sh ]; then
-  . /etc/profile.d/nix.sh
-fi
-
 if [ -r "$HOME/.nix-profile/etc/profile.d/hm-session-vars.sh" ]; then
   . "$HOME/.nix-profile/etc/profile.d/hm-session-vars.sh"
 fi
 
-export PATH="$HOME/.nix-profile/bin:/nix/var/nix/profiles/default/bin:$PATH"
-
-systemctl --user import-environment PATH
-if command -v dbus-update-activation-environment >/dev/null 2>&1; then
-  dbus-update-activation-environment --systemd PATH
-fi
-
+export PATH="$HOME/.nix-profile/bin:$PATH"
 exec "$HOME/.nix-profile/bin/sway"
 EOF
 
