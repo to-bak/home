@@ -78,7 +78,11 @@ in {
       SSH_AUTH_SOCK = "$XDG_RUNTIME_DIR/ssh-agent.socket";
     };
 
-    home.sessionPath = [ "$HOME/software/tooling" "$HOME/.scripts" ];
+    home.sessionPath = [
+      "/nix/var/nix/profiles/default/bin"
+      "$HOME/software/tooling"
+      "$HOME/.scripts"
+    ];
 
     home.file.".scripts" = {
       source = ../scripts;
