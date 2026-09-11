@@ -27,6 +27,12 @@ in {
       '';
     };
 
+    services.emacs = {
+      enable = true;
+      client.enable = true;
+      startWithUserSession = "graphical";
+    };
+
     home.packages = with pkgs; [ cmake libvterm ];
 
     home.file = {

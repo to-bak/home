@@ -8,6 +8,7 @@ in {
   config = mkIf cfg.enable {
     wayland.windowManager.sway = {
       enable = true;
+      package = config.lib.nixGL.wrap pkgs.sway;
       config = null;
       xwayland = true;
       systemd.enable = true;
@@ -38,6 +39,24 @@ in {
           command = "/usr/bin/swaylock -f -c 000000";
         }
       ];
+    };
+
+    systemd.user.services.sway-opacity = {
+      Unit = {
+        Description = "Apply focused and unfocused Sway window opacity";
+        PartOf = [ "sway-session.target" ];
+        After = [ "sway-session.target" ];
+        ConditionEnvironment = "WAYLAND_DISPLAY";
+      };
+      Service = {
+        ExecStart = "${../../scripts/sway-opacity}";
+        Environment = [
+          "PATH=${pkgs.lib.makeBinPath [ pkgs.sway pkgs.jq ]}"
+        ];
+        Restart = "on-failure";
+        RestartSec = 1;
+      };
+      Install.WantedBy = [ "sway-session.target" ];
     };
 
     home.packages = with pkgs; [

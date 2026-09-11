@@ -1,0 +1,38 @@
+#!/bin/sh
+
+apply_opacity() {
+  commands=$(
+    swaymsg -t get_tree -r |
+      jq -r '
+        [
+          .. | objects |
+          select(.type? == "con" and .pid? != null) |
+          ((.app_id // .window_properties.class // "") | ascii_downcase) as $app |
+          if $app == "emacs" and .focused then
+            { id, opacity: 0.99 }
+          elif ($app | test("chromium|google-chrome|spotify|discord")) then
+            { id, opacity: 1.0 }
+          elif .focused then
+            { id, opacity: 0.96 }
+          else
+            { id, opacity: 0.86 }
+          end
+        ] |
+        map("[con_id=\(.id)] opacity set \(.opacity)") |
+        join("; ")
+      '
+  ) || return
+
+  [ -z "$commands" ] || swaymsg -q "$commands"
+}
+
+apply_opacity
+swaymsg -m -t subscribe '["window"]' |
+  while read -r event; do
+    change=$(printf '%s\n' "$event" | jq -r '.change // empty')
+    case "$change" in
+      new | focus | move | floating)
+        apply_opacity
+        ;;
+    esac
+  done

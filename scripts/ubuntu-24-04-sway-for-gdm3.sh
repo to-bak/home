@@ -1,8 +1,10 @@
 #!/bin/sh
 set -eu
 
-sudo apt-get update
-sudo apt-get install -y \
+apt_lock_timeout=300
+
+sudo apt-get -o DPkg::Lock::Timeout="$apt_lock_timeout" update
+sudo apt-get -o DPkg::Lock::Timeout="$apt_lock_timeout" install -y \
   policykit-1-gnome \
   swaylock \
   xdg-desktop-portal \

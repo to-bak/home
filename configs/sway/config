@@ -24,6 +24,8 @@ client.placeholder #c0c0c0 #0c0f0c #dbdbdb #71983b #c0c0c0
 client.background #0c0f0c
 
 input type:keyboard {
+    xkb_layout dk
+    xkb_variant nodeadkeys
     xkb_options ctrl:nocaps
 }
 
@@ -112,10 +114,6 @@ mode "resize" {
 gaps inner 5
 gaps outer 5
 smart_gaps on
-
-for_window [app_id="emacs"] opacity 0.99
-for_window [app_id="chromium-browser"] opacity 1.0
-for_window [app_id="chromium"] opacity 1.0
 
 exec swaymsg workspace 1
 exec nm-applet --indicator
