@@ -3,12 +3,18 @@
 with extendedLib;
 let cfg = config.modules.desktop.sway;
 in {
-  options.modules.desktop.sway.enable = mkBoolOpt false;
+  options.modules.desktop.sway = {
+    enable = mkBoolOpt false;
+    offloadGpu = mkBoolOpt false;
+  };
 
   config = mkIf cfg.enable {
     wayland.windowManager.sway = {
       enable = true;
-      package = config.lib.nixGL.wrap pkgs.sway;
+      package =
+        if cfg.offloadGpu
+        then config.lib.nixGL.wrapOffload pkgs.sway
+        else config.lib.nixGL.wrap pkgs.sway;
       config = null;
       xwayland = true;
       systemd.enable = true;

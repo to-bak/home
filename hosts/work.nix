@@ -22,7 +22,12 @@ in {
   targets.genericLinux.nixGL = {
     packages = nixGL.packages; # you must set this or everything will be a noop
     defaultWrapper = "mesa"; # choose from options
-    installScripts = [ "mesa" ];
+    offloadWrapper = "nvidiaPrime";
+    installScripts = [ "mesa" "nvidiaPrime" ];
+    prime = {
+      card = "1";
+      installScript = "nvidia";
+    };
     vulkan.enable = false;
   };
   targets.genericLinux.enable = true;
@@ -30,7 +35,10 @@ in {
   nixpkgs.config.allowUnfreePredicate = _: true;
 
   modules.desktop = {
-    sway.enable = true;
+    sway = {
+      enable = true;
+      offloadGpu = true;
+    };
     waybar.enable = true;
   };
 
