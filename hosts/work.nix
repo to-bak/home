@@ -4,6 +4,11 @@ with extendedLib;
 let
   cfg = config.home;
   lib = extendedLib;
+  nixGLPackages = import nixGL {
+    inherit pkgs;
+    nvidiaVersion = "595.84";
+    nvidiaHash = "sha256-mcQE5SExvye8ptoCaNzOPr7cenOrF0BxqZXPGmxeugY=";
+  };
 in {
   imports = [
     ../modules/home.nix
@@ -20,7 +25,7 @@ in {
   home.packages = with pkgs; [ nixgl.nixGLIntel ];
 
   targets.genericLinux.nixGL = {
-    packages = nixGL.packages; # you must set this or everything will be a noop
+    packages = nixGLPackages;
     defaultWrapper = "mesa"; # choose from options
     offloadWrapper = "nvidiaPrime";
     installScripts = [ "mesa" "nvidiaPrime" ];
