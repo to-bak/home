@@ -76,8 +76,4 @@ in
 
   programs.home-manager.enable = true;
   programs.command-not-found.enable = true;
-  programs.ssh = {
-    enable = true;
-    enableDefaultConfig = false;
-  };
 }
