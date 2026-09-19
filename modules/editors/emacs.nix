@@ -4,16 +4,10 @@ with extendedLib;
 let
   cfg = config.modules.editors.emacs;
   emacsPackage = pkgs-emacs.emacs31.override { withNativeCompilation = true; };
-  treesitGrammars =
-    let
-      epkgs = pkgs-emacs.emacsPackagesFor emacsPackage;
-    in
-    epkgs.treesit-grammars.with-all-grammars;
-in
-{
-  options.modules.editors.emacs = {
-    enable = mkBoolOpt false;
-  };
+  treesitGrammars = let epkgs = pkgs-emacs.emacsPackagesFor emacsPackage;
+  in epkgs.treesit-grammars.with-all-grammars;
+in {
+  options.modules.editors.emacs = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {
     programs.emacs = {
@@ -32,14 +26,25 @@ in
       '';
     };
 
+    services.emacs = {
+      enable = true;
+      client.enable = true;
+      startWithUserSession = true;
+    };
+
     home.packages = with pkgs; [
       cmake
       libvterm
+      xclip
+      xdotool
+      xorg.xprop
+      xorg.xwininfo
     ];
 
     home.file = {
       ".emacs.d" = {
-        source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/.config/home-manager/.emacs.d";
+        source = config.lib.file.mkOutOfStoreSymlink
+          "${config.home.homeDirectory}/.config/home-manager/.emacs.d";
       };
     };
   };
