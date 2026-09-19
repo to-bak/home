@@ -66,9 +66,9 @@ bindsym Mod4+Shift+x exec i3lock -c 000000
 bindsym Mod4+Up focus up
 bindsym Mod4+a focus parent
 bindsym Mod4+ae split h
-bindsym Mod4+c exec --no-startup-id emacs-launcher '(obp/desktop-org-agenda)'
-bindsym Mod4+Ctrl+c exec --no-startup-id emacs-launcher '(obp/desktop-org-capture)'
-bindsym Mod4+d exec --no-startup-id emacs-launcher '(obp/desktop-universal-launcher)'
+bindsym Mod4+c exec --no-startup-id emacsclient -n --eval "(run-at-time 0 nil (function obp/desktop-org-agenda))"
+bindsym Mod4+Ctrl+c exec --no-startup-id emacsclient -n --eval "(run-at-time 0 nil (function obp/desktop-org-capture))"
+bindsym Mod4+d exec --no-startup-id emacsclient -n --eval "(run-at-time 0 nil (function obp/desktop-universal-launcher))"
 bindsym Mod4+e layout toggle split
 bindsym Mod4+Ctrl+e exec --no-startup-id emacsclient --eval "(emacs-everywhere)"
 bindsym Mod4+f fullscreen toggle
@@ -82,8 +82,8 @@ bindsym Mod4+s layout stacking
 bindsym Mod4+space focus mode_toggle
 bindsym Mod4+v split v
 bindsym Mod4+w layout tabbed
-bindsym Mod4+x exec --no-startup-id emacs-launcher '(obp/desktop-org-roam-capture)'
-bindsym Mod4+Ctrl+x exec --no-startup-id emacs-launcher '(obp/desktop-org-roam-daily-capture)'
+bindsym Mod4+x exec --no-startup-id emacsclient -n --eval "(run-at-time 0 nil (function obp/desktop-org-roam-capture))"
+bindsym Mod4+Ctrl+x exec --no-startup-id emacsclient -n --eval "(run-at-time 0 nil (function obp/desktop-org-roam-daily-capture))"
 bindsym XF86AudioLowerVolume exec amixer -D pulse sset Master 4%-
 bindsym XF86AudioMute exec amixer -D pulse sset Master toggle
 bindsym XF86AudioRaiseVolume exec amixer -D pulse sset Master 4%+

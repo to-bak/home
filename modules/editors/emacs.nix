@@ -4,20 +4,6 @@ with extendedLib;
 let
   cfg = config.modules.editors.emacs;
   emacsPackage = pkgs-emacs.emacs31.override { withNativeCompilation = true; };
-  emacsLauncher =
-    pkgs.runCommand "emacs-launcher" { nativeBuildInputs = [ pkgs.go ]; } ''
-      export HOME="$TMPDIR"
-      export GOCACHE="$TMPDIR/go-cache"
-
-      cp ${../../scripts/emacs-launcher.go} emacs-launcher.go
-      gofmt -w emacs-launcher.go
-      cmp ${../../scripts/emacs-launcher.go} emacs-launcher.go
-      substituteInPlace emacs-launcher.go \
-        --replace-fail '@pluginDir@' '${../../.emacs.d/plugins}'
-
-      mkdir -p "$out/bin"
-      go build -o "$out/bin/emacs-launcher" emacs-launcher.go
-    '';
   treesitGrammars = let epkgs = pkgs-emacs.emacsPackagesFor emacsPackage;
   in epkgs.treesit-grammars.with-all-grammars;
 in {
@@ -48,7 +34,6 @@ in {
 
     home.packages = with pkgs; [
       cmake
-      emacsLauncher
       libvterm
       xclip
       xdotool
