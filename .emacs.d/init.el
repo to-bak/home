@@ -70,6 +70,12 @@ machine has agent-specific commands, models, or other settings.")
 (defvar host/org-agenda-reviews-path (concat host/org-agenda-path "/data/reviews.org")
   "Default path for Org agenda. Overridden by host.el if present.")
 
+(defvar host/org-roam-dailies-path (concat host/org-roam-path "/daily")
+  "Org-roam dailies included in the agenda.")
+
+(defvar host/org-roam-projects-path (concat host/org-roam-path "/projects")
+  "Org-roam project notes included in the agenda.")
+
 ;; ---------------------------------------------------------------------
 ;; Misc
 ;; ---------------------------------------------------------------------
@@ -217,6 +223,28 @@ machine has agent-specific commands, models, or other settings.")
   (global-set-key (kbd "C-c h") #'action-key)
 
   (host/setup-hyperbole-links))
+
+(use-package emacs-everywhere
+  :commands emacs-everywhere)
+
+(use-package universal-launcher
+  :straight nil
+  :ensure nil
+  :load-path "~/.emacs.d/plugins"
+  :custom
+  (universal-launcher-bookmarks-file
+   (expand-file-name "bookmarks.org" host/org-agenda-path))
+  :commands universal-launcher-popup)
+
+(use-package desktop-emacs-popups
+  :straight nil
+  :ensure nil
+  :load-path "~/.emacs.d/plugins"
+  :commands (obp/desktop-universal-launcher
+             obp/desktop-org-agenda
+             obp/desktop-org-capture
+             obp/desktop-org-roam-capture
+             obp/desktop-org-roam-daily-capture))
 
 ;; ---------------------------------------------------------------------
 ;; Info+
@@ -1012,6 +1040,44 @@ machine has agent-specific commands, models, or other settings.")
     :unnarrowed t)
   "Contact org-roam capture template body.")
 
+(defvar obp/org-roam-template-inbox
+  `(plain "%?"
+          :target (file+head "inbox/%<%Y%m%d%H%M%S>-${slug}.org"
+                             ,(concat
+                               "#+title: ${title}\n"
+                               "#+filetags: :inbox:\n"))
+          :unnarrowed t)
+  "Fleeting Org-roam note to refine and link later.")
+
+(defvar obp/org-roam-template-project
+  `(plain
+    ,(concat
+      "* Outcome\n"
+      "%?\n\n"
+      "* Next actions\n\n"
+      "* Notes\n")
+    :target (file+head "projects/${slug}.org"
+                       ,(concat
+                         "#+title: ${title}\n"
+                         "#+filetags: :project:\n"))
+    :unnarrowed t)
+  "Agenda-visible Org-roam project note.")
+
+(defvar obp/org-roam-template-reference
+  `(plain
+    ,(concat
+      "- Source :: %^{Source URL}\n\n"
+      "* Summary\n"
+      "%?\n\n"
+      "* Key ideas\n"
+      "- ")
+    :target (file+head "references/${slug}.org"
+                       ,(concat
+                         "#+title: ${title}\n"
+                         "#+filetags: :reference:\n"))
+    :unnarrowed t)
+  "Reference or literature note with its source.")
+
 
 (defvar obp/org-roam-dailies-template-meeting
   `(entry
@@ -1061,10 +1127,20 @@ machine has agent-specific commands, models, or other settings.")
          ("C-c n d y" . org-roam-dailies-capture-yesterday)
          ("C-c n d t" . org-roam-dailies-capture-tomorrow))
   :config
+  (dolist (directory (list host/org-roam-dailies-path
+                           host/org-roam-projects-path
+                           (expand-file-name "inbox" host/org-roam-path)
+                           (expand-file-name "references" host/org-roam-path)
+                           (expand-file-name "contacts" host/org-roam-path)))
+    (make-directory directory t))
+
   (setq org-roam-node-display-template (concat "${title:*} " (propertize "${tags:10}" 'face 'org-tag)))
 
   (setq org-roam-capture-templates
         `(("d" "default" ,@obp/org-roam-template-default)
+          ("i" "inbox / fleeting" ,@obp/org-roam-template-inbox)
+          ("p" "project" ,@obp/org-roam-template-project)
+          ("r" "reference" ,@obp/org-roam-template-reference)
           ("c" "contact" ,@obp/org-roam-template-contact)))
 
   (setq org-roam-dailies-capture-templates
@@ -1252,7 +1328,7 @@ Bazooka: _r_emember  _b_rowse  _f_lip  _x_ clear
         (tags   . " %i ")
         (search . " ")))
 
-(setq org-agenda-window-setup 'only-window)
+(setq org-agenda-window-setup 'current-window)
 
 (setq org-agenda-scheduled-leaders '("📅        " "📅 %2dx:  ")
       org-agenda-deadline-leaders  '("🚨        " "🚨 %3dd:  " "🚨 -%2dd: "))
@@ -1268,7 +1344,10 @@ Bazooka: _r_emember  _b_rowse  _f_lip  _x_ clear
 (setq org-log-into-drawer t)
 
 (setq org-agenda-files
-      (list host/org-agenda-path host/org-agenda-ticket-path))
+      (list host/org-agenda-path
+            host/org-agenda-ticket-path
+            host/org-roam-dailies-path
+            host/org-roam-projects-path))
 
 (setq org-todo-keywords
       '((sequence "TODO(t)" "STARTED(s)" "|" "CLOSED(c)")
@@ -1304,16 +1383,6 @@ Bazooka: _r_emember  _b_rowse  _f_lip  _x_ clear
   (obp/refresh-prs-agenda)
   (org-agenda-redo)
   (message "Dashboard updated with fresh data!"))
-
-(defun obp/org-agenda-fullscreen ()
-  "Remember the current view, then open Org Agenda full-screen."
-  (interactive)
-  (bazooka-remember)
-  (delete-other-windows)
-  (let ((default-directory
-         (file-name-as-directory (expand-file-name host/org-agenda-path)))
-        (org-agenda-window-setup 'current-window))
-    (org-agenda)))
 
 (setq org-archive-location
       (concat host/org-agenda-path "/archive.org_archive::* Archive"))
@@ -1433,6 +1502,20 @@ Bazooka: _r_emember  _b_rowse  _f_lip  _x_ clear
     "* TODO %?\nSCHEDULED: <%(org-read-date nil nil \"+1d\")>\n%a")
   "Standard capture template for agenda tasks (type, target, template).")
 
+(defvar obp/org-capture-template-inbox
+  '(entry
+    (file+headline org-default-agenda-file "Inbox")
+    "* TODO %?\n:PROPERTIES:\n:CAPTURED: %U\n:END:\n%a"
+    :empty-lines 1)
+  "Unscheduled task for later inbox triage.")
+
+(defvar obp/org-capture-template-note
+  '(entry
+    (file+headline org-default-agenda-file "Inbox")
+    "* %? :NOTE:\n%U\n%a"
+    :empty-lines 1)
+  "Non-actionable note in the agenda inbox.")
+
 (defvar obp/org-capture-template-ticket
   `(plain
     (file obp/get-ticket-file-path)
@@ -1450,7 +1533,9 @@ Bazooka: _r_emember  _b_rowse  _f_lip  _x_ clear
   "Capture template for dynamic Jira Tickets.")
 
 (setq org-capture-templates
-      `(("a" "Agenda - task"      ,@obp/org-capture-template-agenda)
+      `(("i" "Inbox - task"       ,@obp/org-capture-template-inbox)
+        ("a" "Agenda - scheduled" ,@obp/org-capture-template-agenda)
+        ("n" "Inbox - note"       ,@obp/org-capture-template-note)
         ("p" "AI Prompt / Ticket" ,@obp/org-capture-template-ticket)))
 
 (use-package org-ql
@@ -1467,7 +1552,7 @@ Bazooka: _r_emember  _b_rowse  _f_lip  _x_ clear
 ;; C-c o prefix for org commands
 (define-prefix-command 'obp/org-prefix-map)
 (global-set-key (kbd "C-c o") 'obp/org-prefix-map)
-(global-set-key (kbd "C-c a") #'obp/org-agenda-fullscreen)
+(global-set-key (kbd "C-c a") #'org-agenda)
 (global-set-key (kbd "C-c c") 'org-capture)
 
 ;; Global org keybindings (work everywhere)
@@ -1552,8 +1637,8 @@ _q_uit        _C--_
 
 (use-package agent-shell
   :ensure t
-  :custom
-  (agent-shell-session-restore-verbosity 'full)
+  ;; :custom
+  ;; (agent-shell-session-restore-verbosity 'full)
   :config
   ;; `agent-shell' starts completion from `post-self-insert-hook'.  Force the
   ;; newly inserted / or @ to be displayed before Corfu asks Emacs for its
@@ -1614,14 +1699,6 @@ navigation such as @~, @.., @../.., absolute paths, and non-project buffers."
   (evil-define-key 'normal agent-shell-mode-map (kbd "TAB") #'agent-shell-ui-toggle-fragment)
   (evil-define-key 'insert agent-shell-mode-map (kbd "TAB") #'agent-shell-ui-toggle-fragment))
 
-(defun obp/agent-shell-cockpit-fullscreen ()
-  "Remember the current view, then open the agent cockpit full-screen."
-  (interactive)
-  (require 'agent-shell-cockpit)
-  (bazooka-remember)
-  (delete-other-windows)
-  (agent-shell-cockpit))
-
 (use-package agent-shell-cockpit
   :straight (:type git
              :host github
@@ -1629,7 +1706,7 @@ navigation such as @~, @.., @../.., absolute paths, and non-project buffers."
              :branch "main")
   :after agent-shell
   :demand t
-  :bind (("C-c m" . obp/agent-shell-cockpit-fullscreen))
+  :bind (("C-c m" . agent-shell-cockpit))
   :custom
   (agent-shell-cockpit-enable-standalone-sessions t)
   (agent-shell-cockpit-default-instructions '(cockpit))

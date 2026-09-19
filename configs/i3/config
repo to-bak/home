@@ -16,6 +16,10 @@ client.urgent #cc5450 #0c0f0c #dbdbdb #71983b #cc5450
 client.placeholder #c0c0c0 #0c0f0c #dbdbdb #71983b #c0c0c0
 client.background #0c0f0c
 
+for_window [title="^Emacs Everywhere ::"] floating enable, resize set 900 500, move position center
+for_window [title="^emacs-launcher$"] floating enable, border pixel 0, resize set 1100 480, move position center
+for_window [title="^emacs-(capture|roam-capture|daily-capture)$"] floating enable, resize set 1000 700, move position center
+
 bindsym Mod4+0 workspace number 10
 bindsym Mod4+1 workspace number 1
 bindsym Mod4+2 workspace number 2
@@ -62,8 +66,11 @@ bindsym Mod4+Shift+x exec i3lock -c 000000
 bindsym Mod4+Up focus up
 bindsym Mod4+a focus parent
 bindsym Mod4+ae split h
-bindsym Mod4+d exec rofi -show drun -theme ~/.config/home-manager/configs/rofi/themes/theme1/launcher.sh
+bindsym Mod4+c exec --no-startup-id emacs-launcher '(obp/desktop-org-agenda)'
+bindsym Mod4+Ctrl+c exec --no-startup-id emacs-launcher '(obp/desktop-org-capture)'
+bindsym Mod4+d exec --no-startup-id emacs-launcher '(obp/desktop-universal-launcher)'
 bindsym Mod4+e layout toggle split
+bindsym Mod4+Ctrl+e exec --no-startup-id emacsclient --eval "(emacs-everywhere)"
 bindsym Mod4+f fullscreen toggle
 bindsym Mod4+h focus left
 bindsym Mod4+j focus down
@@ -75,6 +82,8 @@ bindsym Mod4+s layout stacking
 bindsym Mod4+space focus mode_toggle
 bindsym Mod4+v split v
 bindsym Mod4+w layout tabbed
+bindsym Mod4+x exec --no-startup-id emacs-launcher '(obp/desktop-org-roam-capture)'
+bindsym Mod4+Ctrl+x exec --no-startup-id emacs-launcher '(obp/desktop-org-roam-daily-capture)'
 bindsym XF86AudioLowerVolume exec amixer -D pulse sset Master 4%-
 bindsym XF86AudioMute exec amixer -D pulse sset Master toggle
 bindsym XF86AudioRaiseVolume exec amixer -D pulse sset Master 4%+
