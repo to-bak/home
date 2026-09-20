@@ -60,7 +60,7 @@ bindsym Mod4+Shift+l move right
 bindsym Mod4+Shift+minus move scratchpad
 bindsym Mod4+Shift+q kill
 bindsym Mod4+Shift+r restart
-bindsym Mod4+Shift+Return exec --no-startup-id emacsclient -c -a ""
+bindsym Mod4+Ctrl+Return exec --no-startup-id emacsclient -c -a ""
 bindsym Mod4+Shift+space floating toggle
 bindsym Mod4+Shift+x exec i3lock -c 000000
 
