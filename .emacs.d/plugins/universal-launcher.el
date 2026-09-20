@@ -40,14 +40,14 @@
 
 (defconst universal-launcher--search-engines
   '(("Google" . "https://www.google.com/search?q=")
-    ("Reddit" . "https://www.reddit.com/search/?q=")
+    ("Erlang" . "https://www.erlang.org/doc/search.html?v=29&q=")
+    ("Elixir" . "https://hexdocs.pm/?packages=elixir%3A1.20.4%2Ceex%3A1.20.4%2Cex_unit%3A1.20.4%2Ciex%3A1.20.4%2Clogger%3A1.20.4%2Cmix%3A1.20.4&q=")
+    ("Google Calender" . "https://calendar.google.com/calendar/u/0/r/search?q=")
     ("Nix Packages" . "https://search.nixos.org/packages?channel=25.11&query=")
-    ("NixOS Options" . "https://search.nixos.org/options?channel=25.11&query=")
     ("GitHub" . "https://github.com/search?q=")
     ("Google Maps" . "https://www.google.com/maps/search/")
     ("Rust Docs" . "https://doc.rust-lang.org/std/?search=")
-    ("MELPA" . "https://melpa.org/#/?q=")
-    ("Emacs Docs" . "https://www.gnu.org/software/emacs/manual/html_node/emacs/index.html?search="))
+    ("Reddit" . "https://www.reddit.com/search/?q="))
   "Search engines offered by the launcher.")
 
 (defvar universal-launcher-context-frame nil
@@ -271,8 +271,7 @@
 
 (defun universal-launcher--emacs-actions ()
   "Return common popup and capture actions."
-  '(("Org agenda" . obp/desktop-org-agenda)
-    ("Capture to Org inbox" . obp/desktop-org-capture)
+  '(("Capture to Org inbox" . obp/desktop-org-capture)
     ("Capture Org-roam note" . obp/desktop-org-roam-capture)
     ("Capture today's Org-roam daily" . obp/desktop-org-roam-daily-capture)))
 

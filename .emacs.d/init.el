@@ -70,12 +70,6 @@ machine has agent-specific commands, models, or other settings.")
 (defvar host/org-agenda-reviews-path (concat host/org-agenda-path "/data/reviews.org")
   "Default path for Org agenda. Overridden by host.el if present.")
 
-(defvar host/org-roam-dailies-path (concat host/org-roam-path "/daily")
-  "Org-roam dailies included in the agenda.")
-
-(defvar host/org-roam-projects-path (concat host/org-roam-path "/projects")
-  "Org-roam project notes included in the agenda.")
-
 ;; ---------------------------------------------------------------------
 ;; Misc
 ;; ---------------------------------------------------------------------
@@ -225,7 +219,19 @@ machine has agent-specific commands, models, or other settings.")
   (host/setup-hyperbole-links))
 
 (use-package emacs-everywhere
-  :commands emacs-everywhere)
+  :commands emacs-everywhere
+  :custom
+  (emacs-everywhere-frame-parameters
+   '((name . "emacs-everywhere")
+     (minibuffer . t)
+     (fullscreen . nil)
+     (width . 100)
+     (height . 24)))
+  :config
+  ;; i3 owns placement.  The package default moves the frame next to the
+  ;; pointer after i3 has centered it, which can leave it partly off-screen.
+  (remove-hook 'emacs-everywhere-init-hooks
+               #'emacs-everywhere-set-frame-position))
 
 (use-package universal-launcher
   :straight nil
@@ -241,7 +247,6 @@ machine has agent-specific commands, models, or other settings.")
   :ensure nil
   :load-path "~/.emacs.d/plugins"
   :commands (obp/desktop-universal-launcher
-             obp/desktop-org-agenda
              obp/desktop-org-capture
              obp/desktop-org-roam-capture
              obp/desktop-org-roam-daily-capture))
@@ -609,9 +614,8 @@ machine has agent-specific commands, models, or other settings.")
    ;; :preview-key "M-."
    :preview-key '(:debounce 0.4 any))
 
-  ;; Optionally configure the narrowing key.
-  ;; Both < and C-+ work reasonably well.
-  (setq consult-narrow-key "<")) ;; "C-+")
+  ;; Narrow either with this prefix key or by typing SOURCE-KEY followed by SPC.
+  (setq consult-narrow-key "<"))
 
 (define-key project-prefix-map (kbd "r") 'consult-ripgrep)
 
@@ -1019,7 +1023,7 @@ machine has agent-specific commands, models, or other settings.")
 ;; --- Org-Roam Standard Capture Templates ---
 
 (defvar obp/org-roam-template-default
-  `(plain "%?"
+  `(plain "%?\n%i"
           :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
                              ,(concat
                                "#+title: ${title}\n"))
@@ -1032,52 +1036,13 @@ machine has agent-specific commands, models, or other settings.")
       "- Email: %^{Email}\n"
       "- Department: %^{Department}\n"
       "- Project: %^{Project}\n"
-      "%?")
+      "%?\n%i")
     :target (file+head "contacts/${slug}.org"
                        ,(concat
                          "#+title: ${title}\n"
                          "#+filetags: :contact:\n"))
     :unnarrowed t)
   "Contact org-roam capture template body.")
-
-(defvar obp/org-roam-template-inbox
-  `(plain "%?"
-          :target (file+head "inbox/%<%Y%m%d%H%M%S>-${slug}.org"
-                             ,(concat
-                               "#+title: ${title}\n"
-                               "#+filetags: :inbox:\n"))
-          :unnarrowed t)
-  "Fleeting Org-roam note to refine and link later.")
-
-(defvar obp/org-roam-template-project
-  `(plain
-    ,(concat
-      "* Outcome\n"
-      "%?\n\n"
-      "* Next actions\n\n"
-      "* Notes\n")
-    :target (file+head "projects/${slug}.org"
-                       ,(concat
-                         "#+title: ${title}\n"
-                         "#+filetags: :project:\n"))
-    :unnarrowed t)
-  "Agenda-visible Org-roam project note.")
-
-(defvar obp/org-roam-template-reference
-  `(plain
-    ,(concat
-      "- Source :: %^{Source URL}\n\n"
-      "* Summary\n"
-      "%?\n\n"
-      "* Key ideas\n"
-      "- ")
-    :target (file+head "references/${slug}.org"
-                       ,(concat
-                         "#+title: ${title}\n"
-                         "#+filetags: :reference:\n"))
-    :unnarrowed t)
-  "Reference or literature note with its source.")
-
 
 (defvar obp/org-roam-dailies-template-meeting
   `(entry
@@ -1127,28 +1092,17 @@ machine has agent-specific commands, models, or other settings.")
          ("C-c n d y" . org-roam-dailies-capture-yesterday)
          ("C-c n d t" . org-roam-dailies-capture-tomorrow))
   :config
-  (dolist (directory (list host/org-roam-dailies-path
-                           host/org-roam-projects-path
-                           (expand-file-name "inbox" host/org-roam-path)
-                           (expand-file-name "references" host/org-roam-path)
-                           (expand-file-name "contacts" host/org-roam-path)))
-    (make-directory directory t))
-
   (setq org-roam-node-display-template (concat "${title:*} " (propertize "${tags:10}" 'face 'org-tag)))
 
   (setq org-roam-capture-templates
         `(("d" "default" ,@obp/org-roam-template-default)
-          ("i" "inbox / fleeting" ,@obp/org-roam-template-inbox)
-          ("p" "project" ,@obp/org-roam-template-project)
-          ("r" "reference" ,@obp/org-roam-template-reference)
           ("c" "contact" ,@obp/org-roam-template-contact)))
 
   (setq org-roam-dailies-capture-templates
         `(("m" "meeting" ,@obp/org-roam-dailies-template-meeting)
           ("j" "journal" ,@obp/org-roam-dailies-template-journal)))
 
-  (org-roam-db-autosync-mode)
-  (require 'org-roam-protocol))
+  (org-roam-db-autosync-mode))
 
 (use-package org-roam-ui
   :after org-roam
@@ -1248,25 +1202,6 @@ Bazooka: _r_emember  _b_rowse  _f_lip  _x_ clear
 ;;   :config
 ;;   (project-tabspaces-mode 1))
 ;;
-;; (defun obp/open-app-workspace (workspace mode command &optional directory)
-;;   "Open WORKSPACE and ensure an app using MODE is visible there.
-;; Preserve the workspace's window layout when one of its windows already shows
-;; MODE.  Otherwise run COMMAND in the selected window, with DIRECTORY as its
-;; `default-directory' when non-nil."
-;;   (let ((tab-bar-new-tab-choice
-;;          (lambda () (get-buffer-create "*scratch*"))))
-;;     (tabspaces-switch-or-create-workspace workspace))
-;;   (unless (seq-some
-;;            (lambda (window)
-;;              (with-current-buffer (window-buffer window)
-;;                (derived-mode-p mode)))
-;;            (window-list))
-;;     (let ((default-directory
-;;            (if directory
-;;                (file-name-as-directory (expand-file-name directory))
-;;              default-directory)))
-;;       (funcall command))))
-;;
 ;; (defun obp/global-switch-buffer ()
 ;;   "Switch to any buffer globally, bypassing Tabspaces."
 ;;   (interactive)
@@ -1274,24 +1209,6 @@ Bazooka: _r_emember  _b_rowse  _f_lip  _x_ clear
 ;;     (call-interactively #'switch-to-buffer)))
 ;;
 ;; (global-set-key (kbd "C-x b") #'obp/global-switch-buffer)
-;;
-;; (defun obp/org-agenda-in-tab ()
-;;   "Open the `agenda' workspace, starting Org Agenda when needed."
-;;   (interactive)
-;;   (obp/open-app-workspace
-;;    "agenda"
-;;    'org-agenda-mode
-;;    (lambda ()
-;;      (let ((org-agenda-window-setup 'current-window))
-;;        (org-agenda)))
-;;    host/org-agenda-path))
-;;
-;; (defun obp/agent-shell-cockpit-in-tab ()
-;;   "Open the `cockpit' workspace, starting its cockpit when needed."
-;;   (interactive)
-;;   (require 'agent-shell-cockpit)
-;;   (obp/open-app-workspace
-;;    "cockpit" 'agent-shell-cockpit-mode #'agent-shell-cockpit))
 
 
 ;; ---------------------------------------------------------------------
@@ -1344,10 +1261,7 @@ Bazooka: _r_emember  _b_rowse  _f_lip  _x_ clear
 (setq org-log-into-drawer t)
 
 (setq org-agenda-files
-      (list host/org-agenda-path
-            host/org-agenda-ticket-path
-            host/org-roam-dailies-path
-            host/org-roam-projects-path))
+      (list host/org-agenda-path host/org-agenda-ticket-path))
 
 (setq org-todo-keywords
       '((sequence "TODO(t)" "STARTED(s)" "|" "CLOSED(c)")
@@ -1358,24 +1272,6 @@ Bazooka: _r_emember  _b_rowse  _f_lip  _x_ clear
   :ensure nil
   :load-path "~/.emacs.d/plugins"
   :config)
-
-(defvar obp/current-jira-ticket ""
-  "Temporarily stores the Jira ticket number during org-capture.")
-
-(defun obp/get-current-ticket ()
-  "Return the current Jira ticket number for org-capture."
-  obp/current-jira-ticket)
-
-(defun obp/get-current-ticket-tag ()
-  "Return the current Jira ticket with hyphens converted to underscores for safe Org tags."
-  (replace-regexp-in-string "-" "_" obp/current-jira-ticket))
-
-(defun obp/get-ticket-file-path ()
-  "Prompt for a Jira ticket number and return the file path for the tickets directory."
-  (setq obp/current-jira-ticket (read-string "Jira Ticket (e.g., TICKET-123): "))
-  (unless (file-exists-p host/org-agenda-ticket-path)
-    (make-directory host/org-agenda-ticket-path t))
-  (expand-file-name (format "%s.org" obp/current-jira-ticket) host/org-agenda-ticket-path))
 
 (defun obp/agenda-refresh-and-redraw ()
   "Fetch fresh data and instantly update the active agenda buffer view."
@@ -1496,47 +1392,40 @@ Bazooka: _r_emember  _b_rowse  _f_lip  _x_ clear
 
 ;; --- Capture Templates ---
 
-(defvar obp/org-capture-template-agenda
+(defun obp/org-capture-url-link ()
+  "Format the captured initial text as a compact HTTP(S) Org link."
+  (require 'url-parse)
+  (let* ((url (string-trim (or (org-capture-get :initial) "")))
+         (parsed (and (string-match-p "\\`https?://" url)
+                      (url-generic-parse-url url)))
+         (host (and parsed (url-host parsed))))
+    (unless (and host
+                 (string-match-p "\\`https?://[^[:space:]]+\\'" url))
+      (user-error "Select one HTTP(S) URL before using the URL template"))
+    (org-link-make-string url (string-remove-prefix "www." host))))
+
+(defvar obp/org-capture-template-todo
   '(entry
     (file+headline org-default-agenda-file "Inbox")
-    "* TODO %?\nSCHEDULED: <%(org-read-date nil nil \"+1d\")>\n%a")
-  "Standard capture template for agenda tasks (type, target, template).")
+    "* TODO %?")
+  "Context-free TODO for the Agenda inbox.")
 
-(defvar obp/org-capture-template-inbox
+(defvar obp/org-capture-template-code-todo
   '(entry
     (file+headline org-default-agenda-file "Inbox")
-    "* TODO %?\n:PROPERTIES:\n:CAPTURED: %U\n:END:\n%a"
-    :empty-lines 1)
-  "Unscheduled task for later inbox triage.")
+    "* TODO %?\n%a\n%i")
+  "TODO linked to the source location, including any selected text.")
 
-(defvar obp/org-capture-template-note
+(defvar obp/org-capture-template-url
   '(entry
     (file+headline org-default-agenda-file "Inbox")
-    "* %? :NOTE:\n%U\n%a"
-    :empty-lines 1)
-  "Non-actionable note in the agenda inbox.")
-
-(defvar obp/org-capture-template-ticket
-  `(plain
-    (file obp/get-ticket-file-path)
-    ,(concat
-      "#+CATEGORY: %^{Project Category}\n"
-      "#+FILETAGS: :TICKET:%(obp/get-current-ticket-tag):\n\n"
-      "* %(obp/get-current-ticket) - %^{Ticket Title}\n"
-      "** Context / Background\n"
-      "%?\n\n"
-      "** AI Guidelines\n"
-      "Please adhere to the high-level guidelines in my manifest: [[id:dfac4c1b-f48b-4f6b-b55e-cb98f43d4168][AI Manifest]]\n\n"
-      "** Action Items\n\n"
-      "** Constraints & Exclusions\n"
-      "- "))
-  "Capture template for dynamic Jira Tickets.")
+    "* TODO %? — %(obp/org-capture-url-link)")
+  "TODO with the selected URL presented as a compact link in its heading.")
 
 (setq org-capture-templates
-      `(("i" "Inbox - task"       ,@obp/org-capture-template-inbox)
-        ("a" "Agenda - scheduled" ,@obp/org-capture-template-agenda)
-        ("n" "Inbox - note"       ,@obp/org-capture-template-note)
-        ("p" "AI Prompt / Ticket" ,@obp/org-capture-template-ticket)))
+      `(("p" "plain"           ,@obp/org-capture-template-todo)
+        ("c" "code"            ,@obp/org-capture-template-code-todo)
+        ("u" "URL"             ,@obp/org-capture-template-url)))
 
 (use-package org-ql
   :ensure t

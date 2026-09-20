@@ -2,8 +2,8 @@
 
 ;;; Commentary:
 ;; Open window-manager-triggered Emacs commands in purpose-built frames.  The
-;; universal launcher uses a true minibuffer-only frame; agenda and capture
-;; commands use ordinary frames whose lifetime follows the command they host.
+;; universal launcher uses a true minibuffer-only frame; capture commands use
+;; ordinary frames whose lifetime follows the command they host.
 
 ;;; Code:
 
@@ -12,10 +12,11 @@
 
 (defvar universal-launcher-context-frame)
 (defvar vertico-count)
+(defvar org-capture-initial)
+(defvar org-capture-link-is-already-stored)
+(defvar org-store-link-plist)
 
 (declare-function universal-launcher-popup "universal-launcher" (&optional context-frame))
-(declare-function org-agenda "org-agenda" (&optional arg keys restriction))
-(declare-function org-agenda-quit "org-agenda" ())
 (declare-function org-roam-capture "org-roam" (&optional goto keys))
 (declare-function org-roam-dailies-capture-today "org-roam-dailies" (&optional goto keys))
 
@@ -79,6 +80,16 @@
       (when (buffer-live-p buffer)
         (kill-buffer buffer)))))
 
+(defun obp/desktop-popup--enforce-single-window ()
+  "Keep dedicated desktop popup frames from exposing staging windows."
+  (let ((frame (selected-frame)))
+    (when (and (frame-parameter frame 'obp-desktop-popup-role)
+               (> (length (window-list frame 'no-minibuf)) 1))
+      (delete-other-windows (selected-window)))))
+
+(add-hook 'window-configuration-change-hook
+          #'obp/desktop-popup--enforce-single-window)
+
 (defun obp/desktop-popup--abort-minibuffer-on-delete (frame)
   "Abort an active minibuffer owned by transient FRAME before deletion."
   (let ((minibuffer (active-minibuffer-window)))
@@ -105,35 +116,68 @@
         (with-selected-frame frame
           (let ((minibuffer-follows-selected-frame t)
                 (minibuffer-auto-raise t)
-                (resize-mini-frames t)
+                ;; Keep this frame at the size requested above and by i3.
+                ;; Auto-fitting starts it at one line and can leave its window
+                ;; horizontally scrolled after Vertico grows the contents.
+                (resize-mini-frames nil)
                 (max-mini-window-height 15)
                 (vertico-count 12)
                 (universal-launcher-context-frame context))
-            (universal-launcher-popup context)))
+            (minibuffer-with-setup-hook
+                (lambda ()
+                  (set-window-hscroll (selected-window) 0))
+              (universal-launcher-popup context))))
       (obp/desktop-popup--delete-frame frame))))
 
-(defun obp/desktop-popup--capture (role function)
-  "Run capture FUNCTION in a dedicated frame identified by ROLE."
+(defun obp/desktop-popup--take-primary-selection ()
+  "Return and clear the current X PRIMARY selection, when non-empty."
+  (when-let ((selection
+              (ignore-errors
+                (gui-get-selection 'PRIMARY 'UTF8_STRING))))
+    (unless (string-empty-p selection)
+      ;; Match Emacs Everywhere: consuming the selection prevents an old X
+      ;; selection from unexpectedly appearing in a later capture.
+      (gui-backend-set-selection 'PRIMARY "")
+      selection)))
+
+(defun obp/desktop-popup--capture (role function &optional use-selection)
+  "Run capture FUNCTION in a dedicated frame identified by ROLE.
+When USE-SELECTION is non-nil, expose the X PRIMARY selection as `%i'."
   (let ((frame (obp/desktop-popup--ordinary-frame role)))
     (condition-case err
         (with-selected-frame frame
-          (funcall function))
+          ;; Org separately requests another window for its template selector
+          ;; and its eventual capture buffer.  In this dedicated frame both
+          ;; should replace the otherwise empty private staging buffer.
+          (let ((display-buffer-overriding-action
+                 '((display-buffer-same-window)))
+                ;; `org-store-link-plist' is global and otherwise carries `%a'
+                ;; from the previous capture into this unrelated desktop one.
+                (org-store-link-plist nil)
+                ;; A desktop capture has no meaningful Emacs source buffer.
+                ;; Without this, Org may manufacture `%a' from whichever
+                ;; buffer happened to be current before the popup was created.
+                (org-capture-link-is-already-stored t)
+                (org-capture-initial
+                 (and use-selection
+                      (obp/desktop-popup--take-primary-selection))))
+            (funcall function)))
       ((error quit)
        (obp/desktop-popup--delete-frame frame)
        (signal (car err) (cdr err))))))
 
 ;;;###autoload
 (defun obp/desktop-org-capture ()
-  "Start ordinary Org capture in a dedicated floating frame."
+  "Capture to Org with the X PRIMARY selection available as `%i'."
   (interactive)
-  (obp/desktop-popup--capture 'capture #'org-capture))
+  (obp/desktop-popup--capture 'capture #'org-capture t))
 
 ;;;###autoload
 (defun obp/desktop-org-roam-capture ()
-  "Start Org-roam capture in a dedicated floating frame."
+  "Capture to Org-roam with the X PRIMARY selection available as `%i'."
   (interactive)
   (require 'org-roam)
-  (obp/desktop-popup--capture 'roam-capture #'org-roam-capture))
+  (obp/desktop-popup--capture 'roam-capture #'org-roam-capture t))
 
 ;;;###autoload
 (defun obp/desktop-org-roam-daily-capture ()
@@ -153,42 +197,6 @@
 (with-eval-after-load 'org-capture
   (add-hook 'org-capture-after-finalize-hook
             #'obp/desktop-popup--finish-capture))
-
-(defvar-keymap obp/desktop-agenda-frame-mode-map
-  :doc "Keys used by Org Agenda in its dedicated desktop frame."
-  "q" #'obp/desktop-org-agenda-quit)
-
-(define-minor-mode obp/desktop-agenda-frame-mode
-  "Close the dedicated agenda frame when quitting Org Agenda."
-  :lighter nil
-  :keymap obp/desktop-agenda-frame-mode-map)
-
-(defun obp/desktop-popup--agenda-mode ()
-  "Enable dedicated-frame behavior in a popup Org Agenda."
-  (when (eq (frame-parameter nil 'obp-desktop-popup-role) 'agenda)
-    (obp/desktop-agenda-frame-mode 1)))
-
-(with-eval-after-load 'org-agenda
-  (add-hook 'org-agenda-mode-hook #'obp/desktop-popup--agenda-mode))
-
-(defun obp/desktop-org-agenda-quit ()
-  "Quit Org Agenda and close its dedicated frame."
-  (interactive)
-  (let ((frame (selected-frame)))
-    (org-agenda-quit)
-    (obp/desktop-popup--delete-frame frame)))
-
-;;;###autoload
-(defun obp/desktop-org-agenda ()
-  "Open the full Org agenda in a dedicated frame."
-  (interactive)
-  (let ((frame (obp/desktop-popup--ordinary-frame 'agenda)))
-    (condition-case err
-        (with-selected-frame frame
-          (org-agenda))
-      ((error quit)
-       (obp/desktop-popup--delete-frame frame)
-       (signal (car err) (cdr err))))))
 
 (provide 'desktop-emacs-popups)
 ;;; desktop-emacs-popups.el ends here

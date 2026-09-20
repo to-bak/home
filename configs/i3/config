@@ -16,7 +16,7 @@ client.urgent #cc5450 #0c0f0c #dbdbdb #71983b #cc5450
 client.placeholder #c0c0c0 #0c0f0c #dbdbdb #71983b #c0c0c0
 client.background #0c0f0c
 
-for_window [title="^Emacs Everywhere ::"] floating enable, resize set 900 500, move position center
+for_window [title="^(emacs-everywhere|Emacs Everywhere ::)"] floating enable, resize set 900 500, move position center
 for_window [title="^emacs-launcher$"] floating enable, border pixel 0, resize set 1100 480, move position center
 for_window [title="^emacs-(capture|roam-capture|daily-capture)$"] floating enable, resize set 1000 700, move position center
 
@@ -60,17 +60,17 @@ bindsym Mod4+Shift+l move right
 bindsym Mod4+Shift+minus move scratchpad
 bindsym Mod4+Shift+q kill
 bindsym Mod4+Shift+r restart
+bindsym Mod4+Shift+Return exec --no-startup-id emacsclient -c -a ""
 bindsym Mod4+Shift+space floating toggle
 bindsym Mod4+Shift+x exec i3lock -c 000000
 
 bindsym Mod4+Up focus up
 bindsym Mod4+a focus parent
 bindsym Mod4+ae split h
-bindsym Mod4+c exec --no-startup-id emacsclient -n --eval "(run-at-time 0 nil (function obp/desktop-org-agenda))"
-bindsym Mod4+Ctrl+c exec --no-startup-id emacsclient -n --eval "(run-at-time 0 nil (function obp/desktop-org-capture))"
+bindsym Mod4+c exec --no-startup-id emacsclient -n --eval "(run-at-time 0 nil (function obp/desktop-org-capture))"
 bindsym Mod4+d exec --no-startup-id emacsclient -n --eval "(run-at-time 0 nil (function obp/desktop-universal-launcher))"
-bindsym Mod4+e layout toggle split
-bindsym Mod4+Ctrl+e exec --no-startup-id emacsclient --eval "(emacs-everywhere)"
+# bindsym Mod4+e layout toggle split
+bindsym Mod4+e exec --no-startup-id emacsclient --eval "(emacs-everywhere)"
 bindsym Mod4+f fullscreen toggle
 bindsym Mod4+h focus left
 bindsym Mod4+j focus down
