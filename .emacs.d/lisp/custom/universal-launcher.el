@@ -57,9 +57,42 @@
                       universal-launcher--search-engines)
   (setq universal-launcher-default-search-engine "Google"))
 
+(defconst universal-launcher--session-environment
+  '("DISPLAY" "XAUTHORITY" "WAYLAND_DISPLAY" "XDG_RUNTIME_DIR"
+    "DBUS_SESSION_BUS_ADDRESS" "XDG_CURRENT_DESKTOP" "XDG_SESSION_TYPE"
+    "XDG_DATA_DIRS" "XDG_CONFIG_HOME" "PATH" "HOME" "LANG" "LC_ALL"
+    "LC_CTYPE" "GTK_PATH" "GIO_EXTRA_MODULES" "GI_TYPELIB_PATH"
+    "QT_QPA_PLATFORM" "GDK_BACKEND")
+  "Session variables needed by applications started through systemd.")
+
+(defun universal-launcher--start-detached (program &rest args)
+  "Run PROGRAM with ARGS in a user service outside Emacs's cgroup.
+The service survives stopping Emacs and is collected after the program exits."
+  (let ((runner (executable-find "systemd-run"))
+        (options '("--user" "--collect" "--quiet" "--same-dir"
+                   "--expand-environment=no" "--property=Type=exec"
+                   "--property=ExitType=cgroup")))
+    (unless runner
+      (user-error "systemd-run is required to launch independent applications"))
+    (dolist (name universal-launcher--session-environment)
+      (when-let* ((value (getenv name)))
+        (setq options (append options (list (concat "--setenv=" name "=" value))))))
+    (with-temp-buffer
+      (let ((status (apply #'call-process runner nil t nil
+                           (append options (list "--" program) args))))
+        (unless (equal status 0)
+          (user-error "Could not launch %s (systemd-run: %s)%s"
+                      program status
+                      (if (string-empty-p (buffer-string))
+                          ""
+                        (concat ": " (string-trim (buffer-string))))))))))
+
 (defun universal-launcher--open-url (url)
-  "Open URL with the configured Emacs browser integration."
-  (browse-url url))
+  "Open URL through the desktop handler independently of Emacs."
+  (let ((opener (executable-find "xdg-open")))
+    (unless opener
+      (user-error "xdg-open is required to open links independently"))
+    (universal-launcher--start-detached opener url)))
 
 (defun universal-launcher--search (query &optional engine-url)
   "Search for QUERY with ENGINE-URL or the configured default engine."
@@ -91,13 +124,15 @@
   (let* ((clean (universal-launcher--strip-desktop-field-codes exec-string))
          (parts (split-string-and-unquote clean))
          (program (car parts)))
-    (if (and program (executable-find program))
-        (apply #'start-process program nil program (cdr parts))
+    (if-let* ((executable (and program (executable-find program))))
+        (apply #'universal-launcher--start-detached executable (cdr parts))
       (user-error "Application executable not found: %s" (or program clean)))))
 
 (defun universal-launcher--run-command (command)
-  "Run COMMAND in the background through the user's shell."
-  (start-process-shell-command "universal-launcher-command" nil command))
+  "Run COMMAND in a separate user service through the user's shell."
+  (universal-launcher--start-detached
+   (or (executable-find shell-file-name) shell-file-name)
+   shell-command-switch command))
 
 (defun universal-launcher--desktop-entry (file)
   "Return a visible application pair parsed from desktop entry FILE."

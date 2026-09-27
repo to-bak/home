@@ -1,1613 +1,659 @@
-;;; init.el --- Personal Emacs configuration -*- lexical-binding: nil; -*-
+;;; init.el --- Init -*- lexical-binding: t; -*-
 
-;; ---------------------------------------------------------------------
-;; Package managment
-;; ---------------------------------------------------------------------
-(setq package-enable-at-startup nil)
+;; Author: James Cherti <https://www.jamescherti.com/contact/>
+;; URL: https://github.com/jamescherti/minimal-emacs.d
+;; Package-Requires: ((emacs "29.1"))
+;; Keywords: maint
+;; Version: 1.5.2
+;; SPDX-License-Identifier: GPL-3.0-or-later
 
-;; Straight packages can be noisy under a new Emacs compiler.  Suppress both
-;; native- and byte-compiler warning logs while leaving other warning classes
-;; visible at `warning-minimum-level'.
-(require 'warnings)
-(dolist (type '((native-compiler) (bytecomp)))
-  (add-to-list 'warning-suppress-types type)
-  (add-to-list 'warning-suppress-log-types type))
+;;; Commentary:
+;; The minimal-emacs.d project is a lightweight and optimized Emacs base
+;; (init.el and early-init.el) that gives you full control over your
+;; configuration. It provides better defaults, an optimized startup, and a clean
+;; foundation for building your own vanilla Emacs setup.
+;;
+;; Building the minimal-emacs.d init.el and early-init.el was the result of
+;; extensive research and testing to fine-tune the best parameters and
+;; optimizations for an Emacs configuration.
+;;
+;; Do not modify this file; instead, modify pre-init.el or post-init.el.
 
-(defvar bootstrap-version)
-(let ((bootstrap-file
-       (expand-file-name
-        "straight/repos/straight.el/bootstrap.el"
-        (or (bound-and-true-p straight-base-dir)
-            user-emacs-directory)))
-      (bootstrap-version 7))
-  (unless (file-exists-p bootstrap-file)
-    (with-current-buffer
-        (url-retrieve-synchronously
-         "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
-         'silent 'inhibit-cookies)
-      (goto-char (point-max))
-      (eval-print-last-sexp)))
-  (load bootstrap-file nil 'nomessage))
+;;; Code:
 
-;; Install use-package with straight.el
-(straight-use-package 'use-package)
+;;; Load pre-init.el
 
-;; Install packages by default in `use-package` forms,
-;; without having to specify `:straight t`
-(setq straight-use-package-by-default t)
+(if (fboundp 'minimal-emacs-load-user-init)
+    (when minimal-emacs-load-pre-init
+      (minimal-emacs-load-user-init "pre-init.el"))
+  (error "The early-init.el file failed to load"))
 
-;; ---------------------------------------------------------------------
-;; host.el
-;; ---------------------------------------------------------------------
-(defvar host/org-agenda-path "~/org"
-  "Default path for Org agenda. Overridden by host.el if present.")
+;;; Before package
 
-(defvar host/org-roam-path "~/org/roam"
-  "Default path for Org agenda. Overridden by host.el if present.")
+;; The initial buffer is created during startup even in non-interactive
+;; sessions, and its major mode is fully initialized. Modes like `text-mode',
+;; `org-mode', or even the default `lisp-interaction-mode' load extra packages
+;; and run hooks, which can slow down startup.
+;;
+;; Using `fundamental-mode' for the initial buffer to avoid unnecessary
+;; startup overhead.
+(setq initial-major-mode 'fundamental-mode
+      initial-scratch-message nil)
 
-(defun host/setup-hyperbole-links ()
-  "Initialize machine-specific Hyperbole links."
-  nil)
+;; Set-language-environment sets default-input-method, which is unwanted.
+(setq default-input-method nil)
 
-(defvar host/gptel-config nil
-  "Function that configures gptel for the current host.
-It is called after gptel has loaded.  Define it in host.el when this machine
-has gptel backends or settings of its own.")
+;; Ask the user whether to terminate asynchronous compilations on exit.
+;; This prevents native compilation from leaving temporary files in /tmp.
+(setq native-comp-async-query-on-exit t)
 
-(defvar host/agent-shell-config nil
-  "Function that configures agent-shell for the current host.
-It is called after agent-shell has loaded.  Define it in host.el when this
-machine has agent-specific commands, models, or other settings.")
+;; Allow for shorter responses: "y" for yes and "n" for no.
+(setq read-answer-short t)
+(if (boundp 'use-short-answers)
+    (setq use-short-answers t)
+  (advice-add 'yes-or-no-p :override #'y-or-n-p))
+(setq revert-buffer-quick-short-answers t)
 
-(load (expand-file-name "host.el" user-emacs-directory) t)
+;;; package.el
 
-(defvar host/org-agenda-ticket-path (concat host/org-agenda-path "/tickets")
-  "Default path for Org agenda. Overridden by host.el if present.")
+(when (and (bound-and-true-p minimal-emacs-package-initialize-and-refresh)
+           (not (bound-and-true-p byte-compile-current-file)))
+  ;; Initialize and refresh package contents again if needed
+  (package-initialize)
+  (unless package-archive-contents
+    (package-refresh-contents))
+  (when (and (version< emacs-version "29.1")
+             (not (package-installed-p 'use-package)))
+    (package-install 'use-package))
+  (require 'use-package))
 
-(defvar host/org-agenda-inbox-path (concat host/org-agenda-path "/inbox.org")
-  "Default path for Org agenda. Overridden by host.el if present.")
+;;; Misc
 
-(defvar host/org-agenda-reviews-path (concat host/org-agenda-path "/data/reviews.org")
-  "Default path for Org agenda. Overridden by host.el if present.")
+(setq undo-limit (* 13 160000)
+      undo-strong-limit (* 13 240000)
+      undo-outer-limit (* 13 24000000))
 
-;; ---------------------------------------------------------------------
-;; Misc
-;; ---------------------------------------------------------------------
-;; https://stackoverflow.com/questions/2548673/how-do-i-get-emacs-to-evaluate-a-file-when-a-frame-is-raised
-(setq custom-file "~/.emacs.d/custom.el")
-(load custom-file)
+(setq whitespace-line-column nil)  ; Use the value of `fill-column'.
 
-(use-package olivetti)
+;; Disable ellipsis when printing s-expressions in the message buffer
+(setq eval-expression-print-length nil
+      eval-expression-print-level nil)
 
-(defvar obp/focused-body-width 100
-  "Text body width shared by focused dashboard views.")
+;; This directs gpg-agent to use the minibuffer for passphrase entry
+(setq epg-pinentry-mode 'loopback)
 
-;; get rid of emacs logo
-;; (setq inhibit-startup-message t)
+;; By default, Emacs stores sensitive authinfo credentials as unencrypted text
+;; in your home directory. Use GPG to encrypt the authinfo file for enhanced
+;; security.
+(setq auth-sources (list "~/.authinfo.gpg"))
 
-;; goto themes: gruvbox, twilight, doom-badger
-(use-package doom-themes
-  :ensure t
-  :init
-  (setq doom-gruvbox-dark-variant "hard")
-  :config
-  ;; (load-theme 'doom-sourcerer t)
-  ;; (load-theme 'doom-tomorrow-night t)
-  ;; (load-theme 'doom-snazzy)
-  ;; (load-theme 'plan9 t)
-  (load-theme 'doom-gruvbox t)
-  ;; Doom reverses Emacs 31's inheritance between these Gnus faces, creating a
-  ;; cycle when Gnus loads.  Keep the empty face visually aligned with Doom's
-  ;; empty mail face without inheriting from `gnus-group-news-low'.
-  (custom-theme-set-faces
-   'doom-gruvbox
-   '(gnus-group-news-low-empty
-     ((t (:inherit gnus-group-mail-1-empty :weight normal)))))
-  (require 'gnus)
-  (doom-themes-visual-bell-config))
+;; Speed up 'find-library' and reduce completion clutter by excluding internal
+;; helper files. This provides a library-focused list.
+(setq find-library-include-other-files nil)
 
-;; Required by `doom-modeline` to display icons.
-;; Run `M-x nerd-icons-install-fonts` to install the necessary fonts.
-(use-package nerd-icons)
+;; Protect the system from code injection vulnerabilities when browsing files.
+;; Disabling local 'eval' expressions ensures that opening a malicious project
+;; or third-party script cannot execute arbitrary Lisp code on your machine.
+(setq enable-local-eval nil)
 
-(use-package doom-modeline
-  :init (doom-modeline-mode 1))
+;;; Minibuffer
 
-;; puts emacs autosave files in /tmp
-(setq backup-directory-alist
-      `((".*" . ,temporary-file-directory)))
-(setq auto-save-file-name-transforms
-      `((".*" ,temporary-file-directory t)))
-(setq lock-file-name-transforms
-      `((".*" ,temporary-file-directory t)))
+(setq enable-recursive-minibuffers t) ; Allow nested minibuffers
 
-;; file backup in ~/backup
-(add-to-list 'backup-directory-alist
-             (cons ".*" "~/backup"))
+;; Keep the cursor out of the read-only portions of the.minibuffer
+(setq minibuffer-prompt-properties
+      '(read-only t intangible t cursor-intangible t face minibuffer-prompt))
+(add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
 
-(use-package exec-path-from-shell
-  :ensure t
-  :config
-  (when (memq window-system '(mac ns x pgtk))
-    (exec-path-from-shell-initialize)))
+;;; Display and user interface
 
-;; Replace yes/no prompt with y/n
-(defalias 'yes-or-no-p 'y-or-n-p)
-(scroll-bar-mode -1)        ; Disable visible scrollbar
-(tool-bar-mode -1)          ; Disable the toolbar
-(tooltip-mode -1)           ; Disable tooltips
-(set-fringe-mode 10)        ; Give some breathing room
-(menu-bar-mode -1)          ; Disable the menu bar
+;; By default, Emacs "updates" its ui more often than it needs to
+(setq which-func-update-delay 1.0)
+(with-no-warnings
+  ;; Obsolete in >= 30.1
+  (setq idle-update-delay which-func-update-delay))
 
-;; fonts
-(defvar efs/default-font-size 180)
-(defvar efs/default-variable-font-size 180)
-(set-face-attribute 'default nil :height 130)
+(defalias #'view-hello-file #'ignore)  ; Never show the hello file
 
-(use-package sudo-edit)
+;; No beeping or blinking
+(setq visible-bell nil)
+(setq ring-bell-function #'ignore)
 
-;; In emacs the default keybindings for yank is C-y, which is kinda awkward on the hand. Use C-v instead.
-;; https://www.reddit.com/r/emacs/comments/sn8pma/how_to_pasteyank_into_minibuffer_input_prompt/
-(define-key minibuffer-local-map (kbd "C-v") 'yank)
+;; Position underlines at the descent line instead of the baseline.
+(setq x-underline-at-descent-line t)
 
-;; Keep actionable package and compatibility warnings visible.
-(setq warning-minimum-level :warning)
+(setq truncate-string-ellipsis "…")
 
-;; line numbers
-(column-number-mode 1)
+(setq display-time-default-load-average nil) ; Omit load average
 
-;; Set both the type and the default buffer-local variable
-;; (setq display-line-numbers-type 'relative)
-;; (setq-default display-line-numbers 'relative)
-(setq display-line-numbers-type 'visual)
-(setq-default display-line-numbers 'visual)
-(setq evil-respect-visual-line-mode t)
+;; Force the mouse to paste text at the active cursor position.
+(setq mouse-yank-at-point t)
 
-;; Toggle the global mode off, then back on to force a refresh on active buffers
-(global-display-line-numbers-mode -1)
-(global-display-line-numbers-mode 1)
+;;; Show-paren
 
-;; Disable line numbers for some modes
-(dolist (mode '(term-mode-hook
-                shell-mode-hook
-                vterm-mode-hook
-                treemacs-mode-hook
-                eshell-mode-hook))
-  (add-hook mode (lambda () (display-line-numbers-mode 0))))
+(setq show-paren-delay 0.1
+      show-paren-highlight-openparen t
+      show-paren-when-point-inside-paren t
+      show-paren-when-point-in-periphery t)
 
-;; Set minimum width for line number display to 3 to avoid the gutter
-;; changing size when scrolling past line 100.
+;;; Buffer management
+
+(setq custom-buffer-done-kill t)
+
+;; Disable auto-adding a new line at the bottom when scrolling.
+(setq next-line-add-newlines nil)
+
+;; This setting forces Emacs to save bookmarks immediately after each change.
+;; Benefit: you never lose bookmarks if Emacs crashes.
+(setq bookmark-save-flag 1)
+
+(setq uniquify-buffer-name-style 'forward)
+
+;; Disable fontification during user input to reduce lag in large buffers.
+;; Also helps marginally with scrolling performance.
+(setq redisplay-skip-fontification-on-input t)
+
+;;; `display-line-numbers-mode'
+
 (setq-default display-line-numbers-width 3)
+(setq-default display-line-numbers-widen t)
 
-(global-hl-line-mode 1) ; Highlight current line
+;;; imenu
 
-;; which-key
-(use-package which-key
-  :init (which-key-mode)
-  :diminish which-key-mode
-  :config
-  (setq which-key-idle-delay 1))
+;; Automatically rescan the buffer for Imenu entries when `imenu' is invoked
+;; This ensures the index reflects recent edits.
+(setq-default imenu-auto-rescan t)
 
-(use-package rainbow-delimiters
-  :hook (prog-mode . rainbow-delimiters-mode))
+;; Prevent truncation of long function names in `imenu' listings
+(setq imenu-max-item-length 160)
 
-;; writeable grep buffer
-(use-package wgrep)
+;;; Tramp
 
-;; indentation
-(setq-default indent-tabs-mode nil)
+(setq tramp-verbose 1
+      remote-file-name-inhibit-cache 50
+      ;; Disable lockfiles and auto-saves for remote files to eliminate lag
+      remote-file-name-inhibit-locks t
+      remote-file-name-inhibit-auto-save-visited t)
 
-;; cleanup whitespace on save.
-(add-hook 'before-save-hook 'whitespace-cleanup)
+;;; Files
 
-;; Automatically add a newline at the end of a file when a file is
-;; saved. The POSIX standard defines a "line" as ending in a newline
-;; character.
-(setq require-final-newline t)
+;; Delete by moving to trash in interactive mode
+(setq delete-by-moving-to-trash (not noninteractive))
+(setq remote-file-name-inhibit-delete-by-moving-to-trash t)
 
-;; line-width
+;; Ignoring this is acceptable since it will redirect to the buffer regardless.
+(setq find-file-suppress-same-file-warnings t)
+
+;; Automatically resolve symlinks to their true paths. This sets the correct
+;; working directory so C-x C-f opens in the right folder and version control
+;; tools recognize the Git repository.
+(setq find-file-visit-truename t
+      ;; Automatically follow a symlink to its source if that source is managed
+      ;; by a version control system, rather than asking for permission.
+      vc-follow-symlinks t)
+
+;; Prefer vertical splits over horizontal ones
+(setq split-width-threshold 170
+      split-height-threshold nil)
+
+;; Increase threshold for large-file warning to reduce prompts when opening
+;; moderately large files while still preserving safeguards for large files.
+(setq large-file-warning-threshold (* 100 1024 1024)) ; 100 Mb
+
+;;; comint (general command interpreter in a window)
+
+(setq ansi-color-for-comint-mode t ; Renders native ANSI colors in the shell
+      comint-prompt-read-only t
+      comint-buffer-maximum-size 4096)
+
+;;; Compilation
+
+(setq compilation-ask-about-save nil
+      compilation-always-kill t
+      ;; Parse up to 2048 characters per line in compilation buffers. This
+      ;; safely catches deep errors and long paths without risking hangs.
+      compilation-max-output-line-length 2048
+      compilation-scroll-output 'first-error)
+
+;; Skip confirmation prompts when creating a new file or buffer
+(setq confirm-nonexistent-file-or-buffer nil)
+
+;;; Backup files
+
+;; Disable the creation of lockfiles (e.g., .#filename).
+;; Modern workflows rely on `global-auto-revert-mode' to handle external file
+;; changes gracefully, making the restrictive nature of lockfiles unnecessary.
+(setq create-lockfiles nil)
+
+;; Disable backup files (e.g., filename~). Note that `auto-save-default'
+;; remains enabled by default. Even with `make-backup-files' backups disabled,
+;; Emacs will still generate temporary recovery files (e.g., #filename#) for
+;; unsaved buffers. This protects your active work from sudden crashes while
+;; ensuring the file system is cleaned up immediately upon a successful save.
+(setq make-backup-files nil)
+
+(setq backup-directory-alist
+      `(("." . ,(expand-file-name "backup" user-emacs-directory))))
+(setq tramp-backup-directory-alist backup-directory-alist)
+(setq backup-by-copying-when-linked t)
+(setq backup-by-copying t)  ; Backup by copying rather renaming
+(setq delete-old-versions t)  ; Delete excess backup versions silently
+(setq version-control t)  ; Use version numbers for backup files
+(setq kept-new-versions 5)
+(setq kept-old-versions 5)
+
+;;; VC
+
+(setq vc-git-print-log-follow t)
+(setq vc-git-diff-switches '("--histogram"))  ; Faster algorithm for diffing.
+
+;;; Auto save
+
+;; Enable auto-save to safeguard against crashes or data loss. The
+;; `recover-file' or `recover-session' functions can be used to restore
+;; auto-saved data.
+(setq auto-save-no-message t)
+
+(when noninteractive
+  ;; The command line interface
+  (setq enable-dir-local-variables nil)
+  (setq-default case-fold-search nil))
+
+;; Do not auto-disable auto-save after deleting large chunks of
+;; text.
+(setq auto-save-include-big-deletions t)
+
+(setq auto-save-list-file-prefix
+      (expand-file-name "autosave/" user-emacs-directory))
+(setq tramp-auto-save-directory
+      (expand-file-name "tramp-autosave/" user-emacs-directory))
+
+(defun minimal-emacs-setup-auto-save-transforms ()
+  "Configure `auto-save-file-name-transforms' for local and remote files.
+This should be called after changing `auto-save-list-file-prefix'."
+  (setq auto-save-file-name-transforms
+        `(("\\`/[^/]*:\\([^/]*/\\)*\\([^/]*\\)\\'"
+           ;; Redirect TRAMP (remote) file auto-saves to the local machine
+           ;; (prefixed with "tramp-") to prevent Emacs from hanging due to
+           ;; network latency during auto-save operations.
+           ,(file-name-concat auto-save-list-file-prefix "tramp-\\2-") sha1)
+          ("\\`/\\([^/]+/\\)*\\([^/]+\\)\\'"
+           ;; Redirect absolute file paths auto-saves to the
+           ;; `auto-save-list-file-prefix' directory. This appends the base
+           ;; filename to the prefix, avoiding #file.txt# files across the system.
+           ,(file-name-concat auto-save-list-file-prefix "\\2-") sha1)))
+
+  (when (memq system-type '(windows-nt cygwin ms-dos))
+    (push `("\\`\\(/\\|[a-zA-Z]:/\\|//\\)\\([^/]+/\\)*\\([^/]+\\)\\'"
+            ,(file-name-concat auto-save-list-file-prefix "\\3-") sha1)
+          auto-save-file-name-transforms)))
+
+(minimal-emacs-setup-auto-save-transforms)
+
+;; Ensure the directory for auto-save session logs exists with restricted
+;; permissions.
+(when auto-save-default
+  (let ((auto-save-dir (file-name-directory auto-save-list-file-prefix)))
+    (unless (file-exists-p auto-save-dir)
+      (with-file-modes #o700
+        (make-directory auto-save-dir t)))))
+
+(setq kill-buffer-delete-auto-save-files t)
+
+;; Remove duplicates from the kill ring to reduce clutter
+(setq kill-do-not-save-duplicates t)
+
+;; Preserve the system clipboard before Emacs delete/kill operations.
+;;
+;; By default, deleting text in Emacs overwrites your system clipboard. For
+;; example, if you copy a link from a browser, switch to Emacs, and delete some
+;; text, your copied link is lost. This setting fixes that by pushing the
+;; clipboard contents into your paste history right before the deletion,
+;; ensuring external data remains retrievable via `yank-pop'.
+(setq save-interprogram-paste-before-kill t)
+
+;;; Auto revert
+;; Auto-revert in Emacs is a feature that automatically updates the contents of
+;; a buffer to reflect changes made to the underlying file.
+
+;; Revert other buffers (e.g, Dired)
+(setq global-auto-revert-non-file-buffers t)
+(setq global-auto-revert-ignore-modes '(Buffer-menu-mode))  ; Resolve issue #29
+
+;;; recentf
+
+;; `recentf' is an that maintains a list of recently accessed files.
+(setq recentf-max-saved-items 300) ; default is 20
+(setq recentf-max-menu-items 15)
+
+;;; saveplace
+
+;; Enables Emacs to remember the last location within a file upon reopening.
+(setq save-place-file (expand-file-name "saveplace" user-emacs-directory))
+(setq save-place-limit 600)
+
+;;; savehist
+
+;; `savehist-mode' is an Emacs feature that preserves the minibuffer history
+;; between sessions.
+(setq history-length 300)
+(setq savehist-additional-variables
+      '(register-alist                   ; macros
+        mark-ring global-mark-ring       ; marks
+        search-ring regexp-search-ring)) ; searches
+
+;;; Frames and windows
+
+(setq resize-mini-windows 'grow-only)
+(setq max-mini-window-height 0.33)
+
+;; The native border "uses" a pixel of the fringe on the rightmost
+;; splits, whereas `window-divider-mode' does not.
+(setq window-divider-default-bottom-width 1
+      window-divider-default-places t
+      window-divider-default-right-width 1)
+
+;;; Scrolling
+
+;; Enables faster scrolling. This may result in brief periods of inaccurate
+;; syntax highlighting, which should quickly self-correct.
+(setq fast-but-imprecise-scrolling t)
+
+;; Move point to top/bottom of buffer before signaling a scrolling error.
+(setq scroll-error-top-bottom t)
+
+;; Keep screen position if scroll command moved it vertically out of the window.
+(setq scroll-preserve-screen-position t)
+
+;; Emacs recenters the window when the cursor moves past `scroll-conservatively'
+;; lines beyond the window edge. A value over 101 disables recentering; the
+;; default (0) is too eager. Here it is set to 20 for a balanced behavior.
+(setq scroll-conservatively 20)
+
+;; 1. Preventing automatic adjustments to `window-vscroll' for long lines.
+;; 2. Resolving the issue of random half-screen jumps during scrolling.
+(setq auto-window-vscroll nil)
+
+;; Horizontal scrolling
+(setq hscroll-margin 2
+      hscroll-step 1)
+
+;; Emacs 29
+(when (memq 'context-menu minimal-emacs-ui-features)
+  (when (and (display-graphic-p) (fboundp 'context-menu-mode))
+    (add-hook 'after-init-hook #'context-menu-mode)))
+
+;;; Cursor
+
+;; The blinking cursor is distracting and interferes with cursor settings in
+;; some minor modes that try to change it buffer-locally (e.g., Treemacs).
+(when (bound-and-true-p blink-cursor-mode)
+  (blink-cursor-mode -1))
+
+;; Don't blink the paren matching the one at point, it's too distracting.
+(setq blink-matching-paren nil)
+
+;; Reduce rendering/line scan work by not rendering cursors or regions in
+;; non-focused windows.
+(setq highlight-nonselected-windows nil)
+
+;;; Text editing, indent, font, and formatting
+
+;; Avoid automatic frame resizing when adjusting settings.
+(setq global-text-scale-adjust-resizes-frames nil)
+
+;; A longer delay can be annoying as it causes a noticeable pause after each
+;; deletion, disrupting the flow of editing.
+(setq delete-pair-blink-delay 0.03)
+
+;; Continue wrapped lines at whitespace rather than breaking in the
+;; middle of a word.
+(setq-default word-wrap t)
+
+;; Disable wrapping by default due to its performance cost.
+(setq-default truncate-lines t)
+
+;; If enabled and `truncate-lines' is disabled, soft wrapping will not occur
+;; when the window is narrower than `truncate-partial-width-windows' characters.
+(setq truncate-partial-width-windows nil)
+
+;; Configure automatic indentation to be triggered exclusively by newline and
+;; DEL (backspace) characters.
+(setq-default electric-indent-chars '(?\n ?\^?))
+
+;; Prefer spaces over tabs. Spaces offer a more consistent default compared to
+;; 8-space tabs. This setting can be adjusted on a per-mode basis as needed.
+(setq-default indent-tabs-mode nil
+              tab-width 4)
+
+;; Enable indentation and completion using the TAB key
+(setq tab-always-indent 'complete)
+(setq tab-first-completion 'word-or-paren-or-punct)
+
+;; Perf: Reduce command completion overhead.
+(setq read-extended-command-predicate #'command-completion-default-include-p)
+
+;; Enable multi-line commenting which ensures that `comment-indent-new-line'
+;; properly continues comments onto new lines.
+(setq comment-multi-line t)
+
+;; Ensures that empty lines within the commented region are also commented out.
+;; This prevents unintended visual gaps and maintains a consistent appearance.
+(setq comment-empty-lines t)
+
+;; We often split terminals and editor windows or place them side-by-side,
+;; making use of the additional horizontal space.
 (setq-default fill-column 80)
 
-(use-package hydra)
-
-(use-package hyperbole
-  :ensure t
-  :config
-  (hyperbole-mode 1)
-  (global-set-key (kbd "C-c h") #'action-key)
-
-  (host/setup-hyperbole-links))
-
-(use-package emacs-everywhere
-  :commands emacs-everywhere
-  :custom
-  (emacs-everywhere-frame-parameters
-   '((name . "emacs-everywhere")
-     (minibuffer . t)
-     (fullscreen . nil)
-     (width . 100)
-     (height . 24)))
-  :config
-  ;; i3 owns placement.  The package default moves the frame next to the
-  ;; pointer after i3 has centered it, which can leave it partly off-screen.
-  (remove-hook 'emacs-everywhere-init-hooks
-               #'emacs-everywhere-set-frame-position))
-
-(use-package universal-launcher
-  :straight nil
-  :ensure nil
-  :load-path "~/.emacs.d/plugins"
-  :custom
-  (universal-launcher-bookmarks-file
-   (expand-file-name "bookmarks.org" host/org-agenda-path))
-  :commands universal-launcher-popup)
-
-(use-package desktop-emacs-popups
-  :straight nil
-  :ensure nil
-  :load-path "~/.emacs.d/plugins"
-  :commands (obp/desktop-universal-launcher
-             obp/desktop-org-capture
-             obp/desktop-org-roam-capture
-             obp/desktop-org-roam-daily-capture))
-
-;; ---------------------------------------------------------------------
-;; Info+
-;; ---------------------------------------------------------------------
-(use-package info+
-  :straight nil
-  :ensure nil
-  :load-path "~/.emacs.d/plugins"
-  :after info)
-
-;; ---------------------------------------------------------------------
-;; Elfeed
-;; ---------------------------------------------------------------------
-(use-package elfeed
-  :ensure t
-  :bind ("C-c e" . elfeed)
-  :config
-  (setq elfeed-feeds
-        '(
-          ;; Danish News
-          ("https://www.version2.dk/rss" dk tech it version2)
-          ;; ("https://nyheder.tv2.dk/rss" dk news tv2)
-          ("https://www.dr.dk/nyheder/service/feeds/senestenyt" dk news)
-
-          ;; Hacker & Developer News
-          ;; ("https://news.ycombinator.com/rss" hacker tech)
-          ;;("http://feeds.arstechnica.com/arstechnica/index" tech longform)
-          ("https://elixirforum.com/rss" elixir dev forum)
-
-          ;; Mainstream Tech & Gadgets
-          ("https://techcrunch.com/feed" tech news)
-          ("https://www.theverge.com/rss/index.xml" tech news)
-
-          ;; Artificial Intelligence
-          ("https://huggingface.co/blog/feed.xml" ai dev)
-          ("https://www.technologyreview.com/topic/artificial-intelligence/feed/" ai news)
-          )))
-
-;; ---------------------------------------------------------------------
-;; Popper
-;; ---------------------------------------------------------------------
-(use-package popper
-  :ensure t
-  :bind (("C-`"   . popper-toggle)
-         ("M-`"   . popper-cycle)
-         ("C-M-`" . popper-toggle-type))
-  :init
-  (setq popper-group-function #'popper-group-by-project)
-  (setq popper-reference-buffers
-        '("\\*Messages\\*"
-          "Output\\*$"
-          "\\*Async Shell Command\\*"
-          help-mode
-          compilation-mode))
-
-  :config
-  (popper-mode +1)
-  (popper-echo-mode +1))
-
-;; ---------------------------------------------------------------------
-;; Terminals
-;; ---------------------------------------------------------------------
-(defvar-local ghostel-popup-p nil
-  "Buffer-local variable to flag and track ghostel popup buffers.")
-
-(defun ghostel-project-toggle ()
-  "Toggle the `ghostel-project` terminal window Doom-style."
-  (interactive)
-  (require 'cl-lib)
-  (let ((ghostel-win (cl-find-if (lambda (w)
-                                   (buffer-local-value 'ghostel-popup-p (window-buffer w)))
-                                 (window-list))))
-    (if ghostel-win
-        (delete-window ghostel-win)
-
-      (let ((buf (save-window-excursion
-                   (ghostel-project)
-                   (current-buffer))))
-        (when (buffer-live-p buf)
-          (with-current-buffer buf
-            (setq-local ghostel-popup-p t)
-            (setq-local popper-popup-status 'popup))
-          (pop-to-buffer buf '(display-buffer-at-bottom (window-height . 0.5))))))))
-
-(use-package ghostel
-  :straight t
-  :commands (ghostel ghostel-project)
-  :bind (("C-c v" . ghostel-project-toggle)
-         ("C-c V" . ghostel))
-  :init
-  (setq ghostel-shell (executable-find "fish")))
-
-(use-package evil-ghostel
-  :after (ghostel evil)
-  :hook (ghostel-mode . evil-ghostel-mode))
-
-;; (use-package vterm
-;;   :straight nil
-;;   :commands vterm
-;;   :config
-;;   (setq vterm-max-scrollback 10000
-;;         vterm-kill-buffer-on-exit t))
-;;
-;; (use-package multi-vterm
-;;   :bind (("C-c t" . multi-vterm-project)))
-;;
-;; (with-eval-after-load 'vterm
-;;   (setq vterm-shell (concat (executable-find "fish") " --login")))
-;;
-;; (with-eval-after-load 'evil
-;;   (evil-set-initial-state 'vterm-mode 'emacs))
-
-;;(use-package eat
-;;  :ensure t
-;;  :hook
-;;  ;; Enable Eat in Eshell to handle visual commands and terminal emulation
-;;  (eshell-load . eat-eshell-mode)
-;;  (eshell-load . eat-eshell-visual-command-mode)
-;;  :config
-;;  (setq eat-kill-buffer-on-exit t)
-;;  (setq eat-term-name "xterm-256color"))
-;;
-;;
-;;(use-package eshell
-;;  :ensure nil ; Built-in
-;;  :config
-;;  ;; Keep eshell buffer behavior clean and terminal-like
-;;  (setq eshell-scroll-to-bottom-on-input 'all
-;;        eshell-scroll-to-bottom-on-output 'all
-;;        eshell-kill-processes-on-exit t
-;;        eshell-hist-ignoredups t
-;;        eshell-destroy-buffer-when-process-dies t)
-;;
-;;  ;; Stop Eshell from spawning separate buffers for TUI programs.
-;;  ;; This lets Eat render htop, vim, etc., natively inline.
-;;  (setq eshell-visual-commands nil
-;;        eshell-visual-subcommands nil
-;;        eshell-visual-options nil)
-;;
-;;  ;; Make sure Evil doesn't interfere with terminal keybindings
-;;  (with-eval-after-load 'evil
-;;    (evil-set-initial-state 'eshell-mode 'emacs)
-;;    (evil-set-initial-state 'eat-mode 'emacs)))
-
-;; ---------------------------------------------------------------------
-;; Project
-;; ---------------------------------------------------------------------
-(use-package project
-  :ensure nil
-  :bind-keymap ("C-c p" . project-prefix-map))
-
-;; drop the prompt menu, go straight into find-file
-(setq project-switch-commands #'magit-project-status)
-
-;; ---------------------------------------------------------------------
-;; Dired
-;; ---------------------------------------------------------------------
-(use-package dired
-  :straight (:type built-in)
-  :ensure nil
-  :commands (dired dired-jump)
-  :bind (("C-x C-j" . dired-jump))
-  :custom ((dired-listing-switches "-agho --group-directories-first"))
-  :config
-  )
-
-;; https://stackoverflow.com/questions/1839313/how-do-i-stop-emacs-dired-mode-from-opening-so-many-buffers
-(setf dired-kill-when-opening-new-dired-buffer t)
-(put 'dired-find-alternate-file 'disabled nil)
-
-
-;; ---------------------------------------------------------------------
-;; Direnv integration
-;; ---------------------------------------------------------------------
-;; direnv integration
-;; (use-package direnv
-;; :init
-;; ;; (add-hook 'prog-mode-hook #'direnv-update-environment)
-;; :config
-;; (direnv-mode))
-
-;; alternative to direnv-mode
-(use-package envrc)
-(envrc-global-mode)
-
-
-;; ---------------------------------------------------------------------
-;; Dashboard
-;; ---------------------------------------------------------------------
-(use-package dashboard
-  :ensure t
-  :config
-  (dashboard-setup-startup-hook))
-
-(add-hook 'server-after-make-frame-hook (lambda () (dashboard-refresh-buffer)))
-(setq dashboard-banner-logo-title "Welcome to Emacs")
-(setq dashboard-startup-banner 'official)
-(setq dashboard-center-content t)
-(setq dashboard-vertically-center-content t)
-(setq dashboard-show-shortcuts nil)
-
-(setq dashboard-display-icons-p t)     ; display icons on both GUI and terminal
-(setq dashboard-icon-type 'nerd-icons) ; use `nerd-icons' package
-
-(setq dashboard-items '((recents   . 5)
-                        (projects  . 5)
-                        (agenda    . 20)))
-(setq dashboard-item-names '(("Agenda for today:"           . "Today's agenda:")
-                             ("Agenda for the coming week:" . "Agenda:")))
-(setq dashboard-set-heading-icons t)
-(setq dashboard-set-file-icons t)
-(setq dashboard-heading-icons '((recents   . "nf-oct-history")
-                                (agenda    . "nf-oct-calendar")
-                                (projects  . "nf-oct-rocket")))
-(setq dashboard-agenda-sort-strategy '(priority-up))
-
-;; ---------------------------------------------------------------------
-;; Completion
-;; ---------------------------------------------------------------------
-;; Enhanced completion at point with Corfu and Cape.
-;; https://github.com/minad/corfu
-(use-package cape)
-
-(use-package corfu
-  :init
-  (global-corfu-mode)
-  (corfu-history-mode)
-  (corfu-popupinfo-mode)
-
-  :config
-  (setq corfu-cycle nil)                  ;; Disable cycling for `corfu-next/previous'
-  (setq corfu-auto t)                     ;; Enable auto completion
-  (setq corfu-preselect 'first)           ;; Make TAB accept the first candidate
-  (setq corfu-scroll-margin 2)            ;; Use scroll margin
-  (setq corfu-min-width 60)
-  (setq corfu-max-width corfu-min-width)  ;; Always have the same width
-
-  ;; Enable completion in the minibuffer, e.g., for commands like
-  ;; `M-:' (`eval-expression') or `M-!' (`shell-command'), when other
-  ;; completion UI is not active.
-  (defun corfu-enable-always-in-minibuffer ()
-    "Enable Corfu in the minibuffer if Vertico/Mct are not active."
-    (unless (or (bound-and-true-p mct--active)
-                (bound-and-true-p vertico--input)
-                (eq (current-local-map) read-passwd-map))
-      (setq-local corfu-auto t)         ;; Enable auto completion
-      (setq-local corfu-echo-delay nil  ;; Disable automatic echo and popup
-                  corfu-popupinfo-delay nil)
-      (corfu-mode 1)))
-  (add-hook 'minibuffer-setup-hook #'corfu-enable-always-in-minibuffer 1)
-
-  (setq corfu-auto-prefix 3)
-  (setq corfu-popupinfo-delay 0))
-;; (set-face-attribute 'corfu-current nil :inherit 'highlight :background nil :foreground nil))
-
-(defun obp/corfu-accept-preselected ()
-  "Accept Corfu's highlighted candidate, including the preselected first one."
-  (interactive)
-  ;; Corfu visually preselects candidate zero while `corfu--index' remains -1.
-  ;; Promote that candidate to an explicit selection before completing it.
-  (when (< corfu--index 0)
-    (corfu-next))
-  (corfu-complete))
-
-(with-eval-after-load 'corfu
-  (keymap-set corfu-map "TAB" #'obp/corfu-accept-preselected)
-  (keymap-set corfu-map "<tab>" #'obp/corfu-accept-preselected))
-
-(use-package vertico
-  :ensure t
-  :bind (:map vertico-map
-              ("C-j" . vertico-next)
-              ("C-k" . vertico-previous)
-              ("C-f" . vertico-scroll-up)
-              ("C-b" . vertico-scroll-down)
-              :map minibuffer-local-map
-              ("<C-backspace>" . backward-kill-word))
-  :custom
-  (vertico-cycle t)
-  :init
-  (vertico-mode))
-
-;; Persist history over Emacs restarts. Vertico sorts by history position.
-(use-package savehist
-  :init
-  (savehist-mode))
-
-;; A few more useful configurations...
-(use-package emacs
-  :init
-  ;; Add prompt indicator to `completing-read-multiple'.
-  ;; We display [CRM<separator>], e.g., [CRM,] if the separator is a comma.
-  (defun crm-indicator (args)
-    (cons (format "[CRM%s] %s"
-                  (replace-regexp-in-string
-                   "\\`\\[.*?]\\*\\|\\[.*?]\\*\\'" ""
-                   crm-separator)
-                  (car args))
-          (cdr args)))
-  (advice-add #'completing-read-multiple :filter-args #'crm-indicator)
-
-  ;; Do not allow the cursor in the minibuffer prompt
-  (setq minibuffer-prompt-properties
-        '(read-only t cursor-intangible t face minibuffer-prompt))
-  (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
-
-  ;; disable recursive minibuffers (enabled in vertico config on readme page)
-  (setq enable-recursive-minibuffers nil))
-
-(use-package orderless
-  :init
-  ;; Configure a custom style dispatcher (see the Consult wiki)
-  ;; (setq orderless-style-dispatchers '(+orderless-consult-dispatch orderless-affix-dispatch)
-  ;;       orderless-component-separator #'orderless-escapable-split-on-space)
-  (setq completion-styles '(orderless basic)
-        completion-category-defaults nil
-        completion-category-overrides '((file (styles partial-completion)))))
-
-(with-eval-after-load 'consult
-  (setq consult-ripgrep-args
-        "rg --null --line-buffered --color=never --max-columns=1000 --path-separator /   --smart-case --no-heading --with-filename --line-number --search-zip --hidden --glob=!.git/"))
-
-
-(use-package consult
-  ;; Replace bindings. Lazily loaded due by `use-package'.
-  :config
-
-  :bind (:map project-prefix-map
-              ("b" . consult-project-buffer))
-
-  ;; Enable automatic preview at point in the *Completions* buffer. This is
-  ;; relevant when you use the default completion UI.
-  :hook (completion-list-mode . consult-preview-at-point-mode)
-
-  ;; The :init configuration is always executed (Not lazy)
-  :init
-
-  ;; Optionally configure the register formatting. This improves the register
-  ;; preview for `consult-register', `consult-register-load',
-  ;; `consult-register-store' and the Emacs built-ins.
-  (setq register-preview-delay 0.5
-        register-preview-function #'consult-register-format)
-
-  ;; Optionally tweak the register preview window.
-  ;; This adds thin lines, sorting and hides the mode line of the window.
-  (advice-add #'register-preview :override #'consult-register-window)
-
-  ;; Use Consult to select xref locations with preview
-  (setq xref-show-xrefs-function #'consult-xref
-        xref-show-definitions-function #'consult-xref)
-
-  ;; Configure other variables and modes in the :config section,
-  ;; after lazily loading the package.
-  :config
-
-  (consult-customize
-   consult-theme :preview-key '(:debounce 0.2 any)
-   consult-ripgrep consult-git-grep consult-grep
-   consult-bookmark consult-recent-file consult-xref
-   consult-source-bookmark consult-source-file-register
-   consult-source-recent-file consult-source-project-recent-file
-   ;; :preview-key "M-."
-   :preview-key '(:debounce 0.4 any))
-
-  ;; Narrow either with this prefix key or by typing SOURCE-KEY followed by SPC.
-  (setq consult-narrow-key "<"))
-
-(define-key project-prefix-map (kbd "r") 'consult-ripgrep)
-
-(use-package consult-project-extra
-  :after consult
-  :custom
-  (consult-project-function #'consult-project-extra-project-fn))
-
-(defun obp/consult-project-file-preview-state (state action candidate)
-  "Forward ACTION and CANDIDATE to Consult STATE, except for image previews."
-  (unless (and (eq action 'preview)
-               (stringp candidate)
-               (let ((case-fold-search t))
-                 (string-match-p
-                  "\\.\\(png\\|jpe?g\\|gif\\|svg\\|webp\\|tiff?\\|bmp\\|ico\\)\\'"
-                  candidate)))
-    (funcall state action candidate)))
-
-(defun obp/consult-project-file-preview ()
-  "Return a Consult file preview state which skips image previews."
-  ;; init.el uses dynamic binding, so carry STATE explicitly instead of
-  ;; returning a lambda that attempts to close over a local variable.
-  (apply-partially #'obp/consult-project-file-preview-state
-                   (consult--file-state)))
-
-(defun obp/consult-project-files-and-buffers ()
-  "Find an open buffer or any file in the selected buffer's project."
-  (interactive)
-  (require 'consult-project-extra)
-  (let ((file-source
-         (copy-sequence consult-project-extra--source-file)))
-    (setf (plist-get file-source :state)
-          #'obp/consult-project-file-preview)
-    (let ((consult-project-extra-sources
-           (list 'consult-project-extra--source-buffer file-source)))
-      (consult-project-extra-find))))
-
-(define-key project-prefix-map (kbd "f")
-            #'obp/consult-project-files-and-buffers)
-(define-key project-prefix-map (kbd "p") #'project-switch-project)
-
-(use-package consult-gh
-  :after consult
-  :custom
-  (consult-gh-prioritize-local-folder t)
-  :init
-  (define-prefix-command 'consult-gh-map)
-  :bind
-  (("C-c g" . consult-gh-map)
-   :map consult-gh-map
-   ("r" . consult-gh-workflow-run)
-   ("l" . consult-gh-run-list)
-   ("e" . consult-gh-run-rerun)
-   ("c" . consult-gh-workflow-create)))
-
-(use-package marginalia
-  :after vertico
-  :ensure t
-  :custom
-  (marginalia-annotators '(marginalia-annotators-heavy marginalia-annotators-light nil))
-  :init
-  (marginalia-mode))
-
-(use-package nerd-icons-completion
-  :after marginalia
-  :config
-  (nerd-icons-completion-mode)
-  ;; Hooks it into Marginalia so icons align perfectly
-  (add-hook 'marginalia-mode-hook #'nerd-icons-completion-marginalia-setup))
-
-;; since embark-export buffers is read-only by default
-;; remove read-only before deleting line
-(defun obp/evil-delete-whole-line-disable-read-only ()
-  (interactive)
-  (read-only-mode -1)
-  (call-interactively 'evil-delete-whole-line)
-  )
-
-;; embark
-(use-package embark
-  :bind
-  ("C-c C-o" . embark-export)
-  ("C-c C-d" . obp/evil-delete-whole-line-disable-read-only))
-
-(use-package embark-consult)
-
-
-;; ---------------------------------------------------------------------
-;; Latex
-;; ---------------------------------------------------------------------
-;; latex integration with zathura
-;; (use-package tex
-;; :ensure auctex)
-
-;; (use-package pdf-tools)
-
-;; (add-hook 'TeX-after-compilation-finished-functions #'TeX-revert-document-buffer) ;; revert pdf after compile
-;; (setq TeX-view-program-selection '((output-pdf "zathura"))) ;; use pdf-tools for viewing
-;; (setq LaTeX-command "latex --synctex=1") ;; optional: enable synctex
-
-;; lstlisting in latex org export
-;;(use-package ox-latex)
-;;(setq org-latex-listings t)
-
-(use-package openwith
-  :init (openwith-mode))
-
-(setq openwith-associations '(("\\.pdf\\'" "zathura" (file))))
-
-;; org-babel
-(org-babel-do-load-languages
- 'org-babel-load-languages
- '((shell . t)
-   (emacs-lisp . t)
-   (python . t)
-   (plantuml . t)))
-
-;; ---------------------------------------------------------------------
-;; Avy
-;; ---------------------------------------------------------------------
-(use-package avy)
-(global-set-key (kbd "C-s") 'avy-goto-word-0)
-(setq avy-timeout-seconds 0.3)
-
-;; ---------------------------------------------------------------------
-;; Evil
-;; ---------------------------------------------------------------------
-(use-package evil
-  :init
-  (setq evil-want-integration t)
-  (setq evil-want-keybinding nil)
-  (setq evil-want-C-u-scroll t)
-  (setq evil-want-C-i-jump nil)
-  :config
-  (evil-mode 1)
-  (define-key evil-insert-state-map (kbd "C-g") 'evil-normal-state)
-  (define-key evil-motion-state-map (kbd "C-e") 'avy-goto-char-timer)
-  ;; Use visual line motions even outside of visual-line-mode buffers
-  (evil-global-set-key 'motion "j" 'evil-next-visual-line)
-  (evil-global-set-key 'motion "k" 'evil-previous-visual-line)
-  (evil-set-initial-state 'messages-buffer-mode 'normal)
-  (evil-set-initial-state 'dashboard-mode 'normal))
-
-(setq evil-symbol-word-search t)
-
-(use-package evil-collection
-  :after evil
-  :config
-  (evil-collection-init))
-
-;; Support searching with * and # from visual selection.
-;; https://github.com/bling/evil-visualstar
-(use-package evil-visualstar
-  :after evil
-  :config
-  (global-evil-visualstar-mode))
-
-(defun obp/save-and-kill-buffer ()
-  "Save the current buffer to file, then kill it."
-  (interactive)
-  (save-buffer)
-  (kill-buffer-and-window))
-
-;; https://emacs.stackexchange.com/questions/72394/how-to-make-q-in-spacemacs-evil-mode-kill-the-buffer-and-delete-the-window
-(evil-ex-define-cmd "q" 'kill-buffer-and-window)
-(evil-ex-define-cmd "wq" 'obp/save-and-kill-buffer)
-
-
-;; ---------------------------------------------------------------------
-;; Version control
-;; ---------------------------------------------------------------------
-;; https://www.reddit.com/r/emacs/comments/11auxod/magit_quits_after_a_commit_happen/
-(defun obp/magit-remember-worktree-project ()
-  "Remember the Git worktree opened in Magit as its own project."
-  (require 'project)
-  (when-let* ((root (magit-toplevel))
-              ((file-regular-p (expand-file-name ".git" root)))
-              (project (project-current nil root)))
-    (when (file-equal-p (project-root project) root)
-      (project-remember-project project nil t))))
-
-(use-package magit
-  :ensure t
-  :config
-  (add-hook 'git-commit-post-finish-hook 'magit)
-  (add-hook 'magit-status-mode-hook #'obp/magit-remember-worktree-project)
-  :custom
-  (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
-
-;; to fetch tags with force (i.e. overriding existing tags), we allow to fetch with the --force flag enabled:
-(transient-append-suffix 'magit-fetch "-t"
-  '("-f" "Bypass safety checks" "--force"))
-
-(use-package magit-delta
-  :hook (magit-mode . magit-delta-mode))
-
-;; Add magit to list of project commands
-;; (add-to-list 'project-switch-commands '(magit-project-status "Magit" ?m))
-
-;; Git gutter indicators
-;; https://ianyepan.github.io/posts/emacs-git-gutter/
-(use-package git-gutter
-  :hook (prog-mode . git-gutter-mode)
-  :config
-  ;; Default is 0, meaning update indicators on saving the file.
-  ;; (setq git-gutter:update-interval 0.02)
-  )
-
-
-;; ---------------------------------------------------------------------
-;; Languages
-;; ---------------------------------------------------------------------
-(use-package elixir-ts-mode
-  :straight (:type built-in))
-(use-package heex-ts-mode
-  :straight (:type built-in))
-(use-package haskell-mode)
-(use-package cc-mode)
-(use-package rust-mode)
-(use-package nix-mode)
-(use-package markdown-mode)
-(use-package erlang)
-(use-package protobuf-mode)
-(use-package yaml-mode)
-(use-package dockerfile-mode)
-(use-package docker)
-(use-package k8s-mode)
-
-;; Emacs 31 can opt into tree-sitter modes centrally.  Grammars are provided
-;; declaratively by Home Manager, so never download or compile them at runtime.
-(use-package treesit
-  :straight (:type built-in)
-  :custom
-  (treesit-auto-install-grammar nil)
-  (treesit-enabled-modes
-   '(bash-ts-mode
-     c-ts-mode
-     c++-ts-mode
-     elixir-ts-mode
-     heex-ts-mode
-     json-ts-mode
-     rust-ts-mode
-     yaml-ts-mode)))
-
-
-;; ---------------------------------------------------------------------
-;; LSP (eglot, built-in from emacs 29)
-;; ---------------------------------------------------------------------
-;; (add-hook 'rust-mode-hook 'eglot-ensure)
-
-(use-package dumb-jump
-  :config
-  (add-hook 'xref-backend-functions #'dumb-jump-xref-activate))
-
-(setq dumb-jump-rg-search-args "--pcre2 --no-ignore -g '!_build/'")
-
-;; ---------------------------------------------------------------------
-;; Org
-;; ---------------------------------------------------------------------
-;; Turn on indentation and auto-fill mode for Org files
-(defun dw/org-mode-setup ()
-  (org-indent-mode)
-  (auto-fill-mode 0)
-  (visual-line-mode 1))
-
-(use-package org
-  :straight (:type built-in)
-  :defer t
-  :init
-  ;; Must be set before org loads; makes evil motion work correctly on hidden link syntax
-  (setq org-fold-core-style 'overlays)
-  :hook (org-mode . dw/org-mode-setup)
-  :config
-  ;;(setq org-ellipsis " ▾"
-  ;;    org-hide-emphasis-markers t
-  ;;    org-src-fontify-natively t
-  ;;    org-fontify-quote-and-verse-blocks t
-  ;;    org-src-tab-acts-natively t
-  ;;    org-edit-src-content-indentation 2
-  ;;    org-hide-block-startup nil
-  ;;    org-src-preserve-indentation nil
-  ;;    org-startup-folded 'content
-  ;;    org-cycle-separator-lines 2)
-
-  (setq org-modules
-        '(org-crypt
-          org-habit
-          org-bookmark
-          org-eshell
-          org-irc))
-
-  (setq org-use-sub-superscripts '{}
-        org-export-with-sub-superscripts '{})
-
-  (setq org-refile-targets '((nil :maxlevel . 2)
-                             (org-agenda-files :maxlevel . 2)))
-
-  (setq org-outline-path-complete-in-steps nil)
-  (setq org-refile-use-outline-path t)
-
-  ;; Follow links in same window, use C-c & to go back
-  (setf (cdr (assoc 'file org-link-frame-setup)) 'find-file)
-
-  (evil-define-key '(normal insert visual) org-mode-map (kbd "C-j") 'org-next-visible-heading)
-  (evil-define-key '(normal insert visual) org-mode-map (kbd "C-k") 'org-previous-visible-heading)
-
-  (evil-define-key '(normal insert visual) org-mode-map (kbd "M-j") 'org-metadown)
-  (evil-define-key '(normal insert visual) org-mode-map (kbd "M-k") 'org-metaup))
-
-;; these following commands sets font:sizing across various levels
-;; of org mode text
-(with-eval-after-load 'org-faces
-  (set-face-attribute 'org-document-title nil :font "JetBrainsMono Nerd Font" :weight 'bold :height 1.3))
-
-(with-eval-after-load 'org-faces
-  (dolist
-      (face '((org-level-1 . 1.2)
-              (org-level-2 . 1.1)
-              (org-level-3 . 1.05)
-              (org-level-4 . 1.0)
-              (org-level-5 . 1.0)
-              (org-level-6 . 1.0)
-              (org-level-7 . 1.0)
-              (org-level-8 . 1.0)))
-    (set-face-attribute (car face) nil :font "JetBrainsMono Nerd Font" :weight 'medium :height (cdr face))))
-
-(use-package evil-org
-  :ensure t
-  :after org
-  :hook (org-mode . evil-org-mode)
-  :config
-  (evil-org-set-key-theme '(navigation insert textobjects additional calendar))
-  (require 'evil-org-agenda)
-  (evil-org-agenda-set-keys))
-
-(use-package org-appear
-  :hook (org-mode . org-appear-mode)
-  :custom
-  (org-appear-autolinks t)
-  (org-appear-autosubmarkers t)
-  (org-appear-trigger 'always))
-
-(use-package org-autolist
-  :hook (org-mode . org-autolist-mode))
-(add-hook 'org-mode-hook (lambda () (org-autolist-mode)))
-
-
-(use-package org-modern
-  :ensure t
-  :custom
-  (org-modern-fold-stars
-   '(("◉" . "◯")
-     ("│" . "└")
-     (" │" . " └")
-     (" │" . " └")))
-  :init
-  (setq org-modern-hide-stars " "))
-
-(setq
- ;; Edit settings
- org-auto-align-tags nil
- org-tags-column 0
- org-catch-invisible-edits 'show-and-error
- org-special-ctrl-a/e t
- org-insert-heading-respect-content t
-
- ;; Org styling, hide markup etc.
- org-hide-emphasis-markers t
- org-pretty-entities t
- org-agenda-tags-column 0
- ;;org-modern-star nil
- ;;org-modern-hide-stars nil
- org-ellipsis "…")
-
-(set-face-attribute 'org-modern-symbol nil :height 1.1)
-(set-face-attribute 'org-modern-label nil :height 0.9)
-
-(setq org-modern-todo-faces
-      '(("TODO"      . (:background "firebrick" :foreground "whitesmoke" :weight bold))
-        ("STARTED"   . (:background "firebrick" :foreground "whitesmoke" :weight bold))
-        ("PARKED"   . (:background "dark goldenrod" :foreground "whitesmoke" :weight bold))
-        ("BACKLOG"   . (:background "dark goldenrod" :foreground "whitesmoke" :weight bold))
-        ("SOMEDAY"   . (:background "purple4" :foreground "whitesmoke" :weight bold))
-        ("CLOSED"    . (:background "forest green" :foreground "whitesmoke" :weight bold))
-        ("CANCELLED" . (:background "forest green" :foreground "whitesmoke" :weight bold))
-        ("REVIEW"   . (:background "firebrick" :foreground "whitesmoke" :weight bold))
-        ("AWAITING"   . (:background "cadetblue" :foreground "whitesmoke" :weight bold))
-        ("DRAFT"   . (:background "dark goldenrod" :foreground "whitesmoke" :weight bold))
-        ("MERGED"   . (:background "forest green" :foreground "whitesmoke" :weight bold))
-        ("APPROVED"   . (:background "forest green" :foreground "whitesmoke" :weight bold))
-        ("IDC"   . (:background "forest green" :foreground "whitesmoke" :weight bold))))
-
-(global-org-modern-mode)
-
-;;(use-package org-superstar
-;;:after org
-;;:hook (org-mode . org-superstar-mode)
-;;:custom
-;;(org-superstar-remove-leading-stars t)
-;;(org-superstar-headline-bullets-list '("◉" "○" "●" "○" "●" "○" "●")))
-
-
-(use-package org-download
-  :after org)
-;; --- Org-Roam Standard Capture Templates ---
-
-(defvar obp/org-roam-template-default
-  `(plain "%?\n%i"
-          :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
-                             ,(concat
-                               "#+title: ${title}\n"))
-          :unnarrowed t)
-  "Default org-roam capture template body.")
-
-(defvar obp/org-roam-template-contact
-  `(plain
-    ,(concat
-      "- Email: %^{Email}\n"
-      "- Department: %^{Department}\n"
-      "- Project: %^{Project}\n"
-      "%?\n%i")
-    :target (file+head "contacts/${slug}.org"
-                       ,(concat
-                         "#+title: ${title}\n"
-                         "#+filetags: :contact:\n"))
-    :unnarrowed t)
-  "Contact org-roam capture template body.")
-
-(defvar obp/org-roam-dailies-template-meeting
-  `(entry
-    ,(concat
-      "** %^{Meeting Title}\n"
-      ":PROPERTIES:\n"
-      ":TIME: %U\n"
-      ":END:\n"
-      "*** Attendees\n"
-      "- %?\n"
-      "*** Agenda\n"
-      "- \n"
-      "*** Notes\n"
-      "- \n"
-      "*** Gemini Notes\n"
-      "*** Action Items\n"
-      "**** TODO ")
-    :target (file+head+olp "%<%Y-%m-%d>.org"
-                           ,(concat
-                             "#+title: %<%Y-%m-%d>\n")
-                           ("Meetings")))
-  "Meeting template body for org-roam dailies.")
-
-(defvar obp/org-roam-dailies-template-journal
-  `(entry
-    "** %<%H:%M> %?"
-    :target (file+head+olp "%<%Y-%m-%d>.org"
-                           ,(concat
-                             "#+title: %<%Y-%m-%d>\n")
-                           ("Log")))
-  "Journal/Log template body for org-roam dailies.")
-
-(use-package org-roam
-  :ensure t
-  :custom
-  (org-roam-directory (file-truename host/org-roam-path))
-  (org-roam-dailies-directory "daily/")
-  :bind (("C-c n f" . org-roam-node-find)
-         ("C-c n i" . org-roam-node-insert)
-         ("C-c n c" . org-roam-capture)
-         ("C-c n a" . org-roam-alias-add)
-         ("C-c n t" . org-roam-tag-add)
-         ("C-c n T" . org-roam-tag-remove)
-         ;; Dailies
-         ("C-c n j" . org-roam-dailies-capture-today)
-         ("C-c n d d" . org-roam-dailies-goto-today)
-         ("C-c n d y" . org-roam-dailies-capture-yesterday)
-         ("C-c n d t" . org-roam-dailies-capture-tomorrow))
-  :config
-  (setq org-roam-node-display-template (concat "${title:*} " (propertize "${tags:10}" 'face 'org-tag)))
-
-  (setq org-roam-capture-templates
-        `(("d" "default" ,@obp/org-roam-template-default)
-          ("c" "contact" ,@obp/org-roam-template-contact)))
-
-  (setq org-roam-dailies-capture-templates
-        `(("m" "meeting" ,@obp/org-roam-dailies-template-meeting)
-          ("j" "journal" ,@obp/org-roam-dailies-template-journal)))
-
-  (org-roam-db-autosync-mode))
-
-(use-package org-roam-ui
-  :after org-roam
-  :bind (("C-c n g" . org-roam-ui-mode))
-  :config
-  (setq org-roam-ui-sync-theme t
-        org-roam-ui-follow t
-        org-roam-ui-update-on-save t
-        org-roam-ui-open-on-start t))
-
-(use-package consult-org-roam
-  :ensure t
-  :after org-roam
-  :custom
-  ;; Use `ripgrep' for searching with `consult-org-roam-search'
-  (consult-org-roam-grep-func #'consult-ripgrep)
-  ;; Configure a custom narrow key for `consult-buffer'
-  (consult-org-roam-buffer-narrow-key ?r)
-  ;; Display org-roam buffers right after non-org-roam buffers
-  ;; in consult-buffer (and not down at the bottom)
-  (consult-org-roam-buffer-after-buffers t)
-  :config
-  ;; Activate the minor mode
-  (consult-org-roam-mode 1)
-  ;; Eventually suppress previewing for certain functions
-  (consult-customize
-   consult-org-roam-forward-links
-   :preview-key "M-.")
-  :bind
-  ;; Define some convenient keybindings as an addition
-  ("C-c n e" . consult-org-roam-file-find)
-  ("C-c n b" . consult-org-roam-backlinks)
-  ("C-c n B" . consult-org-roam-backlinks-recursive)
-  ("C-c n l" . consult-org-roam-forward-links)
-  ("C-c n r" . consult-org-roam-search))
-
-(use-package org-ql
-  :after org)
-
-;; ---------------------------------------------------------------------
-;; Bazooka
-;; ---------------------------------------------------------------------
-(use-package bazooka
-  :straight (:type git
-             :host github
-             :repo "to-bak/bazooka.el"
-             :branch "main")
-  :demand t
-  :custom
-  (bazooka-capacity 4))
-
-(defhydra obp/hydra-bazooka (:color blue :hint nil)
-  "
-Bazooka: _r_emember  _b_rowse  _f_lip  _x_ clear
-"
-  ("r" bazooka-remember)
-  ("b" bazooka-consult)
-  ("f" bazooka-toggle)
-  ("x" bazooka-clear))
-
-;; ---------------------------------------------------------------------
-;; Project Tabspaces (disabled)
-;; ---------------------------------------------------------------------
-;; The plugin remains in plugins/project-tabspaces.el for reference.
-;;
-;; (defun obp/force-roam-tabspace (orig-fun &rest args)
-;;   (tabspaces-switch-or-create-workspace "roam")
-;;   (apply orig-fun args))
-;;
-;; (advice-add 'org-roam-node-find :around #'obp/force-roam-tabspace)
-;; (advice-add 'org-roam-node-insert :around #'obp/force-roam-tabspace)
-;; (advice-add 'org-roam-buffer-toggle :around #'obp/force-roam-tabspace)
-;;
-;; (setq tab-bar-show nil)
-;; (tab-bar-mode 1)
-;;
-;; (use-package tabspaces
-;;   :ensure t
-;;   :custom
-;;   (tabspaces-session nil)
-;;   (tabspaces-use-filtered-buffers-as-default t)
-;;   (tabspaces-default-tab "default")
-;;   (tabspaces-remove-to-default t)
-;;   (tabspaces-include-buffers '("*Messages*"))
-;;   :bind (:map project-prefix-map
-;;               ("p" . project-tabspaces-consult-tabspaces-and-projects)
-;;               ("f" . project-tabspaces-consult-project-files-and-buffers)
-;;               ("k" . project-tabspaces-close-workspace))
-;;   :config
-;;   (tabspaces-mode 1))
-;;
-;; (use-package project-tabspaces
-;;   :straight nil
-;;   :ensure nil
-;;   :load-path "~/.emacs.d/plugins"
-;;   :after tabspaces
-;;   :config
-;;   (project-tabspaces-mode 1))
-;;
-;; (defun obp/global-switch-buffer ()
-;;   "Switch to any buffer globally, bypassing Tabspaces."
-;;   (interactive)
-;;   (let ((read-buffer-function nil))
-;;     (call-interactively #'switch-to-buffer)))
-;;
-;; (global-set-key (kbd "C-x b") #'obp/global-switch-buffer)
-
-
-;; ---------------------------------------------------------------------
-;; Org Agenda
-;; ---------------------------------------------------------------------
-(setq org-default-agenda-file (file-truename host/org-agenda-inbox-path))
-
-(use-package org-super-agenda
-  :ensure t
-  :config
-  ;; Prevent super-agenda from overriding evil hjkl on group headers
-  (setq org-super-agenda-header-map (make-sparse-keymap))
-  (org-super-agenda-mode t))
-
-(add-hook 'org-agenda-mode-hook
-          (lambda ()
-            (setq-local olivetti-body-width obp/focused-body-width)
-            (olivetti-mode 1)))
-
-(setq org-tag-alist
-      '(("@work" . ?w)
-        ("@planning" . ?p)
-        ("@coding" . ?c)
-        ("@meeting" . ?m)))
-
-;; this doesn't work with regex
-(setq org-tag-faces
-      '(("TICKET"           . (:foreground "#808080" :background "black"))                            ;; Gray text
-        ("[A-Za-z]+_[0-9]+" . (:background "salmon" :foreground "black" :weight bold)))) ;; Salmon pill
-
-(setq org-agenda-prefix-format
-      '((agenda . " %i %?-12t %-10s ") ;; Cleaned! Indent, Time, Schedule. No %c.
-        (todo   . " %i ")
-        (tags   . " %i ")
-        (search . " ")))
-
-(setq org-agenda-window-setup 'current-window)
-
-(setq org-agenda-scheduled-leaders '("📅        " "📅 %2dx:  ")
-      org-agenda-deadline-leaders  '("🚨        " "🚨 %3dd:  " "🚨 -%2dd: "))
-
-(setq org-agenda-skip-timestamp-if-done t
-      org-agenda-skip-deadline-if-done t
-      org-agenda-skip-scheduled-if-done t
-      org-agenda-skip-scheduled-if-deadline-is-shown t
-      org-agenda-skip-timestamp-if-deadline-is-shown t
-      org-agenda-start-with-log-mode nil)
-
-(setq org-log-done 'time)
-(setq org-log-into-drawer t)
-
-(setq org-agenda-files
-      (list host/org-agenda-path host/org-agenda-ticket-path))
-
-(setq org-todo-keywords
-      '((sequence "TODO(t)" "STARTED(s)" "|" "CLOSED(c)")
-        (sequence "PARKED(p@)" "BACKLOG(b)" "SOMEDAY(f)" "|" "CANCELLED(x@)")))
-
-(use-package agenda-prs
-  :straight nil
-  :ensure nil
-  :load-path "~/.emacs.d/plugins"
-  :config)
-
-(defun obp/agenda-refresh-and-redraw ()
-  "Fetch fresh data and instantly update the active agenda buffer view."
-  (interactive)
-  (obp/refresh-prs-agenda)
-  (org-agenda-redo)
-  (message "Dashboard updated with fresh data!"))
-
-(setq org-archive-location
-      (concat host/org-agenda-path "/archive.org_archive::* Archive"))
-
-(defun obp/org-save-all-org-buffers (&rest _)
-  "Save all org buffers, ignoring any arguments passed by the advised function."
-  (org-save-all-org-buffers))
-
-(advice-add 'org-refile :after 'obp/org-save-all-org-buffers)
-(advice-add 'org-agenda-refile :after 'obp/org-save-all-org-buffers)
-(advice-add 'org-agenda-todo :after 'obp/org-save-all-org-buffers)
-(advice-add 'org-agenda-deadline :after 'obp/org-save-all-org-buffers)
-(advice-add 'org-agenda-schedule :after 'obp/org-save-all-org-buffers)
-(advice-add 'org-agenda-priority :after 'obp/org-save-all-org-buffers)
-(advice-add 'org-agenda-set-tags :after 'obp/org-save-all-org-buffers)
-(advice-add 'org-agenda-add-note :after 'obp/org-save-all-org-buffers)
-(advice-add 'org-agenda-archive :after 'obp/org-save-all-org-buffers)
-
-(defun obp/org-agenda-skip-unmapped-and-someday ()
-  "Skip entries that have dates, or belong to deferred/closed states."
-  (or (org-agenda-skip-entry-if 'scheduled 'deadline)
-      (when (member (org-get-todo-state) '("SOMEDAY" "PARKED" "BACKLOG" "CLOSED" "CANCELLED"))
-        (save-excursion (or (outline-next-heading) (point-max))))))
-
-(defvar obp/org-agenda-block-inbox
-  `(alltodo "" ((org-agenda-overriding-header "📥 Inbox (Unprocessed Captures)")
-                (org-agenda-files (list ,host/org-agenda-inbox-path))))
-  "Inbox block for unprocessed items.")
-
-(defvar obp/org-agenda-block-agenda
-  '(agenda "" ((org-agenda-start-day "+0d")
-               (org-agenda-span 18)
-               (org-agenda-start-on-weekday nil)
-               (org-super-agenda-groups
-                '((:auto-category t)))))
-  "Standard 18-day schedule/deadline agenda block.")
-
-(defvar obp/org-agenda-block-prs
-  `(todo "REVIEW|DRAFT|AWAITING|APPROVED"
-         ((org-agenda-overriding-header "Pull Requests Awaiting Review")
-          (org-agenda-files (list ,host/org-agenda-reviews-path))
-          (org-agenda-prefix-format '((todo . " %i ")))))
-  "Block displaying pending pull requests.")
-
-(defvar obp/org-agenda-block-unmapped
-  '(alltodo "" ((org-agenda-overriding-header "Unmapped Tasks (No Schedule/Deadline)")
-                (org-agenda-skip-function 'obp/org-agenda-skip-unmapped-and-someday)
-                (org-super-agenda-groups
-                 '((:auto-category t)))))
-  "Block for tasks lacking dates, excluding SOMEDAY items.")
-
-(defvar obp/org-agenda-block-someday
-  '(todo "SOMEDAY"
-         ((org-agenda-overriding-header "☁️ SOMEDAY")
-          (org-super-agenda-groups
-           '((:auto-category t)))))
-  "Block for SOMEDAY tasks.")
-
-(defvar obp/org-agenda-block-backlog
-  '(todo "BACKLOG"
-         ((org-agenda-overriding-header "☁️ BACKLOG")
-          (org-super-agenda-groups
-           '((:auto-category t)))))
-  "Block for BACKLOG tasks, automatically grouped by category.")
-
-(defvar obp/org-agenda-block-parked
-  '(todo "PARKED"
-         ((org-agenda-overriding-header "🚧 Parked")
-          (org-super-agenda-groups
-           '((:auto-category t))))))
-
-(defvar obp/org-agenda-block-closed
-  '(todo "CLOSED|CANCELLED"
-         ((org-agenda-overriding-header "✅ Closed & Cancelled Items")
-          (org-super-agenda-groups
-           '((:auto-category t))))))
-
-(defvar obp/org-agenda-block-ongoing-tickets
-  `(tags "TICKET+LEVEL=1"
-         ((org-agenda-overriding-header "⚡ Active Tickets Index")
-          (org-agenda-files (list ,host/org-agenda-ticket-path))))
-  "A simple index of all top-level ticket files.")
-
-(defvar obp/org-agenda-block-ticket
-  `(tags-todo "TICKET"
-              ((org-agenda-overriding-header "🤖 Active Tickets")
-               (org-agenda-files (list ,host/org-agenda-ticket-path))
-               (org-super-agenda-groups
-                '((:auto-category t)))))
-  "Block displaying active tickets and only their actionable TODOs.")
-
-;; --- Main Custom Commands ---
-
-(setq org-agenda-custom-commands
-      `(("d" "Dashboard"
-         (,obp/org-agenda-block-inbox
-          ,obp/org-agenda-block-ongoing-tickets
-          ,obp/org-agenda-block-agenda
-          ,obp/org-agenda-block-prs))
-
-        ("w" "Weekly Review"
-         (,obp/org-agenda-block-unmapped
-          ,obp/org-agenda-block-parked
-          ,obp/org-agenda-block-backlog
-          ,obp/org-agenda-block-someday
-          ,obp/org-agenda-block-closed))
-
-        ("f" "☁️ Someday" (,obp/org-agenda-block-someday))
-        ("b" "Backlog" (,obp/org-agenda-block-backlog))
-        ("p" "🤖 Tickets" (,obp/org-agenda-block-ticket))))
-
-;; --- Capture Templates ---
-
-(defun obp/org-capture-url-link ()
-  "Format the captured initial text as a compact HTTP(S) Org link."
-  (require 'url-parse)
-  (let* ((url (string-trim (or (org-capture-get :initial) "")))
-         (parsed (and (string-match-p "\\`https?://" url)
-                      (url-generic-parse-url url)))
-         (host (and parsed (url-host parsed))))
-    (unless (and host
-                 (string-match-p "\\`https?://[^[:space:]]+\\'" url))
-      (user-error "Select one HTTP(S) URL before using the URL template"))
-    (org-link-make-string url (string-remove-prefix "www." host))))
-
-(defvar obp/org-capture-template-todo
-  '(entry
-    (file+headline org-default-agenda-file "Inbox")
-    "* TODO %?")
-  "Context-free TODO for the Agenda inbox.")
-
-(defvar obp/org-capture-template-code-todo
-  '(entry
-    (file+headline org-default-agenda-file "Inbox")
-    "* TODO %?\n%a\n%i")
-  "TODO linked to the source location, including any selected text.")
-
-(defvar obp/org-capture-template-url
-  '(entry
-    (file+headline org-default-agenda-file "Inbox")
-    "* TODO %? — %(obp/org-capture-url-link)")
-  "TODO with the selected URL presented as a compact link in its heading.")
-
-(setq org-capture-templates
-      `(("p" "plain"           ,@obp/org-capture-template-todo)
-        ("c" "code"            ,@obp/org-capture-template-code-todo)
-        ("u" "URL"             ,@obp/org-capture-template-url)))
-
-(use-package org-ql
-  :ensure t
-  :bind (("C-c q" . org-ql-search))) ;; Bind to whatever key you prefer
-
-(use-package org-fancy-priorities
-  :ensure t
-  :hook
-  (org-mode . org-fancy-priorities-mode)
-  :config
-  (setq org-fancy-priorities-list '("🔥" "☕" "💤")))
-
-;; C-c o prefix for org commands
-(define-prefix-command 'obp/org-prefix-map)
-(global-set-key (kbd "C-c o") 'obp/org-prefix-map)
-(global-set-key (kbd "C-c a") #'org-agenda)
-(global-set-key (kbd "C-c c") 'org-capture)
-
-;; Global org keybindings (work everywhere)
-(define-key obp/org-prefix-map (kbd "l") 'org-store-link)
-(define-key obp/org-prefix-map (kbd "q") 'org-ql-search)
-
-;; org-mode-map keybindings (org buffers only)
-(with-eval-after-load 'org
-  (define-key org-mode-map (kbd "C-c o d") 'org-deadline)
-  (define-key org-mode-map (kbd "C-c o s") 'org-schedule)
-  (define-key org-mode-map (kbd "C-c o p") 'org-priority)
-  (define-key org-mode-map (kbd "C-c o t") 'org-set-tags-command)
-  (define-key org-mode-map (kbd "C-c o n") 'org-add-note)
-  (define-key org-mode-map (kbd "C-c o r") 'org-refile)
-  (define-key org-mode-map (kbd "C-c o x") 'org-archive-subtree)
-  (define-key org-mode-map (kbd "C-c o o") 'org-open-at-point)
-  (define-key org-mode-map (kbd "C-c o L") 'org-insert-link))
-
-;; org-agenda-mode-map keybindings (agenda view only)
-(with-eval-after-load 'org-agenda
-  (define-key org-agenda-mode-map (kbd "C-c o d") 'org-agenda-deadline)
-  (define-key org-agenda-mode-map (kbd "C-c o s") 'org-agenda-schedule)
-  (define-key org-agenda-mode-map (kbd "C-c o p") 'org-agenda-priority)
-  (define-key org-agenda-mode-map (kbd "C-c o t") 'org-agenda-set-tags)
-  (define-key org-agenda-mode-map (kbd "C-c o n") 'org-agenda-add-note)
-  (define-key org-agenda-mode-map (kbd "C-c o r") 'org-agenda-refile)
-  (define-key org-agenda-mode-map (kbd "C-c o x") 'org-agenda-archive)
-  (define-key org-agenda-mode-map (kbd "C-c o o") 'org-agenda-open-link)
-  (define-key org-agenda-mode-map (kbd "C-c C-c") 'obp/agenda-refresh-and-redraw)
-  )
-
-
-;; ---------------------------------------------------------------------
-;; Window Management
-;; ---------------------------------------------------------------------
-(defhydra hydra-window (:inherit (obp/hydra-bazooka/heads))
-  "
-Movement^^    ^Zoom^             ^Bazooka^
----------------------------------------------
-_h_ ←         _+_                _r_emember
-_j_ ↓         _-_                _b_rowse
-_k_ ↑         _0_ reset          _f_lip
-_l_ →         _C-+_              _x_ clear
-_q_uit        _C--_
-              _C-0_ global reset
-"
-  ("h" evil-window-decrease-width)
-  ("j" evil-window-decrease-height)
-  ("k" evil-window-increase-height)
-  ("l" evil-window-increase-width)
-  ("+" (lambda ()
-         (interactive)
-         (text-scale-increase 1)))
-  ("-" (lambda ()
-         (interactive)
-         (text-scale-decrease 1)))
-  ("0" (lambda ()
-         (interactive)
-         (text-scale-adjust 0)))
-  ("C-+" (lambda ()
-           (interactive)
-           (global-text-scale-adjust 1)))
-  ("C--" (lambda ()
-           (interactive)
-           (global-text-scale-adjust -1)))
-  ("C-0" (lambda ()
-           (interactive)
-           (global-text-scale-adjust 0)))
-  ("q" nil))
-
-(global-set-key (kbd "C-c w") 'hydra-window/body)
-
-
-;; ---------------------------------------------------------------------
-;; AI tooling
-;; ---------------------------------------------------------------------
-(use-package gptel
-  :ensure t
-  :config
-  (when host/gptel-config
-    (funcall host/gptel-config)))
-
-(use-package agent-shell
-  :ensure t
-  ;; :custom
-  ;; (agent-shell-session-restore-verbosity 'full)
-  :config
-  ;; `agent-shell' starts completion from `post-self-insert-hook'.  Force the
-  ;; newly inserted / or @ to be displayed before Corfu asks Emacs for its
-  ;; screen position; without this, `posn-at-point' can transiently return nil.
-  ;; (defun my-agent-shell-redisplay-before-triggering-completion (&rest _)
-  ;;   "Redisplay input before `agent-shell' starts prefix completion."
-  ;;   (redisplay t))
-  ;; (advice-add 'agent-shell--trigger-completion-at-point :before
-  ;;             #'my-agent-shell-redisplay-before-triggering-completion)
-
-  (when host/agent-shell-config
-    (funcall host/agent-shell-config))
-
-  (evil-define-key 'insert agent-shell-mode-map (kbd "RET") #'newline)
-  (evil-define-key 'normal agent-shell-mode-map (kbd "RET") #'comint-send-input))
-
-(defun obp/agent-shell-file-completion-table (string predicate action)
-  "Complete STRING as a filename for agent-shell.
-PREDICATE and ACTION follow the completion table protocol.  In viewport or
-minibuffer input, resolve paths relative to the associated shell buffer."
-  (let ((source (agent-shell-completion--source-buffer)))
-    (when (buffer-live-p source)
-      (with-current-buffer source
-        (completion-file-name-table string predicate action)))))
-
-(defun obp/agent-shell-file-completion-exit (candidate status)
-  "Add a space after completed file CANDIDATE, but not a directory.
-STATUS is the completion exit status."
-  (when (eq status 'finished)
-    (let ((source (agent-shell-completion--source-buffer)))
-      (unless (and (buffer-live-p source)
-                   (with-current-buffer source
-                     (file-directory-p
-                      (substitute-in-file-name candidate))))
-        (insert " ")))))
-
-(defun obp/agent-shell-file-completion-at-point ()
-  "Complete ordinary filesystem paths after @ in every agent shell.
-Unlike agent-shell's project-file list, this supports directory-by-directory
-navigation such as @~, @.., @../.., absolute paths, and non-project buffers."
-  (when-let* ((bounds (agent-shell--completion-bounds "^ \t\n@" ?@)))
-    (list (map-elt bounds :start)
-          (map-elt bounds :end)
-          #'obp/agent-shell-file-completion-table
-          :exclusive 'no
-          :category 'file
-          :company-kind (lambda (candidate)
-                          (if (string-suffix-p "/" candidate)
-                              'folder
-                            'file))
-          :exit-function #'obp/agent-shell-file-completion-exit)))
-
-(with-eval-after-load 'agent-shell-completion
-  (advice-add 'agent-shell--file-completion-at-point :override
-              #'obp/agent-shell-file-completion-at-point))
-
-(with-eval-after-load 'evil-collection
-  (evil-define-key 'normal agent-shell-mode-map (kbd "TAB") #'agent-shell-ui-toggle-fragment)
-  (evil-define-key 'insert agent-shell-mode-map (kbd "TAB") #'agent-shell-ui-toggle-fragment))
-
-(use-package agent-shell-cockpit
-  :straight (:type git
-             :host github
-             :repo "to-bak/agent-shell-cockpit"
-             :branch "main")
-  :after agent-shell
-  :demand t
-  :bind (("C-c m" . agent-shell-cockpit))
-  :custom
-  (agent-shell-cockpit-enable-standalone-sessions t)
-  (agent-shell-cockpit-default-instructions '(cockpit))
-  (agent-shell-cockpit-agent-preview-behavior 'delayed)
-  (agent-shell-cockpit-context-directory-name "context")
-  (agent-shell-cockpit-worktrees-directory-name "worktrees")
-  (agent-shell-cockpit-worktree-open-function #'magit-status)
-  (agent-shell-cockpit-repository-source-function
-   #'project-prompt-project-dir)
-  :config
-  (require 'agent-shell-cockpit-org-roam)
-  (setq agent-shell-cockpit-instructions
-        '((manifest
-           :title "AI Manifest"
-           :source (org-roam "a8a767a1-1644-4c4a-a05f-23f7b3eab5bf")))))
+;; Disable the obsolete practice of end-of-line spacing from the typewriter era.
+(setq sentence-end-double-space nil)
+
+;; According to the POSIX, a line is defined as "a sequence of zero or more
+;; non-newline characters followed by a terminating newline".
+(setq require-final-newline t)
+
+;; Eliminate delay before highlighting search matches
+(setq lazy-highlight-initial-delay 0)
+
+;; Only affect leading indentation. This prevents destroying mid-line visual
+;; alignments, such as aligning variable assignments or trailing comments, by
+;; ensuring spaces in the middle of a line are never converted to tabs.
+(setq tabify-regexp (rx line-start (zero-or-more ?\t) ?\s (one-or-more blank)))
+
+;; Prevent Emacs filling commands (such as `fill-paragraph', `fill-region',
+;; `auto-fill-mode', and Evil's `gq' operator) from inserting line breaks inside
+;; text that is currently hidden via text properties. This prevents accidental
+;; corruption of folded outlines (e.g., in Org or Outline mode) and concealed
+;; markup (e.g., hidden Markdown URLs).
+(setq fill-nobreak-invisible t)
+
+;;; Filetype
+
+;; Do not notify the user each time Python tries to guess the indentation offset
+(setq python-indent-guess-indent-offset-verbose nil)
+
+(setq sh-indent-after-continuation 'always)
+
+;;; Dired and ls-lisp
+
+(setq dired-free-space nil
+      dired-dwim-target t  ; Propose a target for intelligent moving/copying
+      dired-deletion-confirmer 'y-or-n-p
+      dired-filter-verbose nil
+      dired-recursive-deletes 'top
+      dired-recursive-copies 'always
+      dired-vc-rename-file t
+      dired-create-destination-dirs 'ask
+      ;; Suppress Dired buffer kill prompt for deleted dirs
+      dired-clean-confirm-killing-deleted-buffers nil)
+
+;; This is a higher-level predicate that wraps `dired-directory-changed-p'
+;; with additional logic. This `dired-buffer-stale-p' predicate handles remote
+;; files, wdired, unreadable dirs, and delegates to dired-directory-changed-p
+;; for modification checks.
+(setq auto-revert-remote-files nil)
+
+;; Auto refresh Dired buffers, but only if the directory's modification time has
+;; changed on disk. Using `dired-directory-changed-p' is efficient: it avoids
+;; the unconditional re-renders of `t', and skips the heavy overhead of
+;; `dired-buffer-stale-p' (which makes blocking I/O calls for every inserted
+;; subdirectory, causing UI freezes on remote/network drives).
+(setq dired-auto-revert-buffer 'dired-directory-changed-p)
+
+;; Automatically revert destination Dired buffers after file operations
+;; (e.g., copying or renaming), but skip remote directories to prevent
+;; TRAMP network latency and UI freezes.
+(defun minimal-emacs--local-dir-p (dir)
+  "Return non-nil if DIR is a local directory."
+  (not (file-remote-p dir)))
+(setq dired-do-revert-buffer #'minimal-emacs--local-dir-p)
+
+;; dired-omit-mode
+(setq dired-omit-verbose nil
+      dired-omit-files (concat "\\`[.]\\'"))
+
+(setq ls-lisp-verbosity nil)
+(setq ls-lisp-dirs-first t)
+
+;;; Ediff
+
+;; Configure Ediff to use a single frame and split windows horizontally
+(setq ediff-window-setup-function 'ediff-setup-windows-plain
+      ediff-split-window-function 'split-window-horizontally)
+
+;;; Diff
+
+;; Move +/- indicators to the fringe for cleaner diffs
+(setq diff-font-lock-prettify t)
+
+;;; Help
+
+;; Enhance `apropos' and related functions to perform more extensive searches
+(setq apropos-do-all t)
+
+;; Fixes #11: Prevents help command completion from triggering autoload.
+;; Loading additional files for completion can slow down help commands and may
+;; unintentionally execute initialization code from some libraries.
+(setq help-enable-completion-autoload nil)
+(setq help-enable-autoload nil)
+(setq help-enable-symbol-autoload nil)
+(setq help-window-select t)  ;; Focus new help windows when opened
+
+;;; Eglot
+
+(setq eglot-report-progress minimal-emacs-debug)  ; Prevent minibuffer spam
+(setq eglot-autoshutdown t)  ; Shut down after killing last managed buffer
+
+;; A setting of nil or 0 means Eglot will not block the UI at all, allowing
+;; Emacs to remain fully responsive, although LSP features will only become
+;; available once the connection is established in the background.
+(setq eglot-sync-connect 0)
+
+;; Activate Eglot in cross-referenced non-project files
+(setq eglot-extend-to-xref t)
+
+;; Disable margin indicators to prevent line-height shifts caused by emoji font
+;; rendering issues. This disables both `left-fringe' and `margin' indicators.
+(setq eglot-code-action-indications '(eldoc-hint))
+
+;; Eglot optimization
+(if minimal-emacs-debug
+    (setq eglot-events-buffer-config '(:size 2000000 :format full))
+  ;; This reduces log clutter to improves performance.
+  (setq jsonrpc-event-hook nil)
+  ;; Reduce memory usage and avoid cluttering *EGLOT events* buffer
+  (setq eglot-events-buffer-size 0)  ; Deprecated
+  (setq eglot-events-buffer-config '(:size 0 :format short)))
+
+;;; Flymake
+
+(setq flymake-show-diagnostics-at-end-of-line nil)
+(setq flymake-wrap-around nil)
+
+;;; hl-line-mode
+
+;; Highlighting the current window, reducing clutter and improving performance
+(setq hl-line-sticky-flag nil)
+(setq global-hl-line-sticky-flag nil)
+
+;;; icomplete
+
+;; Do not delay displaying completion candidates in `fido-mode' or
+;; `fido-vertical-mode'
+(setq icomplete-compute-delay 0.01)
+
+;;; flyspell
+
+;; Improves flyspell performance by preventing messages from being displayed for
+;; each word when checking the entire buffer.
+(setq flyspell-issue-message-flag nil)
+(setq flyspell-issue-welcome-flag nil)
+
+;;; ispell
+
+;; In Emacs 30 and newer, disable Ispell completion to avoid annotation errors
+;; when no `ispell' dictionary is set.
+(setq text-mode-ispell-word-completion nil)
+
+(setq ispell-silently-savep t)
+
+;;; ibuffer
+
+(setq ibuffer-formats
+      '((mark modified read-only locked
+              " " (name 55 55 :left :elide)
+              " " (size 8 -1 :right)
+              " " (mode 18 18 :left :elide) " " filename-and-process)
+        (mark " " (name 16 -1) " " filename)))
+
+;;; xref
+
+;; Enable completion in the minibuffer instead of the definitions buffer
+(setq xref-show-definitions-function 'xref-show-definitions-completing-read
+      xref-show-xrefs-function 'xref-show-definitions-completing-read)
+
+;;; abbrev
+
+;; Ensure the abbrev_defs file is stored in the correct location when
+;; `user-emacs-directory' is modified, as it defaults to ~/.emacs.d/abbrev_defs
+;; regardless of the change.
+(setq abbrev-file-name (expand-file-name "abbrev_defs" user-emacs-directory))
+
+(setq save-abbrevs 'silently)
+
+;;; dabbrev
+
+(setq dabbrev-upcase-means-case-search t)
+
+(setq dabbrev-ignored-buffer-modes
+      '(archive-mode image-mode docview-mode tags-table-mode
+                     pdf-view-mode tags-table-mode))
+
+(setq dabbrev-ignored-buffer-regexps
+      '(;; - Buffers starting with a space (internal or temporary buffers)
+        "\\` "
+        ;; Tags files such as ETAGS, GTAGS, RTAGS, TAGS, e?tags, and GPATH,
+        ;; including versions with numeric extensions like <123>
+        "\\(?:\\(?:[EG]?\\|GR\\)TAGS\\|e?tags\\|GPATH\\)\\(<[0-9]+>\\)?"))
+
+;;; Remove warnings from narrow-to-region, upcase-region...
+
+(dolist (cmd '(list-timers narrow-to-region narrow-to-page
+                           upcase-region downcase-region
+                           list-threads erase-buffer scroll-left
+                           dired-find-alternate-file set-goal-column))
+  (put cmd 'disabled nil))
+
+;;; Load post init
+
+(when (and minimal-emacs-load-post-init
+           (fboundp 'minimal-emacs-load-user-init))
+  (minimal-emacs-load-user-init "post-init.el"))
+
+(setq minimal-emacs--success t)
+
+;; Local variables:
+;; byte-compile-warnings: (not free-vars)
+;; End:
+
+;;; init.el ends here
