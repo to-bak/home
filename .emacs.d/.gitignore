@@ -2,9 +2,12 @@
 !.gitignore
 !config.org
 !init.el
-!Makefile
-!plugins/
-!plugins/*.el
-!test/
-!test/*.el
+!early-init.el
+!pre-early-init.el
+!post-early-init.el
+!post-init.el
+!lisp/
+!lisp/*.el
+!lisp/custom/
+!lisp/custom/*.el
 !/straight/versions/default.el
