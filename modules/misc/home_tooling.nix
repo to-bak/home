@@ -9,7 +9,7 @@ let
   # same Codex derivation as the terminal CLI.
   codex-acp = pkgs-unstable.buildNpmPackage rec {
     pname = "codex-acp";
-    version = "1.10.0";
+    version = "1.13.1";
 
     src = pkgs-unstable.fetchFromGitHub {
       owner = "agentclientprotocol";
