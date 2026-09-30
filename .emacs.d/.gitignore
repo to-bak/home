@@ -11,3 +11,6 @@
 !lisp/custom/
 !lisp/custom/*.el
 !/straight/versions/default.el
+
+# Preserve the original personal configuration during migration.
+/backup/
