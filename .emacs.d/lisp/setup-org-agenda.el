@@ -6,6 +6,8 @@
 (use-package org-super-agenda
   :demand t
   :config
+  ;; Header text maps override modal keys; use the ordinary buffer maps instead.
+  (setq org-super-agenda-header-map nil)
   (org-super-agenda-mode t))
 
 (add-hook 'org-agenda-mode-hook

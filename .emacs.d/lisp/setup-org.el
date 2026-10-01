@@ -188,41 +188,19 @@ With ARG, or outside a list, use normal `org-return'."
   :commands (org-download-image org-download-screenshot org-download-clipboard)
   :hook (org-mode . org-download-enable))
 
-(defun obp/org-capture-url-link ()
-  "Format the captured initial text as a compact HTTP(S) Org link."
-  (require 'url-parse)
-  (let* ((url (string-trim (or (org-capture-get :initial) "")))
-         (parsed (and (string-match-p "\\`https?://" url)
-                      (url-generic-parse-url url)))
-         (host (and parsed (url-host parsed))))
-    (unless (and host
-                 (string-match-p "\\`https?://[^[:space:]]+\\'" url))
-      (user-error "Select one HTTP(S) URL before using the URL template"))
-    (org-link-make-string url (string-remove-prefix "www." host))))
-
-(defvar obp/org-capture-template-todo
-  '(entry
-    (file+headline org-default-agenda-file "Inbox")
-    "* TODO %?")
-  "Context-free TODO for the Agenda inbox.")
-
-(defvar obp/org-capture-template-code-todo
-  '(entry
-    (file+headline org-default-agenda-file "Inbox")
-    "* TODO %?\n%a\n%i")
-  "TODO linked to the source location, including any selected text.")
-
-(defvar obp/org-capture-template-url
-  '(entry
-    (file+headline org-default-agenda-file "Inbox")
-    "* TODO %? — %(obp/org-capture-url-link)")
-  "TODO with the selected URL presented as a compact link in its heading.")
-
 (setq org-capture-templates
-      `(("p" "plain"           ,@obp/org-capture-template-todo)
-        ("c" "code"            ,@obp/org-capture-template-code-todo)
-        ("u" "URL"             ,@obp/org-capture-template-url)))
-
+      '(("p" "plain" entry
+         (file+headline org-default-agenda-file "Inbox")
+         "* TODO %?")
+        ("c" "code" entry
+         (file+headline org-default-agenda-file "Inbox")
+         "* TODO %?\n%a\n%i")
+        ("b" "Clipboard" entry
+         (file+headline org-default-agenda-file "Inbox")
+         "* %?\n%x")
+        ("w" "Webpage" entry
+         (file+headline org-default-agenda-file "Inbox")
+         "* TODO read later - %:annotation\n%i\n%?")))
 
 (use-package org-fancy-priorities
   :hook (org-mode . org-fancy-priorities-mode)

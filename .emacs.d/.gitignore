@@ -14,3 +14,8 @@
 
 # Preserve the original personal configuration during migration.
 /backup/
+
+# Browser capture handler and setup instructions.
+!desktop/
+!desktop/org-protocol.desktop
+!README.org

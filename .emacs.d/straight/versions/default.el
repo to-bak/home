@@ -56,6 +56,7 @@
  ("marginalia" . "d76d7e36185ab552240c14fb08f7abcbf9a2910c")
  ("markdown-mode" . "76cb4ffecfdf95ee769e5cb4608e04202c3c1521")
  ("melpa" . "e1abef919510b4a1fa4571cf098dbb97caa8fbce")
+ ("meow" . "8aebed9f8cd8d865501b780e63acbeef55da231b")
  ("nerd-icons-completion" . "45b585d972192a3eaeb239e15e55de7f46f8920a")
  ("nerd-icons.el" . "17faac7977242b470732efd417d3bcc8eb5a830e")
  ("nix-mode" . "2c77e7e0b7540efbb20ccaee3557ef90a5dc77f0")

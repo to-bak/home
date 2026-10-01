@@ -17,28 +17,6 @@
 
 
 ;; Interactive window management, inspired by Karthink's wrappers.
-(defun obp/split-window (side size)
-  "Split toward SIDE, select the new window, and return it.
-With a universal prefix SIZE, split the whole main editing area.
-A numeric SIZE keeps the native line/column sizing behaviour."
-  (select-window
-   (split-window (if (consp size) (window-main-window) (selected-window))
-                 (unless (consp size) size) side)))
-
-(defun obp/split-window-below (&optional size)
-  "Split below, select the new window, and choose a buffer."
-  (interactive "P")
-  (let ((window (obp/split-window 'below size)))
-    (when (called-interactively-p 'any) (consult-buffer))
-    window))
-
-(defun obp/split-window-right (&optional size)
-  "Split right, select the new window, and choose a buffer."
-  (interactive "P")
-  (let ((window (obp/split-window 'right size)))
-    (when (called-interactively-p 'any) (consult-buffer))
-    window))
-
 (defun obp/delete-window-or-tab (&optional window)
   "Close WINDOW; close its tab or frame if it is the last editing window."
   (interactive)
@@ -82,8 +60,6 @@ If killing the buffer is cancelled, leave the layout intact."
         (switch-to-buffer buffer)))
     (delete-other-windows)))
 
-(keymap-global-set "<remap> <split-window-below>" #'obp/split-window-below)
-(keymap-global-set "<remap> <split-window-right>" #'obp/split-window-right)
 (keymap-global-set "<remap> <delete-window>" #'obp/delete-window-or-tab)
 (keymap-global-set "<remap> <delete-other-windows>" #'obp/window-toggle-maximize)
 (keymap-global-set "C-x q" #'obp/kill-buffer-and-window)

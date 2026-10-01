@@ -73,4 +73,6 @@
 
 (load-file (expand-file-name "lisp/setup-desktop.el" user-emacs-directory))
 
+(load-file (expand-file-name "lisp/setup-meow.el" user-emacs-directory))
+
 ;;; post-init.el ends here

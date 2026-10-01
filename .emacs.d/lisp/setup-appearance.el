@@ -4,6 +4,11 @@
 (set-face-attribute 'default nil :height 130)
 (column-number-mode 1)
 
+;; Override minimal-emacs's truncation default: wrap at word boundaries.
+;; This is display-only; it does not insert newlines into files.
+(setq-default truncate-lines nil
+              word-wrap t)
+
 ;; Preserve the native modeline and restore the graphical indicator strips.
 (require 'fringe)
 (set-fringe-mode 10)

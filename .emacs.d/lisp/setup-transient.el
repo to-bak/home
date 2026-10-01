@@ -16,8 +16,8 @@
       ("o" "Recent window" switchy-window :transient t)
       ("a" "Select by label" ace-window)]
      ["Arrange"
-      ("2" "Split below" obp/split-window-below)
-      ("3" "Split right" obp/split-window-right)
+      ("2" "Split below" split-window-below)
+      ("3" "Split right" split-window-right)
       ("1" "Maximize/restore" obp/window-toggle-maximize)
       ("d" "Close selected" obp/delete-window-or-tab)
       ("=" "Balance" balance-windows :transient t)]
