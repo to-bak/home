@@ -120,13 +120,4 @@
 
 
 
-;; Restore the note-based instruction catalog without loading Cockpit eagerly.
-(with-eval-after-load 'agent-shell-cockpit
-  (require 'agent-shell-cockpit-org-roam)
-  (setq agent-shell-cockpit-instructions
-        '((manifest :title "AI Manifest"
-                    :source (org-roam "a8a767a1-1644-4c4a-a05f-23f7b3eab5bf")))))
-;; The current Cockpit Org-roam adapter provides its own resolution instructions;
-;; the old agent-shell-cockpit-skills module no longer exists.
-
 ;;; setup-org-roam.el ends here

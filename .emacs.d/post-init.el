@@ -17,8 +17,6 @@
 (defvar host/org-roam-path (expand-file-name "~/org/roam"))
 (defvar host/gptel-config nil
   "Optional function configuring GPTel after it loads.")
-(defvar host/agent-shell-config nil
-  "Optional function configuring Agent Shell after it loads.")
 (defun host/setup-hyperbole-links ()
   "Configure host-specific Hyperbole links; redefine in host.el if needed."
   nil)
@@ -70,7 +68,6 @@
 (load-file (expand-file-name "lisp/setup-org.el" user-emacs-directory))
 (load-file (expand-file-name "lisp/setup-org-agenda.el" user-emacs-directory))
 (load-file (expand-file-name "lisp/setup-org-roam.el" user-emacs-directory))
-(load-file (expand-file-name "lisp/setup-promptel.el" user-emacs-directory))
 
 (load-file (expand-file-name "lisp/setup-desktop.el" user-emacs-directory))
 
