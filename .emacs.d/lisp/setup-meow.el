@@ -88,6 +88,7 @@ endpoint is also a candidate, allowing the initial selection to be accepted."
         (meow-expand chosen)))))
 
 (use-package meow
+  :disabled t
   :straight (:type git :host github :repo "meow-edit/meow")
   :demand t
   :hook ((org-capture-mode . meow-insert-mode)

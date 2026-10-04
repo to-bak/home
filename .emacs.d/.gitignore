@@ -19,3 +19,8 @@
 !desktop/
 !desktop/org-protocol.desktop
 !README.org
+
+# Local Org workspace and Promptel integrations.
+!plugins/
+!plugins/*.el
+!plugins/*.org

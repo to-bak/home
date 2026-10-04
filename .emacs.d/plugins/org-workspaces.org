@@ -1,0 +1,128 @@
+#+title: Org Workspaces
+
+A workspace is an ordinary Org heading with =OW_WORKSPACE: t= and an =ID=.
+Its physical home is =org-workspaces-root-directory/<id>/=. Personal configuration
+uses =~/.workspaces/org-workspaces/=. Renaming/refiling a heading preserves its
+location. Changing the configured root does not move existing files.
+
+* Start here
+1. Create an Org heading describing a task and press =C-c o w w=.
+   This creates its ID and physical directories. Save the Org file normally.
+2. =C-c o w d= links an existing checkout under =repos/=.
+   =C-c o w t= creates a worktree there: choose a repository and a local branch,
+   or enter a new branch name to create it from HEAD. The destination name is
+   derived from the repository. =C-u C-c o w t= lets you choose another name.
+3. =C-c o w l= links a file or directory under =files/=. =C-u C-c o w l= copies it
+   instead. Names cannot contain path separators. Existing paths are never replaced.
+4. Write a brief and decisions in Org. Context selection happens inside Promptel.
+5. =C-c o w p= opens an empty Promptel draft with the workspace root as its destination
+   hint. Use =-a= (Add from…) to attach workspace Org sections or a workspace file.
+   Use =c= to inspect attachments and =-x= to remove one. It does not ask for a member directory. Existing agents retain their own
+   directory; newly launched agents use the root and can work across =repos/=.
+6. In Promptel, =a= chooses the =agent-shell= output adapter. =RET= constructs the
+   prompt, then asks for the destination and insertion or submission.
+7. Save your Org edits after agent initialization to flush pending session IDs.
+   If the buffer is already clean, =C-c o w u= applies pending IDs; then save.
+
+#+begin_example
+~/.workspaces/org-workspaces/<org-id>/
+├── repos/
+│   ├── identity/      Git worktree or link to existing checkout
+│   └── gateway/
+└── files/
+    └── requirements.org
+#+end_example
+
+Existing workspace headings initialize lazily when composing, starting an agent,
+or opening the root. =C-c o w i= initializes explicitly. Existing directory members
+are linked under =repos/= without moving originals or editing their Org entries.
+Directories that no longer exist are not linked; existing destination collisions
+are reported. Initialization can be repeated. =C-c o w r= opens the root in Dired.
+
+* Commands
+| Key | Action |
+|-----+--------|
+| C-c o w v | Workspace agenda (also C-c a W) |
+| C-c o w w | Mark heading and create physical workspace |
+| C-c o w i | Initialize an existing workspace |
+| C-c o w f | Find a workspace heading |
+| C-c o w d | Link an existing directory under repos/ |
+| C-c o w t | Create a Git worktree under repos/ |
+| C-c o w l | Link a resource under files/; C-u copies it |
+| C-c o w r | Open workspace root in Dired |
+| C-c o w p | Open Promptel associated with the workspace |
+| C-c o w P | Compose independently |
+| C-c o w n | Start an agent at workspace root without Promptel |
+| C-c o w a | Associate an existing agent |
+| C-c o w s | Open or resume a saved session |
+| C-c o w u | Apply pending session references in the Org buffer |
+
+* Agenda
+The top section shows agents processing or awaiting approval, including
+unassociated agents. Each workspace heading groups its live and historic session
+entries below it, using the existing Org hierarchy and saved session properties.
+The agent adapter supplies these rows; the core has no agent dependency.
+=RUNNING= means processing, =APPROVAL= means waiting for permission, =IDLE= means
+ready, and =SAVED= means a session reference with no live agent. =UNSAVED= means
+there is no live agent or saved session ID to resume.
+=RET=, =TAB=, or =C-c o w s= on a session row opens/resumes that exact session.
+=g= refreshes the status snapshot; rendering never updates the Org file.
+Section headings and dividers use agenda faces and =org-agenda-block-separator=.
+
+Workspace rows show TODO states inline, without TODO grouping. Normal agenda
+navigation/scheduling works on workspace rows, as do =C-c o w= workspace commands.
+Use the full prefix: =C-c o w p= to compose, =C-c o w s= to open/resume a session,
+or =C-c o w n= to start an agent. Bare =p= and =s= remain agenda commands.
+Source files reopen by Org ID after their buffers are killed. Completed workspaces
+remain visible until archived. The normal agenda file list remains unchanged.
+
+* Context, persistence and cleanup
+Workspace membership makes resources available on disk; it does not attach their
+contents to a prompt. Org sections are attached explicitly through Promptel: select one or several
+nonempty headings; only their own bodies are included, excluding metadata and
+children. Section text is captured when attached. Remove and reattach a section
+to pick up later edits. Old =OW_CONTEXT_IDS= properties are ignored. Other Promptel attachment
+semantics are unchanged. The existing AI Manifest is optional context.
+
+Context selection never creates IDs or edits Org metadata. Live buffers are
+searched before Org's disk index. Selection is per draft; nothing is attached
+automatically or remembered on the workspace.
+Background session initialization queues metadata without modifying the Org file.
+Pending references alone are not persistent. Personal agenda advice still saves
+all modified Org buffers after several agenda actions; this package does not
+perform automatic saves. New workspace members are normal unsaved Org edits.
+
+Saved sessions retain their original directory and backend identifier. Starting a
+new session uses the physical workspace root. Neither closing a workspace nor
+archiving its heading removes files, worktrees or agents. Cleanup remains explicit.
+Copies of headings need fresh IDs before being used as independent workspaces.
+
+* Package boundaries
+- =org-workspaces.el=: Org metadata, physical directories, Git, agenda extension hook.
+- =org-workspaces-promptel.el=: optional workspace context source and root hints.
+- =promptel-agent-shell.el=: output adapter without an Org dependency.
+- =org-workspaces-agent-shell.el=: session persistence, reopening, live agenda section.
+
+The output adapter renders system instructions as labeled user text. It rejects
+model metadata it cannot apply. Insertion for review is the default output action;
+existing agent input must be submitted or cleared first.
+
+* Tests
+#+begin_src sh
+emacs -Q --batch -l ~/.config/home-manager/.emacs.d/tests/org-workspaces-run-tests.el
+#+end_src
+
+* Resuming model and reasoning selections
+The saved =OW_AGENT= identifier selects the agent automatically on resume.
+If its configuration is missing or ambiguous, resumption reports an error.
+Session entries store =OW_AGENT_OPTIONS= as JSON alongside =OW_SESSION_ID=.
+It contains the chosen model, reasoning effort, mode, and other advertised select
+options (for example fast mode). Free-text settings and credentials are excluded.
+On resume, these saved choices override global agent defaults; the model is applied
+first so its supported reasoning levels are available. Unsupported selections are
+reported by agent-shell in the resumed buffer.
+
+Confirmed changes are queued in memory without editing or autosaving Org files.
+Save the workspace notes to persist them. If the Org buffer is clean, use
+=C-c o w u= there and then save. Until saved, queued changes do not survive exiting
+Emacs. Old session entries with no saved options retain normal agent defaults.

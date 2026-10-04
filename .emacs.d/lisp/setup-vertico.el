@@ -2,6 +2,9 @@
 
 (use-package vertico
   :demand t
+  :bind (:map vertico-map
+         ("C-j" . vertico-next)
+         ("C-k" . vertico-previous))
   :init
   (setq vertico-cycle t)
   :config

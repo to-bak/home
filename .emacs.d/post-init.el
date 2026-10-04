@@ -50,7 +50,7 @@
 (load-file (expand-file-name "lisp/setup-dired.el" user-emacs-directory))
 
 (load-file (expand-file-name "lisp/setup-coding.el" user-emacs-directory))
-(load-file (expand-file-name "lisp/setup-completion-preview.el" user-emacs-directory))
+(load-file (expand-file-name "lisp/setup-corfu.el" user-emacs-directory))
 (load-file (expand-file-name "lisp/setup-languages.el" user-emacs-directory))
 
 (load-file (expand-file-name "lisp/setup-project.el" user-emacs-directory))
@@ -70,9 +70,11 @@
 (load-file (expand-file-name "lisp/setup-org.el" user-emacs-directory))
 (load-file (expand-file-name "lisp/setup-org-agenda.el" user-emacs-directory))
 (load-file (expand-file-name "lisp/setup-org-roam.el" user-emacs-directory))
+(load-file (expand-file-name "lisp/setup-promptel.el" user-emacs-directory))
 
 (load-file (expand-file-name "lisp/setup-desktop.el" user-emacs-directory))
 
 (load-file (expand-file-name "lisp/setup-meow.el" user-emacs-directory))
+(load-file (expand-file-name "lisp/setup-evil.el" user-emacs-directory))
 
 ;;; post-init.el ends here

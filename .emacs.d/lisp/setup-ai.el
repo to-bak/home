@@ -35,8 +35,7 @@ Leave directories open for further completion."
 
 (use-package agent-shell
   :commands (agent-shell agent-shell-openai-start-codex)
-  :hook ((agent-shell-mode . obp/hide-line-numbers)
-         (agent-shell-mode . completion-preview-mode))
+  :hook (agent-shell-mode . obp/hide-line-numbers)
   :bind (:map agent-shell-mode-map
          ("C-c RET" . newline)
          ("C-c TAB" . agent-shell-ui-toggle-fragment))
