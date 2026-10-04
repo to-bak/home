@@ -9,7 +9,7 @@ let
   # same Codex derivation as the terminal CLI.
   codex-acp = pkgs-unstable.buildNpmPackage rec {
     pname = "codex-acp";
-    version = "1.13.1";
+    version = "2.0.0";
 
     src = pkgs-unstable.fetchFromGitHub {
       owner = "agentclientprotocol";
@@ -43,8 +43,9 @@ in
 
   config = mkIf cfg.enable {
     home.packages = [
-      pkgs-unstable.codex
-      codex-acp
+      # pkgs-unstable.codex
+      # codex-acp
+      pkgs-unstable.nodejs
     ];
   };
 }

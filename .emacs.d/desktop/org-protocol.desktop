@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Org Capture
+Comment=Capture browser pages in Emacs
+Exec=emacsclient --no-wait --create-frame --frame-parameters "((name . \\"emacs-capture\\") (title . \\"emacs-capture\\") (obp-desktop-popup-role . capture) (width . 110) (height . 38))" %u
+Terminal=false
+NoDisplay=true
+MimeType=x-scheme-handler/org-protocol;

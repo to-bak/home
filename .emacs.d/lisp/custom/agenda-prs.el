@@ -1,151 +1,235 @@
-;;; agenda-prs.el --- Rich Headline GitHub PR Sync -*- lexical-binding: t; -*-
+;;; agenda-prs.el --- Asynchronous GitHub PR agenda sync -*- lexical-binding: t; -*-
 
-(require 'json)
 (require 'org)
+(require 'cl-lib)
+(require 'json)
+(require 'subr-x)
 
 (defgroup agenda-prs nil
-  "Settings for synchronizing GitHub PRs into Org Mode."
-  :group 'org
-  :prefix "agenda-prs-")
+  "Synchronize labeled GitHub pull requests into an Org file."
+  :group 'org :prefix "agenda-prs-")
 
-;;; --- Configurable Variables (Set these in host.el) ---
-
-(defcustom agenda-prs-github-user "your_username"
-  "Your GitHub username, used for PR state logic."
-  :type 'string)
-
-(defcustom agenda-prs-label "label"
-  "The GitHub label to search for."
-  :type 'string)
-
+(defcustom agenda-prs-github-user nil
+  "GitHub login whose PRs and approvals are tracked."
+  :type '(choice (const nil) string))
+(defcustom agenda-prs-label nil
+  "Label selecting open pull requests."
+  :type '(choice (const nil) string))
 (defcustom agenda-prs-target-file "~/notes/work/data/reviews.org"
-  "The absolute path to the Org file where PRs should be synced."
+  "Org file containing synchronized PR headings."
+  :type 'file)
+(defcustom agenda-prs-refresh-interval 600
+  "Seconds between automatic refreshes. Restart the mode after changing this."
+  :type 'natnum)
+(defcustom agenda-prs-closed-state "CLOSED"
+  "State for PRs no longer matching the open-PR search.
+Disappearance does not distinguish merged, closed or relabeled PRs."
   :type 'string)
 
-(defcustom agenda-prs-closed-state "MERGED"
-  "The TODO state for PRs no longer returned by the search (overrides IDC)."
-  :type 'string)
+(defvar agenda-prs--process nil)
+(defvar agenda-prs--timer nil)
 
-;;; --- Core Logic ---
+(defun agenda-prs-configured-p ()
+  "Return non-nil when usable account and label settings are present."
+  (and (stringp agenda-prs-github-user)
+       (string-match-p "\\`[[:alnum:]][[:alnum:]-]*\\'" agenda-prs-github-user)
+       (not (equal agenda-prs-github-user "your_username"))
+       (stringp agenda-prs-label) (not (string-empty-p agenda-prs-label))
+       (executable-find "gh")))
 
-(defun agenda-prs--fetch-data ()
-  "Fetch PRs via `gh` CLI and return a hash table of parsed data."
-  (let* ((graphql-query
-          (format "query($q: String!) { search(query: $q, type: ISSUE, first: 30) { nodes { ... on PullRequest { title url isDraft author { login } repository { name } reviews(first: 1, states: APPROVED, author: \"%s\") { totalCount } } } } }"
-                  agenda-prs-github-user))
-         (q-string (format "is:pr is:open label:%s" agenda-prs-label))
-         (json-string
-          (with-temp-buffer
-            (call-process "gh" nil t nil "api" "graphql"
-                          "-f" (concat "query=" graphql-query)
-                          "-f" (concat "q=" q-string))
-            (buffer-string)))
-         (parsed (json-parse-string json-string :object-type 'hash-table :array-type 'list))
-         (nodes (gethash "nodes" (gethash "search" (gethash "data" parsed))))
-         (prs (make-hash-table :test 'equal)))
-
-    (dolist (node nodes)
-      (when (gethash "url" node)
-        (let* ((url (gethash "url" node))
-               (title (gethash "title" node))
-               (author (gethash "login" (gethash "author" node)))
-               (repo (gethash "name" (gethash "repository" node)))
-               (is-draft (eq (gethash "isDraft" node) t))
-               (reviews-count (gethash "totalCount" (gethash "reviews" node)))
-               (approved (> reviews-count 0))
-               (is-mine (string= author agenda-prs-github-user)))
-
-          ;; Mimic bash filter: skip drafts unless you are the author
-          (when (or (not is-draft) is-mine)
-            (puthash url (list :title title :author author :repo repo
-                               :is-draft is-draft :approved approved :is-mine is-mine)
-                     prs)))))
-    prs))
+(defun agenda-prs--parse (buffer user)
+  "Validate every response page in BUFFER and return PR data for USER."
+  (with-current-buffer buffer
+    (goto-char (point-min))
+    (let ((pages (json-parse-buffer :object-type 'hash-table :array-type 'list
+                                    :false-object nil :null-object nil))
+          (prs (make-hash-table :test 'equal))
+          (count 0) total last-info)
+      (unless (and (listp pages) pages) (error "Missing GitHub response pages"))
+      (dolist (page pages)
+        (when (gethash "errors" page) (error "GitHub returned GraphQL errors"))
+        (let* ((data (gethash "data" page))
+               (search (and (hash-table-p data) (gethash "search" data))))
+          (unless (hash-table-p search) (error "Missing GitHub search results"))
+          (setq total (gethash "issueCount" search)
+                last-info (gethash "pageInfo" search))
+          (unless (and (numberp total) (<= total 1000) (hash-table-p last-info))
+            (error "Search exceeds GitHub's result limit or is incomplete"))
+          (dolist (node (gethash "nodes" search))
+            (let* ((url (gethash "url" node))
+                   (author (gethash "login" (gethash "author" node)))
+                   (repo (gethash "name" (gethash "repository" node)))
+                   (reviews (gethash "totalCount" (gethash "reviews" node)))
+                   (draft (gethash "isDraft" node)))
+              (unless (and (stringp url) (stringp author) (stringp repo)
+                           (stringp (gethash "title" node)) (numberp reviews))
+                (error "Incomplete PR data"))
+              (cl-incf count)
+              (puthash url
+                       (list :title (gethash "title" node) :author author :repo repo
+                             :is-draft draft :is-mine (string-equal (downcase author) (downcase user))
+                             :approved (> reviews 0)) prs)))))
+      (unless (and (= count total) (not (gethash "hasNextPage" last-info)))
+        (error "Incomplete PR pagination; preserving existing entries"))
+      prs)))
 
 (defun agenda-prs--determine-state (data)
-  "Determine the correct TODO keyword based on the PR's status."
-  (let ((is-mine (plist-get data :is-mine))
-        (is-draft (plist-get data :is-draft))
-        (approved (plist-get data :approved)))
-    (cond
-     ((and is-mine is-draft) "DRAFT")
-     (is-mine "AWAITING")
-     (approved "APPROVED")
-     (t "REVIEW"))))
+  "Return the TODO keyword corresponding to PR DATA."
+  (cond ((and (plist-get data :is-mine) (plist-get data :is-draft)) "DRAFT")
+        ((plist-get data :is-mine) "AWAITING")
+        ((plist-get data :approved) "APPROVED")
+        (t "REVIEW")))
 
 (defun agenda-prs--format-title (url data)
-  "Generate the string for the agenda headline (no emojis)."
-  ;; Format: [[URL][Title]] (Author - Repo)
-  (format "[[%s][%s]] (%s - %s)"
-          url (plist-get data :title)
+  "Return the Org headline text for URL and DATA."
+  (format "%s (%s - %s)"
+          (org-link-make-string url (replace-regexp-in-string
+                                     "[\n\r]+" " " (plist-get data :title)))
           (plist-get data :author) (plist-get data :repo)))
 
-(defun agenda-prs--sync-buffer (fetched-prs)
-  "Safely update existing PRs and insert new ones."
-  (let ((seen-urls (make-hash-table :test 'equal)))
-
-    ;; Pass 1: Update existing headings and close missing ones
+(defun agenda-prs--sync-buffer (prs)
+  "Update tracked PRs from complete PRS data, preserving user annotations."
+  (let ((seen (make-hash-table :test 'equal))
+        (org-inhibit-logging t)
+        (org-log-done nil))
     (org-map-entries
      (lambda ()
-       ;; org-get-heading t t t t strips TODOs, tags, priorities, etc., leaving just the title text
        (let* ((heading (org-get-heading t t t t))
-              ;; Extract the URL from the [[URL][Title]] link format
-              (url (when (and heading (string-match "\\[\\[\\(.*?\\)\\]\\[" heading))
-                     (match-string 1 heading)))
-              (current-todo (org-get-todo-state)))
+              (url (or (org-entry-get nil "PR_URL")
+                       (when (string-match
+                              "\\[\\[\\(https://github\\.com/[^/]+/[^/]+/pull/[0-9]+\\)\\]" heading)
+                         (match-string 1 heading))))
+              (state (org-get-todo-state))
+              (data (and url (gethash url prs))))
          (when url
-           (let ((data (gethash url fetched-prs)))
-             (if data
-                 ;; PR exists and is active: Track it and update text/state
-                 (progn
-                   (puthash url t seen-urls)
-                   (let ((target-todo (agenda-prs--determine-state data)))
-                     ;; Update the state UNLESS it is marked as IDC
-                     (unless (string= current-todo "IDC")
-                       (unless (string= current-todo target-todo)
-                         (org-todo target-todo))))
-                   ;; Update the headline text in case the title changed
-                   (org-back-to-heading t)
-                   (when (looking-at org-complex-heading-regexp)
-                     (replace-match (agenda-prs--format-title url data) t t nil 4)))
-
-               ;; PR is missing from fetch: Close it (this overrides IDC)
-               (unless (string= current-todo agenda-prs-closed-state)
-                 (org-todo agenda-prs-closed-state)))))))
-     t)
-
-    ;; Pass 2: Insert new PRs at the end of the file
+           (puthash url t seen)
+           (if data
+               (progn
+                 (unless (equal state "IDC")
+                   (let ((next (agenda-prs--determine-state data)))
+                     (unless (equal state next) (org-todo next))))
+                 (let ((title (agenda-prs--format-title url data)))
+                   (unless (equal heading title) (org-edit-headline title))))
+             (unless (equal state agenda-prs-closed-state)
+               (org-todo agenda-prs-closed-state))))))
+     nil)
     (goto-char (point-max))
     (maphash
      (lambda (url data)
-       (unless (gethash url seen-urls)
+       ;; Retain old behavior: other authors' drafts are not inserted.
+       (unless (or (gethash url seen)
+                   (and (plist-get data :is-draft) (not (plist-get data :is-mine))))
          (unless (bolp) (insert "\n"))
-         (let ((initial-todo (agenda-prs--determine-state data)))
-           (insert (format "** %s %s\n"
-                           initial-todo
-                           (agenda-prs--format-title url data))))))
-     fetched-prs)))
+         (insert (format "** %s %s\n" (agenda-prs--determine-state data)
+                         (agenda-prs--format-title url data)))))
+     prs)))
 
-;;; --- Main Commands ---
+(defun agenda-prs--apply (prs file)
+  "Apply validated PRS to FILE without saving unrelated user edits."
+  (make-directory (file-name-directory file) t)
+  (with-current-buffer (find-file-noselect file)
+    (when (buffer-modified-p)
+      (error "PR file has unsaved edits; skipping this refresh"))
+    (unless (verify-visited-file-modtime (current-buffer))
+      (revert-buffer t t))
+    (save-excursion
+      (save-restriction
+        (widen)
+        (atomic-change-group (agenda-prs--sync-buffer prs))))
+    (when (buffer-modified-p) (save-buffer)))
+  ;; Redraw only displayed agendas, preserving the user's selected window.
+  (when (fboundp 'org-agenda-redo)
+    (save-selected-window
+      (dolist (buffer (buffer-list))
+        (when-let* ((window (get-buffer-window buffer t))
+                    ((with-current-buffer buffer (derived-mode-p 'org-agenda-mode))))
+          (with-selected-window window (org-agenda-redo t)))))))
+
+(defun agenda-prs--finish (process _event)
+  "Handle completion of asynchronous PROCESS and release its buffers."
+  (when (memq (process-status process) '(exit signal))
+    (unwind-protect
+        (unless (process-get process 'cancelled)
+          (condition-case err
+              (progn
+                (unless (= (process-exit-status process) 0)
+                  (error "GitHub CLI failed (exit %d); keeping existing PRs"
+                         (process-exit-status process)))
+                (agenda-prs--apply
+                 (agenda-prs--parse (process-buffer process) (process-get process 'user))
+                 (process-get process 'file))
+                (message "PR agenda refreshed"))
+            (error (message "PR agenda: %s" (error-message-string err)))))
+      (when-let* ((timer (process-get process 'timeout))) (cancel-timer timer))
+      (when (eq process agenda-prs--process) (setq agenda-prs--process nil))
+      (dolist (buffer (list (process-buffer process) (process-get process 'stderr)))
+        (when (buffer-live-p buffer) (kill-buffer buffer))))))
 
 (defun obp/refresh-prs-agenda ()
-  "Fetch fresh PR data and update the Org file."
+  "Start an asynchronous PR refresh, reusing any request already running."
   (interactive)
-  (save-window-excursion
-    (let ((fetched-prs (agenda-prs--fetch-data))
-          (reviews-file (expand-file-name agenda-prs-target-file)))
-      (with-current-buffer (find-file-noselect reviews-file)
-        (save-excursion
-          (agenda-prs--sync-buffer fetched-prs))
-        (save-buffer)))))
+  (unless (agenda-prs-configured-p)
+    (user-error "Configure agenda-prs-github-user and agenda-prs-label, and install gh"))
+  (unless (process-live-p agenda-prs--process)
+    (let* ((output (generate-new-buffer " *agenda-prs-output*"))
+           (stderr (generate-new-buffer " *agenda-prs-errors*"))
+           (query (concat
+                   "query($q:String!,$user:String!,$endCursor:String){"
+                   "search(query:$q,type:ISSUE,first:100,after:$endCursor){"
+                   "issueCount pageInfo{hasNextPage endCursor} nodes{... on PullRequest{"
+                   "title url isDraft author{login} repository{name} "
+                   "reviews(first:1,states:APPROVED,author:$user){totalCount}}}}}")))
+      (condition-case err
+          (progn
+            (setq agenda-prs--process
+                  (make-process
+                   :name "agenda-prs" :buffer output :stderr stderr :noquery t
+                   :connection-type 'pipe :sentinel #'ignore
+                   :command (list "gh" "api" "graphql" "--paginate" "--slurp"
+                                  "-f" (concat "query=" query)
+                                  "-f" (concat "user=" agenda-prs-github-user)
+                                  "-f" (concat "q=is:pr is:open label:"
+                                               (json-serialize agenda-prs-label)))))
+            (process-put agenda-prs--process 'user agenda-prs-github-user)
+            (process-put agenda-prs--process 'file (expand-file-name agenda-prs-target-file))
+            (process-put agenda-prs--process 'stderr stderr)
+            (process-put agenda-prs--process 'timeout
+                         (run-at-time 90 nil
+                                      (lambda (process)
+                                        (when (process-live-p process) (delete-process process)))
+                                      agenda-prs--process))
+            (set-process-sentinel agenda-prs--process #'agenda-prs--finish)
+            (when (memq (process-status agenda-prs--process) '(exit signal))
+              (agenda-prs--finish agenda-prs--process "finished")))
+        (error (kill-buffer output) (kill-buffer stderr)
+               (signal (car err) (cdr err))))))
+  agenda-prs--process)
 
 (defun obp/agenda-refresh-and-redraw ()
-  "Fetch fresh data and update the active agenda buffer view."
+  "Redraw the agenda now and refresh PRs asynchronously."
   (interactive)
-  (obp/refresh-prs-agenda)
-  (when (eq major-mode 'org-agenda-mode)
-    (org-agenda-redo))
-  (message "PR Dashboard updated!"))
+  (when (derived-mode-p 'org-agenda-mode) (org-agenda-redo))
+  (obp/refresh-prs-agenda))
+
+(defun agenda-prs--refresh ()
+  "Timer entry point; report errors without interrupting editing."
+  (condition-case err (obp/refresh-prs-agenda)
+    (error (message "PR agenda: %s" (error-message-string err)))))
+
+(define-minor-mode agenda-prs-auto-refresh-mode
+  "Refresh PR data periodically in a background process."
+  :global t :lighter nil
+  (when agenda-prs--timer (cancel-timer agenda-prs--timer))
+  (setq agenda-prs--timer nil)
+  (if agenda-prs-auto-refresh-mode
+      (if (and (agenda-prs-configured-p) (> agenda-prs-refresh-interval 0))
+          (setq agenda-prs--timer
+                (run-at-time 5 agenda-prs-refresh-interval #'agenda-prs--refresh))
+        (setq agenda-prs-auto-refresh-mode nil)
+        (user-error "Configure PR account, label and a positive refresh interval"))
+    (when (process-live-p agenda-prs--process)
+      (process-put agenda-prs--process 'cancelled t)
+      (delete-process agenda-prs--process))))
 
 (provide 'agenda-prs)
 ;;; agenda-prs.el ends here

@@ -1,8 +1,16 @@
-;;; desktop-config.el --- Personal Emacs settings -*- lexical-binding: t; -*-
+;;; setup-desktop.el --- Personal Emacs settings -*- lexical-binding: t; -*-
 
 ;; ---------------------------------------------------------------------
 ;; Desktop integration
 ;; ---------------------------------------------------------------------
+;; Register external capture URLs before the server receives them.
+(use-package org-protocol
+  :straight nil
+  :after org
+  :demand t
+  :custom
+  (org-protocol-default-template-key "w"))
+
 (use-package emacs-everywhere
   :commands emacs-everywhere
   :custom
@@ -20,7 +28,7 @@
 
 (use-package universal-launcher
   :straight nil
-  :ensure nil
+  :load-path "lisp/custom"
   :custom
   (universal-launcher-bookmarks-file
    (expand-file-name "bookmarks.org" host/org-agenda-path))
@@ -28,12 +36,11 @@
 
 (use-package desktop-emacs-popups
   :straight nil
-  :ensure nil
+  :demand t
+  :load-path "lisp/custom"
   :commands (obp/desktop-universal-launcher
              obp/desktop-org-capture
              obp/desktop-org-roam-capture
              obp/desktop-org-roam-daily-capture))
 
-(provide 'desktop-config)
-
-;;; desktop-config.el ends here
+;;; setup-desktop.el ends here

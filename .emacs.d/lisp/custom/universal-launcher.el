@@ -16,8 +16,6 @@
 (require 'subr-x)
 (require 'url-util)
 
-(recentf-mode 1)
-
 (defgroup universal-launcher nil
   "Launch desktop and Emacs resources with Consult."
   :group 'convenience)
@@ -188,7 +186,7 @@ The service survives stopping Emacs and is collected after the program exits."
                     (alist-get 'instance properties)))
          windows)
     (when (and id name class (equal type "con")
-               (not (string-match-p "\\`emacs-\\(?:launcher\\|capture\\)\\'"
+               (not (string-match-p "\\`emacs-\\(?:launcher\\|capture\\|roam-capture\\|daily-capture\\)\\'"
                                     (downcase name))))
       (push (cons (format "%s (%s)" name class) id) windows))
     (dolist (child (append (alist-get 'nodes node)
@@ -227,7 +225,7 @@ The service survives stopping Emacs and is collected after the program exits."
 (defun universal-launcher--show-buffer (buffer)
   "Show BUFFER in the Emacs frame that preceded the launcher."
   (let ((frame (if (frame-live-p universal-launcher-context-frame)
-                 universal-launcher-context-frame
+                   universal-launcher-context-frame
                  (seq-find (lambda (candidate)
                              (and (display-graphic-p candidate)
                                   (not (eq (frame-parameter candidate 'minibuffer)
@@ -258,16 +256,16 @@ The service survives stopping Emacs and is collected after the program exits."
         (insert-file-contents file)
         (delay-mode-hooks (org-mode))
         (org-element-map (org-element-parse-buffer) 'link
-          (lambda (link)
-            (when (member (org-element-property :type link) '("http" "https"))
-              (let* ((url (org-element-property :raw-link link))
-                     (description
-                      (string-trim
-                       (org-element-interpret-data
-                        (org-element-contents link)))))
-                (push (cons (if (string-empty-p description) url description)
-                            url)
-                      bookmarks)))))))
+			 (lambda (link)
+			   (when (member (org-element-property :type link) '("http" "https"))
+			     (let* ((url (org-element-property :raw-link link))
+				    (description
+				     (string-trim
+				      (org-element-interpret-data
+				       (org-element-contents link)))))
+			       (push (cons (if (string-empty-p description) url description)
+					   url)
+				     bookmarks)))))))
     (sort (cl-delete-duplicates bookmarks
                                 :key #'cdr :test #'string= :from-end t)
           (lambda (a b) (string-lessp (car a) (car b))))))
@@ -317,43 +315,43 @@ The service survives stopping Emacs and is collected after the program exits."
 (defun universal-launcher--sources ()
   "Return the Consult sources used by the launcher."
   '((:name "Applications" :narrow ?a :category application
-     :items universal-launcher--applications
-     :action universal-launcher--run-application
-     :disposition close)
+	   :items universal-launcher--applications
+	   :action universal-launcher--run-application
+	   :disposition close)
     (:name "Windows" :narrow ?w :category window
-     :items universal-launcher--windows
-     :action universal-launcher--focus-window
-     :disposition close)
+	   :items universal-launcher--windows
+	   :action universal-launcher--focus-window
+	   :disposition close)
     (:name "Buffers" :narrow ?b :category buffer
-     :items universal-launcher--buffers
-     :action universal-launcher--show-buffer
-     :disposition context)
+	   :items universal-launcher--buffers
+	   :action universal-launcher--show-buffer
+	   :disposition context)
     (:name "Files" :narrow ?f :category file
-     :items universal-launcher--files
-     :action universal-launcher--show-file
-     :disposition context)
+	   :items universal-launcher--files
+	   :action universal-launcher--show-file
+	   :disposition context)
     (:name "Bookmarks" :narrow ?k :category bookmark
-     :items universal-launcher--bookmarks
-     :action universal-launcher--open-url
-     :disposition close)
+	   :items universal-launcher--bookmarks
+	   :action universal-launcher--open-url
+	   :disposition close)
     (:name "Emacs" :narrow ?e :category command
-     :items universal-launcher--emacs-actions
-     :action universal-launcher--run-emacs-action
-     :disposition close)
+	   :items universal-launcher--emacs-actions
+	   :action universal-launcher--run-emacs-action
+	   :disposition close)
     (:name "Browser" :narrow ?g :category browser
-     :items universal-launcher--browser-actions
-     :action universal-launcher--browser-action
-     :disposition close)
+	   :items universal-launcher--browser-actions
+	   :action universal-launcher--browser-action
+	   :disposition close)
     (:name "Search" :narrow ?s :category web-search :default t
-     :items universal-launcher--search-engines
-     :action universal-launcher--search-with-engine
-     :new universal-launcher--search
-     :disposition close)
+	   :items universal-launcher--search-engines
+	   :action universal-launcher--search-with-engine
+	   :new universal-launcher--search
+	   :disposition close)
     (:name "Command" :narrow ?c :category command
-     :items universal-launcher--commands
-     :action universal-launcher--run-command
-     :new universal-launcher--run-command
-     :disposition close)))
+	   :items universal-launcher--commands
+	   :action universal-launcher--run-command
+	   :new universal-launcher--run-command
+	   :disposition close)))
 
 ;;;###autoload
 (defun universal-launcher-popup (&optional context-frame)

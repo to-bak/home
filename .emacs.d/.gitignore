@@ -11,3 +11,16 @@
 !lisp/custom/
 !lisp/custom/*.el
 !/straight/versions/default.el
+
+# Preserve the original personal configuration during migration.
+/backup/
+
+# Browser capture handler and setup instructions.
+!desktop/
+!desktop/org-protocol.desktop
+!README.org
+
+# Local Org workspace and Promptel integrations.
+!plugins/
+!plugins/*.el
+!plugins/*.org
