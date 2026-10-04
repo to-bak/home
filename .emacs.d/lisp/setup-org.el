@@ -52,6 +52,12 @@
   ;; Follow links in the same window; C-c & goes back.
   (setf (cdr (assoc 'file org-link-frame-setup)) 'find-file))
 
+(use-package org-dispatch
+  :straight nil
+  :load-path (lambda () (expand-file-name "plugins/" user-emacs-directory))
+  :commands org-dispatch
+  :bind (:map org-mode-map ("C-c m" . org-dispatch)))
+
 ;; Load Babel backends when Org is first used.
 (with-eval-after-load 'org
   (org-babel-do-load-languages

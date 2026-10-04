@@ -9,8 +9,7 @@
      term-mode
      vterm-mode
      eat-mode
-     ghostel-mode
-     agent-shell-mode)
+     ghostel-mode)
     (motion
      help-mode)
     (normal

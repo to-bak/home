@@ -1,9 +1,0 @@
-#+title: Local Org and Promptel integrations
-
-Restored from the indexed snapshot of the =wip (org-workspaces)= stash on
-master, commit =8f13d27629f5983ad10e309bc2d8281ad9ccd11a=.
-
-Loaded by =lisp/setup-promptel.el=. Promptel itself uses the existing checkout
-at =~/git/promptel/=. Workspace commands use =C-c o w=; =C-c m= stays Cockpit.
-
-See [[file:org-workspaces.org][Org Workspaces]] for setup, composition and session commands.

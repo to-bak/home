@@ -26,4 +26,12 @@
   (when (executable-find "zathura")
     (openwith-mode 1)))
 
+(use-package yasnippet
+  :hook (org-mode . yas-minor-mode)
+  :init
+  (setq yas-snippet-dirs (list (expand-file-name "snippets/" user-emacs-directory))
+        yas-prompt-functions '(yas-completing-prompt))
+  :config
+  (yas-reload-all))
+
 ;;; setup-extras.el ends here

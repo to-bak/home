@@ -1,0 +1,10 @@
+# name: Reusable prompt
+# key: prompt
+# --
+* ${1:Review Org-roam graph}
+:PROPERTIES:
+:DIRECTORY: ${2:~/notes/}
+:MODEL: ${3:}
+:END:
+${4:Review missing connections and duplicate concepts.}
+$0
