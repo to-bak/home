@@ -20,6 +20,7 @@
   :config
   (advice-add 'evil-delete :around #'obp/evil-delete-to-black-hole)
   (keymap-set evil-insert-state-map "C-g" #'evil-normal-state)
+  (keymap-set evil-motion-state-map "C-e" #'avy-goto-char-timer)
   (evil-global-set-key 'motion "j" #'evil-next-visual-line)
   (evil-global-set-key 'motion "k" #'evil-previous-visual-line)
   (evil-mode 1))

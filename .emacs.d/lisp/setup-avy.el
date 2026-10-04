@@ -1,7 +1,8 @@
 ;;; setup-avy.el --- Jump to visible text -*- lexical-binding: t; -*-
 
 (use-package avy
-  :bind (("M-j" . avy-goto-char-timer)
+  :bind (("C-s" . avy-goto-word-0)
+         ("M-j" . avy-goto-char-timer)
          ("C-'" . avy-goto-word-0)
          ("C-M-'" . avy-resume)
          ("M-s j" . avy-goto-char-2)

@@ -1,0 +1,10 @@
+# name: Agent task
+# key: task
+# --
+* TODO ${1:Task}
+:PROPERTIES:
+:DIRECTORY: ${2:~/}
+:MODEL: ${3:}
+:END:
+${4:Describe the task.}
+$0

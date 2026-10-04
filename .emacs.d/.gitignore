@@ -24,3 +24,8 @@
 !plugins/
 !plugins/*.el
 !plugins/*.org
+
+# Personal Yasnippet templates.
+!snippets/
+!snippets/org-mode/
+!snippets/org-mode/*
