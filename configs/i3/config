@@ -109,6 +109,7 @@ smart_gaps on
 bar {
   position bottom
   status_command i3status
+  tray_output primary
 }
 
 exec_always --no-startup-id i3-msg workspace 1

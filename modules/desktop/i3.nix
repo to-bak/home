@@ -27,13 +27,11 @@ in
 
     programs.i3status = {
       enable = true;
-      enableDefault = false;
       general = {
         output_format = "i3bar";
         interval = 5;
       };
       modules."tztime local" = {
-        position = 1;
         settings.format = "%I:%M %p | %d-%m";
       };
     };
