@@ -7,10 +7,8 @@
     ./terminal
     ./shell
     ./fzf.nix
-    ./lnav.nix
     ./direnv.nix
     ./ripgrep.nix
     ./kubernetes.nix
-    ./home_tooling.nix
   ];
 }

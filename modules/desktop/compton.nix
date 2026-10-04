@@ -1,4 +1,4 @@
-{ config, pkgs, extendedLib, ... }:
+{ config, extendedLib, ... }:
 
 with extendedLib;
 let

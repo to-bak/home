@@ -1,4 +1,4 @@
-{ config, pkgs, extendedLib, ... }:
+{ config, extendedLib, ... }:
 
 with extendedLib;
 let 
@@ -23,10 +23,6 @@ in
       # export NIX_REMOTE=daemon
     '';
     };
-
-    home.packages = with pkgs; [
-      zoxide
-    ];
 
     programs.zoxide = {
       enable = true;

@@ -13,7 +13,6 @@ in
     # MISC
     tex
     cachix
-    networkmanagerapplet
     flameshot
     gnumake
     gdb
@@ -38,8 +37,5 @@ in
     zip
     unzip
     gnupg
-    lazygit
-    lazydocker
-    mscgen
   ];
 }

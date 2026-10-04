@@ -1,12 +1,9 @@
 {
-  config,
-  extendedLib,
   pkgs,
   nixGL,
   ...
 }:
 
-with extendedLib;
 {
   imports = [
     ../modules/home.nix
@@ -37,8 +34,6 @@ with extendedLib;
 
   modules.desktop = {
     i3.enable = true;
-    rofi.enable = true;
-    polybar.enable = true;
     compton.enable = true;
   };
 
@@ -47,13 +42,11 @@ with extendedLib;
   modules.services.dunst.enable = true;
 
   modules.misc = {
-    home_tooling.enable = true;
     direnv.enable = true;
     fzf.enable = true;
     kubernetes.enable = true;
     ripgrep.enable = true;
     shell.fish.enable = true;
-    browser.chromium.enable = true;
     terminal.alacritty.enable = true;
     terminal.tmux = {
       enable = true;
