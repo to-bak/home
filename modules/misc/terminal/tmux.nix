@@ -1,4 +1,4 @@
-{ config, pkgs, extendedLib, nixGL, ... }:
+{ config, pkgs, extendedLib, ... }:
 
 with extendedLib;
 let 
@@ -29,20 +29,17 @@ in
   config = mkIf cfg.enable {
     programs.tmux = {
       enable = true;
-      plugins = with pkgs; [
-        tmuxPlugins.sensible
-	tmuxPlugins.resurrect
-	tmuxPlugins.onedark-theme
-	tmuxPlugins.yank
+      sensibleOnTop = false;
+      plugins = with pkgs.tmuxPlugins; [
+        {
+          plugin = sensible;
+          # Apply native settings before plugins, so their bindings take effect.
+          extraConfig = "source-file ~/.config/tmux/tmux.conf.native";
+        }
+        resurrect
+        onedark-theme
+        yank
       ];
-
-       extraConfig = ''
-	source-file ~/.config/tmux/tmux.conf.native
-	run-shell ${pkgs.tmuxPlugins.sensible}/share/tmux-plugins/sensible/sensible.tmux
-	run-shell ${pkgs.tmuxPlugins.resurrect}/share/tmux-plugins/resurrect/resurrect.tmux
-	run-shell ${pkgs.tmuxPlugins.onedark-theme}/share/tmux-plugins/onedark-theme/tmux-onedark-theme.tmux
-	run-shell ${pkgs.tmuxPlugins.yank}/share/tmux-plugins/yank/yank.tmux
-       '';
     };
 
     home.packages = [ pkgs.tmuxinator ];

@@ -51,7 +51,6 @@ bindsym Mod4+Shift+Left move left
 bindsym Mod4+Shift+Right move right
 bindsym Mod4+Shift+Up move up
 bindsym Mod4+Shift+c reload
-bindsym Mod4+Shift+d exec rofi -show window
 bindsym Mod4+Shift+e exec i3-nagbar -t warning -m 'Do you want to exit i3?' -b 'Yes' 'i3-msg exit'
 bindsym Mod4+Shift+h move left
 bindsym Mod4+Shift+j move down
@@ -107,8 +106,12 @@ gaps inner 5
 gaps outer 5
 smart_gaps on
 
+bar {
+  position bottom
+  status_command i3status
+}
+
 exec_always --no-startup-id i3-msg workspace 1
-exec_always --no-startup-id systemctl --user restart polybar.service
 exec_always --no-startup-id feh --bg-scale $HOME/.config/home-manager/wallpapers/nord_dark_city.png
 exec_always --no-startup-id picom --transparent-clipping -b
 exec --no-startup-id autorandr -c
