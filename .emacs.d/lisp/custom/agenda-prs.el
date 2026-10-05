@@ -205,12 +205,6 @@ Disappearance does not distinguish merged, closed or relabeled PRs."
                (signal (car err) (cdr err))))))
   agenda-prs--process)
 
-(defun obp/agenda-refresh-and-redraw ()
-  "Redraw the agenda now and refresh PRs asynchronously."
-  (interactive)
-  (when (derived-mode-p 'org-agenda-mode) (org-agenda-redo))
-  (obp/refresh-prs-agenda))
-
 (defun agenda-prs--refresh ()
   "Timer entry point; report errors without interrupting editing."
   (condition-case err (obp/refresh-prs-agenda)

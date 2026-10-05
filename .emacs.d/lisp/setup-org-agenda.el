@@ -29,6 +29,13 @@
 
 (setq org-agenda-window-setup 'current-window)
 
+(defun obp/org-agenda-set-directory ()
+  "Use the Org directory for file navigation and project discovery."
+  (setq-local default-directory
+              (file-name-as-directory (expand-file-name host/org-agenda-path))))
+
+(add-hook 'org-agenda-finalize-hook #'obp/org-agenda-set-directory)
+
 (setq org-agenda-scheduled-leaders '("📅        " "📅 %2dx:  ")
       org-agenda-deadline-leaders  '("🚨        " "🚨 %3dd:  " "🚨 -%2dd: "))
 
@@ -53,14 +60,23 @@
 (setq org-archive-location
       (concat host/org-agenda-path "/archive.org_archive::* Archive"))
 
-(defun obp/org-save-all-org-buffers (&rest _)
-  "Save all org buffers, ignoring any arguments passed by the advised function."
-  (org-save-all-org-buffers))
+(defun obp/org-save-current-buffer (&rest _)
+  "Save the current modified Org file after an edit has completed."
+  (when (and (derived-mode-p 'org-mode) buffer-file-name (buffer-modified-p))
+    (save-buffer)))
 
-(dolist (command '(org-refile org-agenda-todo org-agenda-deadline
-			      org-agenda-schedule org-agenda-priority org-agenda-set-tags
-			      org-agenda-add-note org-agenda-archive))
-  (advice-add command :after #'obp/org-save-all-org-buffers))
+;; These hooks run in the edited file, including when editing from the agenda.
+;; Log notes are stored later than the command that opens their input buffer.
+(dolist (hook '(org-after-tags-change-hook org-after-note-stored-hook
+                org-after-refile-insert-hook))
+  (add-hook hook #'obp/org-save-current-buffer))
+
+;; Save after the complete operation, including TODO's final cleanup.  Use the
+;; underlying Org commands so the current buffer is the source, not the agenda.
+;; Refile's insertion hook saves its destination; Org saves archive destinations.
+(dolist (command '(org-todo org-deadline org-schedule org-priority org-refile
+                   org-archive-subtree))
+  (advice-add command :after #'obp/org-save-current-buffer))
 
 (defun obp/org-agenda-skip-unmapped-and-someday ()
   "Skip entries that have dates, or belong to deferred/closed states."
@@ -154,8 +170,7 @@
          ("C-c o n" . org-agenda-add-note)
          ("C-c o r" . org-agenda-refile)
          ("C-c o x" . org-agenda-archive)
-         ("C-c o o" . org-agenda-open-link)
-         ("C-c C-c" . obp/agenda-refresh-and-redraw)))
+         ("C-c o o" . org-agenda-open-link)))
 
 (use-package agenda-prs
   :straight nil
