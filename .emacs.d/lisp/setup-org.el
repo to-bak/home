@@ -58,6 +58,12 @@
   :commands org-dispatch
   :bind (:map org-mode-map ("C-c m" . org-dispatch)))
 
+(use-package org-dispatch-codex
+  :straight nil
+  :load-path (lambda () (expand-file-name "plugins/" user-emacs-directory))
+  :after org-dispatch
+  :demand t)
+
 ;; Load Babel backends when Org is first used.
 (with-eval-after-load 'org
   (org-babel-do-load-languages
@@ -108,57 +114,6 @@
   (org-appear-autosubmarkers t)
   (org-appear-trigger 'always))
 
-(defun obp/org-item-text-start ()
-  "Return the position after the current item's bullet and checkbox."
-  (save-excursion
-    (beginning-of-line)
-    (when (looking-at org-list-full-item-re)
-      (let ((checkbox-end (match-end 3)))
-        (if checkbox-end
-            (+ checkbox-end (if (eq (char-after checkbox-end) ?\s) 1 0))
-          (match-end 1))))))
-
-(defun obp/org-return (&optional arg)
-  "Continue list items with RET; outdent or remove an empty item.
-With ARG, or outside a list, use normal `org-return'."
-  (interactive "P")
-  (if (or arg (not (org-in-item-p))
-          (and org-return-follows-link (org-in-regexp org-link-any-re)))
-      (org-return arg)
-    (if (and (org-at-item-p) (eolp) (<= (point) (obp/org-item-text-start)))
-        (condition-case nil (org-outdent-item)
-          (error (delete-region (line-beginning-position) (line-end-position))))
-      (cond
-       ((save-excursion (goto-char (org-in-item-p)) (org-at-item-checkbox-p))
-        (org-insert-todo-heading nil))
-       ((and (org-at-item-description-p)
-             (> (point) (obp/org-item-text-start)) (< (point) (line-end-position)))
-        (newline))
-       (t (org-meta-return))))))
-
-(defun obp/org-backspace (count)
-  "Delete an item prefix at its beginning; otherwise delete COUNT characters."
-  (interactive "p")
-  (if (and (= count 1) (org-at-item-p)
-           (<= (point) (obp/org-item-text-start)))
-      (if (org-previous-line-empty-p)
-          (delete-region (line-beginning-position)
-                         (save-excursion (forward-line -1) (line-beginning-position)))
-        (goto-char (obp/org-item-text-start))
-        (if (= (line-beginning-position) (point-min))
-            (delete-region (line-beginning-position) (point))
-          (when (save-excursion (beginning-of-line) (looking-at-p ".*::[ \t]*$"))
-            (end-of-line))
-          (delete-region (point)
-                         (save-excursion (forward-line -1) (line-end-position)))))
-    (org-delete-backward-char count)))
-
-(with-eval-after-load 'org
-  (keymap-set org-mode-map "RET" #'obp/org-return)
-  (keymap-set org-mode-map "DEL" #'obp/org-backspace)
-  (keymap-set org-mode-map "<backspace>" #'obp/org-backspace))
-
-
 (use-package org-modern
   :hook ((org-mode . org-modern-mode)
          (org-agenda-finalize . org-modern-agenda))
@@ -176,7 +131,7 @@ With ARG, or outside a list, use normal `org-return'."
   (set-face-attribute 'org-modern-label nil :height 0.9)
 
   (setq org-modern-todo-faces
-	'(("TODO"      . (:background "firebrick" :foreground "whitesmoke" :weight bold))
+    '(("TODO"      . (:background "firebrick" :foreground "whitesmoke" :weight bold))
           ("STARTED"   . (:background "firebrick" :foreground "whitesmoke" :weight bold))
           ("PARKED"   . (:background "dark goldenrod" :foreground "whitesmoke" :weight bold))
           ("BACKLOG"   . (:background "dark goldenrod" :foreground "whitesmoke" :weight bold))
