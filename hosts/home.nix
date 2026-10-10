@@ -42,6 +42,7 @@
   modules.services.dunst.enable = true;
 
   modules.misc = {
+    syncthing.enable = true;
     direnv.enable = true;
     fzf.enable = true;
     kubernetes.enable = true;

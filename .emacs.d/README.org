@@ -1,0 +1,61 @@
+#+title: Emacs profiles
+
+The same checkout supports desktop Emacs and terminal Emacs in Termux.
+The phone profile uses only built-in libraries; it does not bootstrap Straight
+or load the desktop modules. The existing minimal-emacs.d startup defaults are
+shared by both profiles. Emacs 29.1 or newer is required by this configuration.
+
+* Termux
+
+Install Emacs with =pkg install emacs=. With =~/.emacs.d= linked to this
+checkout's =.emacs.d=, start =emacs= normally. =TERMUX_VERSION= or a Termux
+=PREFIX= automatically selects the phone profile. To select it explicitly:
+
+#+begin_src sh
+EMACS_PROFILE=phone emacs
+#+end_src
+
+After these changes have been committed and pushed to the home repository,
+run =git -C ~/home-config pull= on the phone, then restart Emacs.
+
+* Reading, editing and capture
+
+- =C-c n=: browse =~/org=.
+- =TAB=: fold or unfold an Org heading.
+- =C-x C-s=: save edits to a note.
+- =C-c c n=: capture a note.
+- =C-c c t=: capture a TODO.
+- =C-c C-c=: save and finish the capture.
+- =C-c C-k=: abort the capture.
+- =C-c a=: built-in agenda for Org files directly inside the notes directory.
+
+Org buffers under =~/org= are editable on both devices. Configure the
+Syncthing share as Send & Receive on both the phone and computer. Unmodified
+buffers refresh when Syncthing updates their files. Save and wait for syncing
+to finish before editing the same file on the other device.
+
+Phone and desktop captures use the same =inbox.org= file under the =Inbox=
+heading. With the current paths this is =~/org/inbox.org=, included in the
+existing Syncthing share. The desktop dashboard's Inbox block reads this file,
+so phone TODO captures appear there after syncing. Plain note captures are
+stored alongside tasks but do not appear in the dashboard's TODO-only block.
+
+Refile processed captures from this inbox normally. Save and sync =inbox.org=
+before capturing or processing it on the other device; concurrent offline
+changes can produce a Syncthing conflict copy. Existing per-file captures in
+the old =phone-inbox= directories can be refiled into =inbox.org= manually.
+
+The phone uses standard Emacs keys. Desktop modal editing, themes, AI,
+development tools, and third-party Org packages are not loaded.
+
+* Configuration layout
+
+- =post-init.el=: selects =phone= or =desktop=.
+- =lisp/setup-phone.el=: minimal phone settings, Org editing and capture.
+- =lisp/setup-desktop-profile.el=: the original desktop configuration.
+
+Set =EMACS_PROFILE=desktop= to explicitly select the desktop profile.
+The phone paths are defined at the top of =lisp/setup-phone.el=. The desktop
+inbox defaults to =inbox.org= inside =host/org-agenda-path= (currently =~/org=).
+If the devices use different local folder paths, keep =inbox.org= at the same
+relative location inside the shared folder on each device.

@@ -10,5 +10,6 @@
     ./direnv.nix
     ./ripgrep.nix
     ./kubernetes.nix
+    ./syncthing.nix
   ];
 }
