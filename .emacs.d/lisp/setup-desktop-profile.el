@@ -1,16 +1,5 @@
 ;;; setup-desktop-profile.el --- Personal desktop configuration -*- no-byte-compile: t; lexical-binding: t; -*-
 
-;; Reuse the existing Straight installation.
-(load (expand-file-name "straight/repos/straight.el/bootstrap.el"
-                        user-emacs-directory)
-      nil 'nomessage)
-
-;; Use Emacs's bundled use-package with Straight's official integration.
-(require 'use-package)
-(setq straight-use-package-by-default t
-      use-package-always-ensure nil
-      use-package-always-defer t)
-
 (setq org-fold-core-style 'overlays)
 
 (defvar host/org-agenda-path (expand-file-name "~/org"))

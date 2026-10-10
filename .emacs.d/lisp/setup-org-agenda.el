@@ -1,6 +1,7 @@
 ;;; setup-org-agenda.el --- Capture dashboard and PR refresh -*- lexical-binding: t; -*-
 
-(setq org-default-notes-file host/org-agenda-inbox-path
+(setq org-directory host/org-agenda-path
+      org-default-notes-file host/org-agenda-inbox-path
       org-default-agenda-file host/org-agenda-inbox-path)
 
 (use-package org-super-agenda
@@ -9,6 +10,9 @@
   ;; Header text maps override modal keys; use the ordinary buffer maps instead.
   (setq org-super-agenda-header-map nil)
   (org-super-agenda-mode t))
+
+(use-package olivetti
+  :commands olivetti-mode)
 
 (add-hook 'org-agenda-mode-hook
           (lambda ()
@@ -86,7 +90,9 @@
 
 (defvar obp/org-agenda-block-inbox
   `(alltodo "" ((org-agenda-overriding-header "📥 Inbox (Unprocessed Captures)")
-                (org-agenda-files (list ,host/org-agenda-inbox-path))))
+                (org-agenda-files
+                 (when (file-exists-p ,host/org-agenda-inbox-path)
+                   (list ,host/org-agenda-inbox-path)))))
   "Inbox block for unprocessed items.")
 
 (defvar obp/org-agenda-block-agenda
@@ -100,7 +106,9 @@
 (defvar obp/org-agenda-block-prs
   `(todo "REVIEW|DRAFT|AWAITING|APPROVED"
          ((org-agenda-overriding-header "Pull Requests Awaiting Review")
-          (org-agenda-files (list ,host/org-agenda-reviews-path))
+          (org-agenda-files
+           (when (file-exists-p ,host/org-agenda-reviews-path)
+             (list ,host/org-agenda-reviews-path)))
           (org-agenda-prefix-format '((todo . " %i ")))))
   "Block displaying pending pull requests.")
 
@@ -156,11 +164,15 @@
         ("b" "Backlog" (,obp/org-agenda-block-backlog))))
 
 
+(defun obp/org-agenda-hide-line-numbers ()
+  "Hide line numbers in generated agendas on both profiles."
+  (display-line-numbers-mode 0))
+
 (use-package org-agenda
   :straight nil
   ;; Emacs 31's visual line-number calculation can crash while rebuilding a
   ;; split agenda window. Keep line numbers in notes, not generated agendas.
-  :hook (org-agenda-mode . obp/hide-line-numbers)
+  :hook (org-agenda-mode . obp/org-agenda-hide-line-numbers)
   :bind (("C-c a" . org-agenda)
          :map org-agenda-mode-map
          ("C-c o d" . org-agenda-deadline)
@@ -172,15 +184,16 @@
          ("C-c o x" . org-agenda-archive)
          ("C-c o o" . org-agenda-open-link)))
 
-(use-package agenda-prs
-  :straight nil
-  :load-path "lisp/custom"
-  :demand t
-  :init
-  (setq agenda-prs-target-file host/org-agenda-reviews-path)
-  :config
-  (when (agenda-prs-configured-p)
-    (agenda-prs-auto-refresh-mode 1)))
+(unless (equal obp/emacs-profile "phone")
+  (use-package agenda-prs
+    :straight nil
+    :load-path "lisp/custom"
+    :demand t
+    :init
+    (setq agenda-prs-target-file host/org-agenda-reviews-path)
+    :config
+    (when (agenda-prs-configured-p)
+      (agenda-prs-auto-refresh-mode 1))))
 
 (use-package org-ql
   :bind (("C-c q" . org-ql-search)

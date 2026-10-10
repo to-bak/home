@@ -1,5 +1,16 @@
 ;;; setup-org.el --- Org editing, appearance and capture -*- lexical-binding: t; -*-
 
+(defvar host/org-agenda-path (expand-file-name "~/org"))
+(defvar host/org-agenda-inbox-path
+  (expand-file-name "inbox.org" host/org-agenda-path))
+(defvar host/org-agenda-reviews-path
+  (expand-file-name "data/reviews.org" host/org-agenda-path))
+
+(defun obp/org-capture-inbox-file ()
+  "Return the shared inbox, creating its parent directory if needed."
+  (make-directory (file-name-directory host/org-agenda-inbox-path) t)
+  host/org-agenda-inbox-path)
+
 ;; ---------------------------------------------------------------------
 ;; Org
 ;; ---------------------------------------------------------------------
@@ -34,11 +45,10 @@
   :hook (org-mode . obp/org-mode-setup)
   :config
   (setq org-modules
-        '(org-crypt
-          org-habit
-          org-bookmark
-          org-eshell
-          org-irc))
+        (delq nil
+              (mapcar (lambda (module)
+                        (when (locate-library (symbol-name module)) module))
+                      '(org-crypt org-habit org-bookmark org-eshell org-irc))))
 
   (setq org-use-sub-superscripts '{}
         org-export-with-sub-superscripts '{})
@@ -52,17 +62,18 @@
   ;; Follow links in the same window; C-c & goes back.
   (setf (cdr (assoc 'file org-link-frame-setup)) 'find-file))
 
-(use-package org-dispatch
-  :straight nil
-  :load-path (lambda () (expand-file-name "plugins/" user-emacs-directory))
-  :commands org-dispatch
-  :bind (:map org-mode-map ("C-c m" . org-dispatch)))
+(unless (equal obp/emacs-profile "phone")
+  (use-package org-dispatch
+    :straight nil
+    :load-path (lambda () (expand-file-name "plugins/" user-emacs-directory))
+    :commands org-dispatch
+    :bind (:map org-mode-map ("C-c m" . org-dispatch)))
 
-(use-package org-dispatch-codex
-  :straight nil
-  :load-path (lambda () (expand-file-name "plugins/" user-emacs-directory))
-  :after org-dispatch
-  :demand t)
+  (use-package org-dispatch-codex
+    :straight nil
+    :load-path (lambda () (expand-file-name "plugins/" user-emacs-directory))
+    :after org-dispatch
+    :demand t))
 
 ;; Load Babel backends when Org is first used.
 (with-eval-after-load 'org
@@ -70,13 +81,16 @@
    'org-babel-load-languages
    '((shell . t)
      (emacs-lisp . t)
-     (python . t)
-     (plantuml . t))))
+     (python . t)))
+  (unless (equal obp/emacs-profile "phone")
+    (org-babel-do-load-languages 'org-babel-load-languages
+                               (append org-babel-load-languages '((plantuml . t))))))
 
 ;; these following commands sets font:sizing across various levels
 ;; of org mode text
 (with-eval-after-load 'org-faces
-  (set-face-attribute 'org-document-title nil :font "JetBrainsMono Nerd Font" :weight 'bold :height 1.3))
+  (when (display-graphic-p)
+    (set-face-attribute 'org-document-title nil :font "JetBrainsMono Nerd Font" :weight 'bold :height 1.3)))
 
 (with-eval-after-load 'org-faces
   (dolist
@@ -88,7 +102,8 @@
               (org-level-6 . 1.0)
               (org-level-7 . 1.0)
               (org-level-8 . 1.0)))
-    (set-face-attribute (car face) nil :font "JetBrainsMono Nerd Font" :weight 'medium :height (cdr face))))
+    (when (display-graphic-p)
+      (set-face-attribute (car face) nil :font "JetBrainsMono Nerd Font" :weight 'medium :height (cdr face)))))
 
 (setq
  ;; Edit settings
@@ -145,23 +160,32 @@
           ("APPROVED"   . (:background "forest green" :foreground "whitesmoke" :weight bold))
           ("IDC"   . (:background "forest green" :foreground "whitesmoke" :weight bold)))))
 
-(use-package org-download
-  :commands (org-download-image org-download-screenshot org-download-clipboard)
-  :hook (org-mode . org-download-enable))
+(unless (equal obp/emacs-profile "phone")
+  (use-package org-download
+    :commands (org-download-image org-download-screenshot org-download-clipboard)
+    :hook (org-mode . org-download-enable)))
 
 (setq org-capture-templates
-      '(("p" "plain" entry
-         (file+headline org-default-agenda-file "Inbox")
-         "* TODO %?")
-        ("c" "code" entry
-         (file+headline org-default-agenda-file "Inbox")
-         "* TODO %?\n%a\n%i")
-        ("b" "Clipboard" entry
-         (file+headline org-default-agenda-file "Inbox")
-         "* %?\n%x")
-        ("w" "Webpage" entry
-         (file+headline org-default-agenda-file "Inbox")
-         "* TODO read later - %:annotation\n%i\n%?")))
+      (append
+       '(("n" "Note" entry
+          (file+headline obp/org-capture-inbox-file "Inbox")
+          "* %?\n%U\n" :empty-lines 1)
+         ("t" "Task" entry
+          (file+headline obp/org-capture-inbox-file "Inbox")
+          "* TODO %?\n%U\n" :empty-lines 1)
+         ("p" "plain" entry
+          (file+headline obp/org-capture-inbox-file "Inbox")
+          "* TODO %?"))
+       (unless (equal obp/emacs-profile "phone")
+         '(("c" "code" entry
+            (file+headline obp/org-capture-inbox-file "Inbox")
+            "* TODO %?\n%a\n%i")
+           ("b" "Clipboard" entry
+            (file+headline obp/org-capture-inbox-file "Inbox")
+            "* %?\n%x")
+           ("w" "Webpage" entry
+            (file+headline obp/org-capture-inbox-file "Inbox")
+            "* TODO read later - %:annotation\n%i\n%?")))))
 
 (use-package org-fancy-priorities
   :hook (org-mode . org-fancy-priorities-mode)

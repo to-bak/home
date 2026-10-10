@@ -9,6 +9,9 @@
           "phone"
         "desktop")))
 
+(load (expand-file-name "lisp/setup-packages.el" user-emacs-directory)
+      nil 'nomessage)
+
 (pcase obp/emacs-profile
   ("phone"
    (load (expand-file-name "lisp/setup-phone.el" user-emacs-directory)

@@ -1,19 +1,22 @@
 #+title: Emacs profiles
 
 The same checkout supports desktop Emacs and terminal Emacs in Termux.
-The phone profile uses only built-in libraries; it does not bootstrap Straight
-or load the desktop modules. The existing minimal-emacs.d startup defaults are
+Both profiles use Straight and =use-package=, and load the same Org editing,
+capture and agenda modules. The existing minimal-emacs.d startup defaults are
 shared by both profiles. Emacs 29.1 or newer is required by this configuration.
 
 * Termux
 
-Install Emacs with =pkg install emacs=. With =~/.emacs.d= linked to this
+Install Emacs and Git with =pkg install emacs git=. With =~/.emacs.d= linked to this
 checkout's =.emacs.d=, start =emacs= normally. =TERMUX_VERSION= or a Termux
 =PREFIX= automatically selects the phone profile. To select it explicitly:
 
 #+begin_src sh
 EMACS_PROFILE=phone emacs
 #+end_src
+
+The first startup needs internet access to bootstrap Straight and install the
+Org packages. Later startups reuse the installed packages, including offline.
 
 After these changes have been committed and pushed to the home repository,
 run =git -C ~/home-config pull= on the phone, then restart Emacs.
@@ -27,7 +30,8 @@ run =git -C ~/home-config pull= on the phone, then restart Emacs.
 - =C-c c t=: capture a TODO.
 - =C-c C-c=: save and finish the capture.
 - =C-c C-k=: abort the capture.
-- =C-c a=: built-in agenda for Org files directly inside the notes directory.
+- =C-c a=: shared Org agenda menu.
+- =C-c a d=: dashboard with inbox tasks, an 18-day agenda, and synced PR reviews.
 
 Org buffers under =~/org= are editable on both devices. Configure the
 Syncthing share as Send & Receive on both the phone and computer. Unmodified
@@ -45,13 +49,20 @@ before capturing or processing it on the other device; concurrent offline
 changes can produce a Syncthing conflict copy. Existing per-file captures in
 the old =phone-inbox= directories can be refiled into =inbox.org= manually.
 
-The phone uses standard Emacs keys. Desktop modal editing, themes, AI,
-development tools, and third-party Org packages are not loaded.
+The phone uses standard Emacs keys, with the shared =C-c o= Org bindings. Org
+appearance packages, =org-super-agenda= grouping, =olivetti= and =org-ql= are
+available on both devices. Desktop modal editing, AI dispatch, screenshot and
+clipboard integrations, and GitHub refresh load only on the desktop. Font
+settings apply only to graphical frames. The phone dashboard reads synced
+=data/reviews.org= when available.
 
 * Configuration layout
 
 - =post-init.el=: selects =phone= or =desktop=.
-- =lisp/setup-phone.el=: minimal phone settings, Org editing and capture.
+- =lisp/setup-packages.el=: shared Straight bootstrap and =use-package= settings.
+- =lisp/setup-phone.el=: phone paths, shared Org module loading and phone bindings.
+- =lisp/setup-org.el=: shared Org editing, appearance and capture templates.
+- =lisp/setup-org-agenda.el=: shared TODO states, dashboard and review commands.
 - =lisp/setup-desktop-profile.el=: the original desktop configuration.
 
 Set =EMACS_PROFILE=desktop= to explicitly select the desktop profile.
