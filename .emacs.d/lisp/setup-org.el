@@ -52,6 +52,22 @@
   ;; Follow links in the same window; C-c & goes back.
   (setf (cdr (assoc 'file org-link-frame-setup)) 'find-file))
 
+;; Install exporters through Straight, alongside the rest of the Lisp config.
+(use-package htmlize
+  :defer t)
+
+(use-package org-re-reveal
+  :after ox
+  :demand t
+  :custom
+  ;; Detect the asset layout from the locally installed reveal.js files.
+  (org-re-reveal-revealjs-version nil)
+  (org-re-reveal-root
+   (concat "file://"
+           (expand-file-name "reveal.js"
+                             (or (getenv "XDG_DATA_HOME")
+                                 "~/.local/share")))))
+
 (use-package org-dispatch
   :straight nil
   :load-path (lambda () (expand-file-name "plugins/" user-emacs-directory))

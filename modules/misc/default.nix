@@ -9,6 +9,7 @@
     ./fzf.nix
     ./direnv.nix
     ./ripgrep.nix
+    ./reveal.nix
     ./kubernetes.nix
   ];
 }
