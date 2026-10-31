@@ -11,15 +11,9 @@
               ("r" . consult-ripgrep)))
 
 ;; One picker for open buffers and every project file, including unopened files.
-(use-package consult-project-extra
-  :bind (:map project-prefix-map ("f" . consult-project-extra-find))
-  :config
-  (setq consult-project-extra-sources
-        '(consult-project-extra--source-buffer
-          consult-project-extra--source-file))
-  ;; Preserve the file-opening action and preview only on request.
-  (consult-customize consult-project-extra--source-file
-    :state #'consult--file-preview
-    :preview-key "M-."))
+(use-package consult-project-pickers
+  :straight nil
+  :load-path "lisp/custom"
+  :bind (:map project-prefix-map ("f" . consult-project-pickers-find)))
 
 ;;; setup-project.el ends here
